@@ -201,7 +201,7 @@ function buildRooms(scene,S,RW,WIN,outs){
     bx(RW,cx,h/2-.3,0,w,h+.6,d,o.wall);blk(S,x0,x1,-.3,0,z0,z1,o.floor,false);
     blk(S,x0,x1,0,.25,z0,z0+.06,o.trim||'#ffffff',false);blk(S,x0,x0+.06,0,.25,z0,z1,o.trim||'#ffffff',false);blk(S,x1-.06,x1,0,.25,z0,z1,o.trim||'#ffffff',false);
     col(x0-1,x0,0,h,z0-1,z1+1,{cam:false});col(x1,x1+1,0,h,z0-1,z1+1,{cam:false});col(x0-1,x1+1,0,h,z0-1,z0,{cam:false});col(x0-1,x1+1,0,h,z1,z1+1,{cam:false});
-    bx(S,cx,.02,z1-.8,1.8,.02,1,'#7a4a2a');bx(S,cx,1.25,z1-.02,1.8,2.5,.05,o.doorCol||'#2b2b2b');
+    bx(S,cx,.02,z1-.8,1.8,.02,1,'#7a4a2a');
     const r={id,name:o.name,cx,x0,x1,z0,z1,h,spawn:{x:cx,z:z1-2.8},out:outs[id],light:o.light||'#fff4e0'};G.rooms[id]=r;
     G.triggers.push({x:cx,z:z1-1,r:1.4,label:'Exit to town',act:()=>G.exit(id)});
     fill({cx,x0,x1,z0,z1,h,S,RW,WIN,
@@ -230,7 +230,7 @@ function buildRooms(scene,S,RW,WIN,outs){
     R.back(4.5,3.6,4,2.6,posterTex({w:512,h:332,bg:'#fff06b',kicker:'Craft',title:'Bar Craft',big:70,foot:'TAP TO VIEW'}),proj('Bar Craft'),{reach:8});
     ROLES.forEach((r,i)=>{const side=i<3?'left':'right';const u=-3.5+(i%3)*3.5;R[side](u,2.8,2.6,3.25,posterTex({bg:['#ff6a3d','#2f5bff','#c9f26b','#ffc9e0','#f4efe6','#ffcc3a'][i],kicker:r[0],title:r[1],body:r[2],big:58,bs:24}),()=>G.card({n:r[1],tag:r[0],st:r[2],d:'Part of the journey: '+r[1]+' at '+r[2]+'.',href:'',color:'#f4efe6'}),{reach:6})});
     G.triggers.push({x:cx,z:z0+3.4,r:1.5,label:'Brew a coffee',act:()=>G.brew()});
-    const tables=[[-4.5,1.5],[4.5,1.5],[0,4]];const lk=[{shirt:'#2f5bff',hair:'long',face:'smile'},{shirt:'#c9f26b',hair:'cap',hat:'#141414',face:'grin'},{shirt:'#ff8fc1',hair:'bun',face:'o'}];
+    const tables=[[-4.5,-.5],[4.5,-.5],[0,.8]];const lk=[{shirt:'#2f5bff',hair:'long',face:'smile'},{shirt:'#c9f26b',hair:'cap',hat:'#141414',face:'grin'},{shirt:'#ff8fc1',hair:'bun',face:'o'}];
     const rev=[['His cortado fixed my Monday. And my Tuesday.','5 stars. Would wait in line again.'],['I asked for extra hot. He explained extraction for 10 minutes. Worth it.','Never asking for extra hot again.'],['Cup first, then the numbers. He said it before I could order.','Then he cut the café\'s wastage by 12%. Iconic.']];
     tables.forEach(([u,z],i)=>{const x=cx+u;cyl(R.S,x,.95,z,.8,.8,.08,'#e8e2d6',14);blk(R.S,x-.08,x+.08,0,.95,z-.08,z+.08,'#2c2f36');cyl(R.S,x,1.05,z,.12,.1,.2,'#ffffff',10);
       R.npc({name:'Café regular',x:x,z:z+1.25,yaw:Math.PI,sit:true,look:lk[i],lines:rev[i],barks:['Mmm.','So good.','Another one.']});blk(R.S,x-.3,x+.3,0,.5,z+1,z+1.6,'#6b4a35')});

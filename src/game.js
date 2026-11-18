@@ -14,7 +14,7 @@ const cam={yaw:0,pitch:.36,dist:8.5,tdist:8.5,lastDrag:0};
 const inp={jx:0,jy:0,keys:{},target:null,pend:null,jump:false};
 let player,cupMesh,marker,timeMode=LS.get('ow_time','auto'),zoneName='',beansGot=new Set(LS.get('ow_beans',[])),unlocked=LS.get('ow_unlocked',false),party=false;
 let quest=LS.get('ow_quest',{doctor:0}),dlgState=null,tour=null,evPhase=-1,rallyI=0,rallyT=0,heard=0,concertT=0;
-G.player=P;
+G.player=P;OW._={P,G,cam,W,get party(){return party}};
 export const EGGS=['ow_beans','ow_roof','ow_call','ow_laptop','ow_mirror','ow_lake','ow_goal','ow_freeloader','ow_rally','ow_concert','ow_doctor','ow_party','ow_scooter','ow_dog','ow_tour'];
 
 /* ================= host (standalone or inside portfolio) ================= */
@@ -138,8 +138,8 @@ const rayBox=(o,d,c)=>{let t0=0,t1=1;for(const [a,b0,b1] of[['x',c.x0,c.x1],['y'
 
 /* ================= rooms ================= */
 function fade(fn){const f=$('.ow-fade');f.classList.add('on');setTimeout(()=>{fn();setTimeout(()=>f.classList.remove('on'),60)},RM?0:260)}
-function enterRoom(id){const r=G.rooms[id];if(!r)return;snd.door();fade(()=>{if(P.ride)dismount();P.pos.set(r.spawn.x,0,r.spawn.z);P.vel.set(0,0,0);P.world=id;cam.yaw=0;cam.pitch=.42;cam.tdist=Math.min(cam.tdist,7.5);inp.target=null;marker.visible=false;setTime();zone(r.name,true);snapCam()})}
-function exitRoom(id){const r=G.rooms[id];snd.door();fade(()=>{const o=r.out;P.pos.set(o.x,0,o.z);P.vel.set(0,0,0);P.world='out';cam.yaw=Math.atan2(-o.fx,-o.fz);cam.pitch=.36;inp.target=null;marker.visible=false;setTime();zone('',true);snapCam()})}
+function enterRoom(id){const r=G.rooms[id];if(!r)return;snd.door();fade(()=>{if(P.ride)dismount();P.pos.set(r.spawn.x,0,r.spawn.z);P.vel.set(0,0,0);P.world=id;cam.yaw=0;cam.pitch=.55;cam.tdist=Math.min(cam.tdist,7.5);P.yaw=Math.PI;inp.target=null;marker.visible=false;setTime();zone(r.name,true);snapCam()})}
+function exitRoom(id){const r=G.rooms[id];snd.door();fade(()=>{const o=r.out;P.pos.set(o.x+o.fx*1.2,0,o.z+o.fz*1.2);P.vel.set(0,0,0);P.world='out';P.yaw=Math.atan2(o.fx,o.fz);cam.yaw=Math.atan2(o.fx,o.fz)+.7;cam.pitch=.42;inp.target=null;marker.visible=false;setTime();zone('',true);snapCam()})}
 
 /* ================= main loop ================= */
 let curAct=null,actT=0,timeT=0,mapT=0,barkT=2;
