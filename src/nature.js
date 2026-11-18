@@ -9,7 +9,7 @@ float fbm2(vec2 p){return .55*vnoise(p)+.3*vnoise(p*2.07+3.1)+.15*vnoise(p*4.13+
 export const MASK={x0:-100,z0:-56,w:200,h:150};
 
 /* ---------- top-down mask: where grass may grow (white) ---------- */
-export function makeMask(roads,b){if(b){MASK.x0=b[0]-20;MASK.z0=b[2]-20;MASK.w=b[1]-b[0]+40;MASK.h=b[3]-b[2]+40}const S=3,c=document.createElement('canvas');c.width=MASK.w*S;c.height=MASK.h*S;const x=c.getContext('2d');
+export function makeMask(roads,b){if(b){MASK.x0=b[0]-40;MASK.z0=b[2]-40;MASK.w=b[1]-b[0]+80;MASK.h=b[3]-b[2]+80}const S=3,c=document.createElement('canvas');c.width=MASK.w*S;c.height=MASK.h*S;const x=c.getContext('2d');
   x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);
   const R=(x0,x1,z0,z1,col='#000')=>{x.fillStyle=col;x.fillRect((x0-MASK.x0)*S,(z0-MASK.z0)*S,(x1-x0)*S,(z1-z0)*S)};
   for(const r of roads)R(r[0],r[1],r[2],r[3]);
@@ -30,12 +30,12 @@ export function groundMaterial(snow){const t=tex(512,512,(x,W,H)=>{const r=rng(1
   return m}
 
 /* ---------- swaying grass that follows the player ---------- */
-export function makeGrass(scene,mask){const mobile=matchMedia('(pointer:coarse)').matches||innerWidth<700;const N=mobile?42000:100000,SIZE=mobile?50:62;
-  const base=new THREE.BufferGeometry();const w=.045,pos=new Float32Array([-w,0,0, w,0,0, -w*.62,.45,0, w*.62,.45,0, 0,1,0]);
-  base.setAttribute('position',new THREE.BufferAttribute(pos,3));base.setAttribute('normal',new THREE.BufferAttribute(new Float32Array([0,0,1,0,0,1,0,0,1,0,0,1,0,0,1]),3));
-  base.setAttribute('uv',new THREE.BufferAttribute(new Float32Array([0,0,1,0,0,.45,1,.45,.5,1]),2));
-  const c0=new THREE.Color('#22401a'),c1=new THREE.Color('#4a7329'),c2=new THREE.Color('#8daf55');const col=[];for(const y of[0,0,.45,.45,1]){const c=y<.5?c0.clone().lerp(c1,y/.45):c1.clone().lerp(c2,(y-.45)/.55);col.push(c.r,c.g,c.b)}
-  base.setAttribute('color',new THREE.BufferAttribute(new Float32Array(col),3));base.setIndex([0,1,2,1,3,2,2,3,4]);
+export function makeGrass(scene,mask){const mobile=matchMedia('(pointer:coarse)').matches||innerWidth<700;const N=mobile?44000:130000,SIZE=mobile?38:56;
+  const base=new THREE.BufferGeometry();const w=.042,pos=new Float32Array([-w,0,0, w,0,0, -w*.85,.35,0, w*.85,.35,0, -w*.55,.7,0, w*.55,.7,0, 0,1,0]);
+  base.setAttribute('position',new THREE.BufferAttribute(pos,3));base.setAttribute('normal',new THREE.BufferAttribute(new Float32Array([0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1]),3));
+  base.setAttribute('uv',new THREE.BufferAttribute(new Float32Array([0,0,1,0,0,.35,1,.35,0,.7,1,.7,.5,1]),2));
+  const c0=new THREE.Color('#34552a'),c1=new THREE.Color('#5e8c36'),c2=new THREE.Color('#a3c262');const col=[];for(const y of[0,0,.35,.35,.7,.7,1]){const c=y<.5?c0.clone().lerp(c1,y/.5):c1.clone().lerp(c2,(y-.5)/.5);col.push(c.r,c.g,c.b)}
+  base.setAttribute('color',new THREE.BufferAttribute(new Float32Array(col),3));base.setIndex([0,1,2,1,3,2,2,3,4,3,5,4,4,5,6]);
   const g=new THREE.InstancedBufferGeometry();g.index=base.index;for(const k of['position','normal','uv','color'])g.setAttribute(k,base.attributes[k]);
   const off=new Float32Array(N*4),R=rng(7);for(let i=0;i<N;i++){off[i*4]=R()*SIZE;off[i*4+1]=R()*SIZE;off[i*4+2]=R()*Math.PI*2;off[i*4+3]=.45+R()*.55}
   g.setAttribute('aOff',new THREE.InstancedBufferAttribute(off,4));g.instanceCount=N;
@@ -46,17 +46,17 @@ export function makeGrass(scene,mask){const mobile=matchMedia('(pointer:coarse)'
       .replace('#include <color_vertex>',`#include <color_vertex>
         vec2 gB=aOff.xy+uSize*floor((uPlayer-aOff.xy)/uSize+.5);
         vec2 mu=(gB-uMaskMin)/uMaskSize;
-        float gM=(mu.x<0.||mu.y<0.||mu.x>1.||mu.y>1.)?(abs(gB.x)<300.?1.:0.):texture2D(uMask,mu).r;
+        float gM=(mu.x<0.||mu.y<0.||mu.x>1.||mu.y>1.)?0.:smoothstep(.5,.88,texture2D(uMask,mu).r);
         float gN=fbm2(gB*.06),gN2=vnoise(gB*.9);
         float gD=distance(gB,uPlayer);
-        float gH=aOff.w*(.5+1.05*gN)*gM*smoothstep(uSize*.5,uSize*.5-7.,gD);
+        float gH=aOff.w*(.3+.48*gN)*gM*smoothstep(uSize*.5,uSize*.5-7.,gD);gH*=step(.08,gH);
         vColor.rgb*=mix(vec3(.82,.9,.72),vec3(1.12,1.06,.86),gN2);
         vColor.rgb=mix(vColor.rgb,vColor.rgb*vec3(1.35,1.15,.62),smoothstep(.62,.9,fbm2(gB*.11+9.))*.7);`)
       .replace('#include <beginnormal_vertex>','vec3 objectNormal=vec3(0.,1.,0.);')
       .replace('#include <begin_vertex>',`
         vec3 p=position;p.y*=gH;p.x*=(.75+.5*gN2)*step(.001,gH);
         float wv=sin(uTime*1.6+gB.x*.13+gB.y*.09)*.55+sin(uTime*2.9+gB.x*.55+gB.y*.4)*.2;
-        float lean=(wv*.32*uWind+.18+gN2*.12)*p.y*p.y;
+        float lean=(wv*.3*uWind+.22+gN2*.14)*p.y*p.y/max(gH,.15);
         float cs=cos(aOff.z),sn=sin(aOff.z);
         vec3 r=vec3(p.x*cs,p.y,p.x*sn);
         vec2 wd=normalize(vec2(.8,.6));r.xz+=wd*lean;

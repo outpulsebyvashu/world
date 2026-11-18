@@ -120,7 +120,7 @@ function memepura(scene,ctx){const {S}=ctx;
   billboard(scene,ctx,32,24.6,PI,6.4,2.4,memeTex('LIVE FROM THE PITCH','SKILL ISSUE?','#8a63d2','#ffffff'));
   billboard(scene,ctx,93.6,34,-PI/2,7,2.6,memeTex('HOW OLD IS THIS BEACH?','SIX SEVEN','#ff8a3d','#141414'));
   billboard(scene,ctx,57,44.6,PI,6.4,2.4,memeTex('PUBLIC SERVICE ANNOUNCEMENT','TOUCH GRASS →','#5cc46b','#141414'));
-  G.noGrass.push([96,105,-40,104])}
+  G.noGrass.push([96,260,-120,220])}
 
 /* ---------- Political Basti: lanes, bunting, two joke parties, a loudspeaker van ---------- */
 function partyTex(name,line,bg,fg,sym){return tex(400,520,(c,W,H)=>{c.fillStyle=bg;c.fillRect(0,0,W,H);c.fillStyle=fg;c.font='800 26px '+FONT_T;c.fillText('VOTE',30,60);let sz=88;c.font='400 '+sz+'px '+FONT_D;while(c.measureText(name).width>W-50&&sz>40){sz-=6;c.font='400 '+sz+'px '+FONT_D}c.fillText(name,28,60+sz);

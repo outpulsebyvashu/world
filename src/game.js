@@ -228,7 +228,7 @@ function camTick(dt,snap){cam.dist+=(cam.tdist-cam.dist)*Math.min(1,dt*6);
   if(P.state==='sit'&&P.seat){let d=(P.seat.yaw+Math.PI)-cam.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));if(performance.now()-cam.lastDrag>1500)cam.yaw+=d*Math.min(1,dt*2)}
   if(P.ride&&performance.now()-cam.lastDrag>1200){let d=(P.yaw+Math.PI)-cam.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));cam.yaw+=d*Math.min(1,dt*2.5)}
   const cp=Math.cos(cam.pitch);fw.set(Math.sin(cam.yaw)*cp*cam.dist,Math.sin(cam.pitch)*cam.dist,Math.cos(cam.yaw)*cp*cam.dist);
-  let tm=1;if(P.world==='out'){for(const c of G.colliders){if(c.cam===false||c.y1<1)continue;const t=rayBox(tgt,fw,c);if(t<tm)tm=t}let tt2=1;if(G.camCols)for(const c of G.camCols){if(Math.abs(c.x0-P.pos.x)>40||Math.abs(c.z0-P.pos.z)>40)continue;const t=rayBox(tgt,fw,c);if(t<tt2)tt2=t}tm=Math.min(tm,Math.max(tt2,2.6/cam.dist))}
+  let tm=1;if(P.world==='out'){let lift=0;for(const c of G.colliders){if(c.cam===false||c.y1<1)continue;const t=rayBox(tgt,fw,c);if(t>=1)continue;if(c.y1<2.7){if(t>.12){const need=(c.y1+.45-tgt.y)/t;if(need>fw.y)lift=Math.max(lift,need-fw.y)}continue}if(t<tm)tm=t}fw.y+=Math.min(lift,4.5);let tt2=1;if(G.camCols)for(const c of G.camCols){if(Math.abs(c.x0-P.pos.x)>40||Math.abs(c.z0-P.pos.z)>40)continue;const t=rayBox(tgt,fw,c);if(t<tt2)tt2=t}tm=Math.min(tm,Math.max(tt2,2.6/cam.dist))}
   const want=tgt.clone().addScaledVector(fw,Math.max(.12,tm-.04));want.y=Math.max(want.y,P.pos.y+.4);
   if(snap)camera.position.copy(want);else camera.position.lerp(want,Math.min(1,dt*14));camera.lookAt(tgt);
   sunL.position.copy(P.pos).addScaledVector(sunDir,90);sunL.target.position.copy(P.pos);
