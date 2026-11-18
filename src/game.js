@@ -5,6 +5,7 @@ import {CSS,HUD} from './hud.js';
 import {snd} from './sound.js';
 import {makeMask,groundMaterial,makeGrass,makeSky,MASK} from './nature.js';
 import {TOWNS,ORDER,BEANS} from './towns.js';
+import {makeFire} from './events.js';
 
 const OW=window.OW={};
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
@@ -16,7 +17,7 @@ const cam={yaw:0,pitch:.36,dist:8.5,tdist:8.5,lastDrag:0};
 const inp={jx:0,jy:0,keys:{},target:null,pend:null,jump:false};
 let player,cupMesh,marker,timeMode=LS.get('ow_time','auto'),zoneName='',beansGot=new Set(LS.get('ow_beans',[])),unlocked=LS.get('ow_unlocked',false),party=false;
 let quest=LS.get('ow_quest',{doctor:0}),dlgState=null,tour=null,evPhase=-1,rallyI=0,rallyT=0,heard=0,concertT=0;
-G.player=P;G.snd=snd;OW._={P,G,cam,W,get party(){return party},get camera(){return camera},get scene(){return scene},get grass(){return grass},get town(){return curTown},load:id=>loadTown(id),view(x,y,z,tx,ty,tz){running=false;camera.position.set(x,y,z);camera.lookAt(tx,ty,tz);setTime();renderer.render(scene,camera)},THREE};
+G.player=P;G.snd=snd;OW._={P,G,cam,W,fire:()=>fire&&fire.start(),get fireState(){return fire&&fire.active},step(n,dt=.05){let t=performance.now()/1000;for(let i=0;i<n;i++){t+=dt;update(dt,t)}},drone:on=>setDrone(on!==false),dronePos:(x,y,z)=>{drone.pos.set(x,y,z);drone.vel.set(0,0,0)},get party(){return party},get camera(){return camera},get scene(){return scene},get grass(){return grass},get town(){return curTown},load:id=>loadTown(id),view(x,y,z,tx,ty,tz){running=false;camera.position.set(x,y,z);camera.lookAt(tx,ty,tz);setTime();renderer.render(scene,camera)},THREE};
 export const EGGS=['ow_beans','ow_roof','ow_call','ow_laptop','ow_mirror','ow_lake','ow_goal','ow_freeloader','ow_rally','ow_concert','ow_doctor','ow_party','ow_scooter','ow_dog','ow_tour','ow_fire','ow_bonfire','ow_statue','ow_firepole','ow_bus','ow_alltowns','ow_terminal','ow_snowman','ow_skydeck'];
 
 /* ================= host (standalone or inside portfolio) ================= */
@@ -48,6 +49,7 @@ OW.init=async(host,el,progress=()=>{})=>{
   player=makeChar({skin:'#c48a60',shirt:'#141414',pants:'#8a7f5a',cargo:'#6f6646',shoes:'#f5f5f5',hair:'curly',glasses:true,face:'smile',seed:3,logo:'#ff6a3d'});scene.add(player);
   const cb=new Batch();cyl(cb,0,0,0,.11,.09,.22,'#ffffff',10);cyl(cb,0,.11,0,.1,.1,.01,'#8a5a3b',10);cupMesh=cb.mesh(CHM);cupMesh.position.set(0,-.72,.12);cupMesh.visible=false;player.userData.armR.add(cupMesh);
   marker=new THREE.Mesh(new THREE.RingGeometry(.35,.5,24).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:.9,depthWrite:false}));marker.visible=false;scene.add(marker);
+  fire=makeFire({scene,camera,P,snd,W,toast,bubbleNear});
   if(!TOWNS[curTown]||!TOWNS[curTown].ready)curTown='vashupur';
   loadTown(curTown);progress(.75);await fontsP;fontsOK=true;streamNear(P.pos,70);progress(.9);await new Promise(r=>setTimeout(r,0));
   bindInput();resize();addEventListener('resize',resize);
@@ -99,7 +101,7 @@ function bindInput(){const cv=renderer.domElement,joy=$('.ow-joy'),knob=$('.ow-k
   cv.addEventListener('pointerdown',e=>{snd.unlock();pts.set(e.pointerId,{x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,t:performance.now()});cv.setPointerCapture(e.pointerId);if(pts.size===2){const [a,b]=[...pts.values()];pinch=Math.hypot(a.x-b.x,a.y-b.y)}});
   cv.addEventListener('pointermove',e=>{const p=pts.get(e.pointerId);if(!p)return;const dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;
     if(pts.size===2){const [a,b]=[...pts.values()];const d=Math.hypot(a.x-b.x,a.y-b.y);if(pinch)cam.tdist=clamp(cam.tdist*pinch/d,4,16);pinch=d;return}
-    cam.yaw-=dx*.0065;cam.pitch=clamp(cam.pitch+dy*.0045,.05,1.25);cam.lastDrag=performance.now()});
+    cam.yaw-=dx*.0065;cam.pitch=clamp(cam.pitch+dy*.0045,drone.on?-.35:.05,drone.on?1.52:1.25);cam.lastDrag=performance.now()});
   const up=e=>{const p=pts.get(e.pointerId);if(!p)return;pts.delete(e.pointerId);if(pts.size<2)pinch=0;if(Math.hypot(e.clientX-p.sx,e.clientY-p.sy)<10&&performance.now()-p.t<400)tap(e.clientX,e.clientY)};
   cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',e=>pts.delete(e.pointerId));
   cv.addEventListener('wheel',e=>{e.preventDefault();cam.tdist=clamp(cam.tdist*(1+e.deltaY*.001),4,16)},{passive:false});
@@ -108,7 +110,10 @@ function bindInput(){const cv=renderer.domElement,joy=$('.ow-joy'),knob=$('.ow-k
     if(['1','2','3','4'].includes(k))emote(['wave','dance','sip','sixseven'][+k-1]);if(k.startsWith('arrow'))e.preventDefault()});
   addEventListener('keyup',e=>{inp.keys[e.key.toLowerCase()]=false});
   addEventListener('blur',()=>{inp.keys={}});
-  $('.ow-jump').addEventListener('pointerdown',e=>{e.preventDefault();snd.unlock();inp.jump=true});
+  const jb=$('.ow-jump'),db=$('.ow-down');jb.addEventListener('pointerdown',e=>{e.preventDefault();snd.unlock();inp.jump=true;drone.up=1});
+  for(const ev of['pointerup','pointercancel','pointerleave']){jb.addEventListener(ev,()=>drone.up=0);db.addEventListener(ev,()=>drone.down=0)}
+  db.addEventListener('pointerdown',e=>{e.preventDefault();drone.down=1});
+  $('.ow-drone').onclick=()=>{snd.click();setDrone(!drone.on)};
   $('.ow-emo').onclick=()=>{const m=$('.ow-emotes');m.hidden=!m.hidden};
   root.querySelectorAll('.ow-emotes button').forEach(b=>b.onclick=()=>{emote(b.dataset.e);$('.ow-emotes').hidden=true});
   $('.ow-act').onclick=()=>{const a=curAct;if(a){snd.click();a.act()}};
@@ -126,7 +131,7 @@ function updMute(){$('.ow-mute').innerHTML=snd.muted?ICON.mute:ICON.vol;$('.ow-m
 const ICON={sun:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>',moon:'<svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>',dusk:'<svg viewBox="0 0 24 24"><path d="M3 18h18M6 14a6 6 0 0 1 12 0M12 3v4M4.6 7.6l1.8 1.8M19.4 7.6l-1.8 1.8"/></svg>',vol:'<svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>',mute:'<svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>'};
 
 const ray=new THREE.Raycaster(),v2=new THREE.Vector2(),plY=new THREE.Plane(new THREE.Vector3(0,1,0),0),hitP=new THREE.Vector3();
-function tap(cx,cy){if(P.state==='sit'||P.climb)return;const r=renderer.domElement.getBoundingClientRect();v2.set((cx-r.left)/r.width*2-1,-(cy-r.top)/r.height*2+1);ray.setFromCamera(v2,camera);
+function tap(cx,cy){if(P.state==='sit'||P.climb||drone.on)return;const r=renderer.domElement.getBoundingClientRect();v2.set((cx-r.left)/r.width*2-1,-(cy-r.top)/r.height*2+1);ray.setFromCamera(v2,camera);
   const near=G.pick.filter(o=>o.visible!==false&&o.getWorldPosition(hitP).distanceTo(P.pos)<45);
   const hits=ray.intersectObjects(near,true);
   for(const h of hits){let o=h.object;while(o&&!o.userData.tap)o=o.parent;if(!o)continue;if(h.distance>60)break;
@@ -153,7 +158,7 @@ function loadTown(id){if(!TOWNS[id])id='vashupur';
   for(const k of Object.keys(W))delete W[k];
   curTown=id;G.TOWN=id;LS.set('ow_town',id);const T=TOWNS[id];party=false;evPhase=-1;tour=null;closeDlg&&$('.ow-dlg')&&closeDlg();
   townRoot=new THREE.Group();scene.add(townRoot);lazy=[];
-  buildWorld(townRoot);spawnTown(townRoot);
+  if(drone.on)setDrone(false);buildWorld(townRoot);spawnTown(townRoot);fire.reset(townRoot,T,id);
   W.ground.material=groundMaterial(!!T.snow);W.clouds.visible=false;W.sun.visible=false;
   if(T.snow){const n=1600,v=new Float32Array(n*3);for(let i=0;i<n;i++){v[i*3]=(Math.random()-.5)*70;v[i*3+1]=Math.random()*26;v[i*3+2]=(Math.random()-.5)*70}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(v,3));W.snow=new THREE.Points(g,new THREE.PointsMaterial({color:'#ffffff',size:.12,transparent:true,opacity:.85,depthWrite:false}));townRoot.add(W.snow)}
   const old=grass.U.uMask.value;grass.U.uMask.value=makeMask(T.roads.map(r=>r[4]==='x'?[r[0],r[1],r[2]-2.3,r[3]+2.3]:[r[0]-2.3,r[1]+2.3,r[2],r[3]]),T.b);if(old&&old!==grass.U.uMask.value)old.dispose();
@@ -171,8 +176,28 @@ function collectLazy(){const seen=new Set(lazy.map(e=>e.t));townRoot.updateMatri
 function distOf(e,p){let d=1e9;for(const q of e.p){const v=Math.hypot(q.x-p.x,q.z-p.z);if(v<d)d=v}return d-e.r}
 function streamNear(p,R){lazy=lazy.filter(e=>{if(!e.t.userData.lazy)return false;if(distOf(e,p)<R){drawTex(e.t);return false}return true})}
 function lazyTick(){if(!fontsOK||!lazy.length)return;const t0=performance.now();lazyT-=1;
-  if(lazyT<=0){lazyT=15;const p=P.world==='out'?P.pos:(G.rooms[P.world]?_v.set(G.rooms[P.world].spawn.x,0,G.rooms[P.world].spawn.z):P.pos);for(const e of lazy)e.d=distOf(e,p);lazy.sort((a,b)=>a.d-b.d)}
+  if(lazyT<=0){lazyT=15;const p=P.world==='out'?(drone.on?drone.focus:P.pos):(G.rooms[P.world]?_v.set(G.rooms[P.world].spawn.x,0,G.rooms[P.world].spawn.z):P.pos);for(const e of lazy)e.d=distOf(e,p);lazy.sort((a,b)=>a.d-b.d)}
   const budget=lazy[0].d<60?6:3;while(lazy.length&&performance.now()-t0<budget){const e=lazy.shift();drawTex(e.t)}}
+/* ---- drone view: free flight over the town, the player waits where they stood ---- */
+let fire=null;const drone={on:false,pos:new THREE.Vector3(),vel:new THREE.Vector3(),focus:new THREE.Vector3(),up:0,down:0,saved:null};
+function bubbleNear(x,z,lines){const c=G.npcs.filter(n=>n.c&&n.c.visible&&!n.hidden&&n.kind!=='dog'&&n.kind!=='cat'&&Math.hypot(n.c.position.x-x,n.c.position.z-z)<36).slice(0,3);c.forEach((n,i)=>bubble(n,lines[i%lines.length]))}
+function setDrone(on){if(on&&P.world!=='out'){toast('DRONE','The drone only flies outside.');return}
+  drone.on=on;root.classList.toggle('drone',on);const b=$('.ow-drone');b.setAttribute('aria-pressed',on?'true':'false');b.setAttribute('aria-label',on?'Land the drone':'Drone view');
+  const jb=$('.ow-jump');jb.querySelector('span').textContent=on?'UP':'JUMP';jb.setAttribute('aria-label',on?'Fly up':'Jump');$('.ow-down').hidden=!on;drone.up=drone.down=0;
+  if(on){drone.saved={yaw:cam.yaw,pitch:cam.pitch};drone.pos.copy(camera.position);drone.pos.y=Math.max(drone.pos.y+16,26);drone.vel.set(0,0,0);cam.pitch=.72;inp.target=null;marker.visible=false;$('.ow-act').hidden=true;
+    toast('DRONE VIEW',matchMedia('(pointer:fine)').matches?'WASD to fly, drag to look, Space / C for height.':'Joystick to fly, drag to look, UP / DOWN for height.')}
+  else{if(drone.saved){cam.yaw=drone.saved.yaw;cam.pitch=drone.saved.pitch}snapCam()}}
+function droneTick(dt,mx,mz,mag,sprint){const K=inp.keys,sp=sprint?44:22,k=1-Math.exp(-4*dt);
+  const vy=((K[' ']||drone.up)?1:0)-((K.c||K.q||drone.down)?1:0);
+  drone.vel.x+=(mx*mag*sp-drone.vel.x)*k;drone.vel.z+=(mz*mag*sp-drone.vel.z)*k;drone.vel.y+=(vy*13-drone.vel.y)*k;
+  drone.pos.addScaledVector(drone.vel,dt);const T=TOWNS[curTown];drone.pos.x=clamp(drone.pos.x,T.b[0]-60,T.b[1]+60);drone.pos.z=clamp(drone.pos.z,T.b[2]-60,T.b[3]+60);
+  drone.pos.y=clamp(drone.pos.y,3,220);for(const c of G.colliders){if(drone.pos.x>c.x0-.6&&drone.pos.x<c.x1+.6&&drone.pos.z>c.z0-.6&&drone.pos.z<c.z1+.6&&drone.pos.y<c.y1+1.2&&drone.pos.y>c.y0-1)drone.pos.y=c.y1+1.2}}
+function droneCam(dt){const cp=Math.cos(cam.pitch);fw.set(-Math.sin(cam.yaw)*cp,-Math.sin(cam.pitch),-Math.cos(cam.yaw)*cp);
+  camera.position.copy(drone.pos);camera.lookAt(tmp.copy(drone.pos).add(fw));
+  const t=fw.y<-.05?Math.min(90,drone.pos.y/-fw.y):40;drone.focus.set(drone.pos.x+fw.x*t,0,drone.pos.z+fw.z*t);
+  sunL.position.copy(drone.focus).addScaledVector(sunDir,90);sunL.target.position.copy(drone.focus);
+  W.sun.position.copy(camera.position).addScaledVector(sunDir,600);W.sun.lookAt(camera.position);
+  W.moon.position.copy(camera.position).add(tmp.set(-sunDir.x,Math.abs(sunDir.y)+.25,-sunDir.z).normalize().multiplyScalar(560));W.moon.lookAt(camera.position);W.stars.position.copy(camera.position)}
 function updQuestSafe(){try{updQuest()}catch(e){}}
 function beanHint(){const left=ORDER.filter(t=>BEANS.some((b,i)=>b.t===t&&!beansGot.has(i))).map(t=>TOWNS[t].name);return left.length?' Still missing some in: '+left.join(', ')+'.':''}
 function openBus(){const o=$('.ow-bus');const l=o.querySelector('.ow-towns');l.innerHTML='';
@@ -184,10 +209,10 @@ function ride(id){const r=$('.ow-ride'),T=TOWNS[id];r.querySelector('b').textCon
 function openLift(T){const o=$('.ow-lift');o.querySelector('.k').textContent='Lift · Outpulse Residences Tower '+T;const g=o.querySelector('.ow-floors');g.innerHTML='';
   for(let f=13;f>=0;f--){const b=document.createElement('button');b.type='button';b.className='ow-fl'+((G.res.tower===T&&G.res.floor===f&&P.world!=='out')?' here':'');b.textContent=f?String(f):'G';b.setAttribute('aria-label',f?'Floor '+f:'Ground floor');
     b.onclick=()=>{o.hidden=true;snd.blip();G.res.tower=T;G.res.floor=f;if(!f){G.enter('res'+T);return}G.rooms.resFloor.name='Tower '+T+' · Floor '+f;G.enter('resFloor')};g.appendChild(b)}o.hidden=false}
-function tpTo(x,y,z,yaw,label){snd.door();fade(()=>{if(P.ride)dismount();P.world='out';P.pos.set(x,y,z);P.vel.set(0,0,0);P.yaw=yaw||0;cam.yaw=(yaw||0)+Math.PI;cam.pitch=.42;inp.target=null;marker.visible=false;setTime();zone(label||TOWNS[curTown].name,true);snapCam()})}
+function tpTo(x,y,z,yaw,label){if(drone.on)setDrone(false);snd.door();fade(()=>{if(P.ride)dismount();P.world='out';P.pos.set(x,y,z);P.vel.set(0,0,0);P.yaw=yaw||0;cam.yaw=(yaw||0)+Math.PI;cam.pitch=.42;inp.target=null;marker.visible=false;setTime();zone(label||TOWNS[curTown].name,true);snapCam()})}
 
 function fade(fn){const f=$('.ow-fade');f.classList.add('on');setTimeout(()=>{fn();setTimeout(()=>f.classList.remove('on'),60)},RM?0:260)}
-function enterRoom(id){const r=G.rooms[id];if(!r)return;snd.door();fade(()=>{if(r.build){r.build();r.build=null;collectLazy()}if(r.refresh)r.refresh();streamNear(new THREE.Vector3(r.spawn.x,0,r.spawn.z),40);if(P.ride)dismount();P.pos.set(r.spawn.x,0,r.spawn.z);P.vel.set(0,0,0);P.world=id;cam.yaw=0;cam.pitch=.55;cam.tdist=Math.min(cam.tdist,7.5);P.yaw=Math.PI;inp.target=null;marker.visible=false;setTime();zone(r.name,true);snapCam()})}
+function enterRoom(id){const r=G.rooms[id];if(!r)return;if(drone.on)setDrone(false);snd.door();fade(()=>{if(r.build){r.build();r.build=null;collectLazy()}if(r.refresh)r.refresh();streamNear(new THREE.Vector3(r.spawn.x,0,r.spawn.z),40);if(P.ride)dismount();P.pos.set(r.spawn.x,0,r.spawn.z);P.vel.set(0,0,0);P.world=id;cam.yaw=0;cam.pitch=.55;cam.tdist=Math.min(cam.tdist,7.5);P.yaw=Math.PI;inp.target=null;marker.visible=false;setTime();zone(r.name,true);snapCam()})}
 function exitRoom(id){const r=G.rooms[id];snd.door();fade(()=>{const o=r.out;P.pos.set(o.x+o.fx*1.2,o.y||0,o.z+o.fz*1.2);P.vel.set(0,0,0);P.world='out';P.yaw=Math.atan2(o.fx,o.fz);cam.yaw=Math.atan2(o.fx,o.fz)+.7;cam.pitch=.42;inp.target=null;marker.visible=false;setTime();zone('',true);snapCam()})}
 
 /* ================= main loop ================= */
@@ -205,6 +230,7 @@ function update(dt,T){
   else if(inp.target){const dx=inp.target.x-P.pos.x,dz=inp.target.z-P.pos.z,d=Math.hypot(dx,dz);const pd=inp.pend?Math.hypot(inp.pend.x-P.pos.x,inp.pend.z-P.pos.z):1e9;
     if(d<.35||(inp.pend&&pd<=inp.pend.reach)){const p=inp.pend;inp.target=null;inp.pend=null;marker.visible=false;if(p)p.fn()}else{mx=dx/d;mz=dz/d;mag=d>10?1:Math.min(1,d/1.2+.4)}}
   else mag=0;
+  if(drone.on){droneTick(dt,mx,mz,mag,sprint);mag=0;inp.jump=false}
   if(P.state==='sit'){if(mag>.5||inp.jump){stand();inp.jump=false}else{mag=0}}
   if(P.climb){climbStep(dt);mag=0}
   /* --- velocity --- */
@@ -230,18 +256,18 @@ function update(dt,T){
   if(P.ride)snd.motor(hs/16);else snd.motor(0);
   if(marker.visible){marker.rotation.y+=dt*2;marker.material.opacity=.5+.4*Math.sin(T*6)}
   /* --- world systems --- */
-  if(grass&&P.world==='out')grass.update(dt,T,P.pos.x,P.pos.z);if(sky){sky.position.copy(camera.position);if(sky.material.uniforms.time)sky.material.uniforms.time.value=T}
-  beansTick(dt,T);npcTick(dt,T);eventTick(dt,T);ballTick(dt);ambientTick(dt,T);
+  const FC=drone.on?drone.focus:P.pos;if(grass&&P.world==='out')grass.update(dt,T,FC.x,FC.z);if(sky){sky.position.copy(camera.position);if(sky.material.uniforms.time)sky.material.uniforms.time.value=T}
+  beansTick(dt,T);npcTick(dt,T);eventTick(dt,T);fire.tick(dt,T);ballTick(dt);ambientTick(dt,T);
   if(P.world==='out')lakeCheck();
   /* --- action button --- */
-  actT-=dt;if(actT<=0){actT=.12;pickAction()}
+  actT-=dt;if(actT<=0){actT=.12;if(drone.on){curAct=null;$('.ow-act').hidden=true}else pickAction()}
   timeT-=dt;if(timeT<=0){timeT=20;setTime();updTimeBtn()}
   mapT-=dt;if(mapT<=0){mapT=.15;drawMini();zoneCheck()}
   barkT-=dt;if(barkT<=0){barkT=3+Math.random()*3;bark()}
   bubblesTick();
   camTick(dt)}
 function snapCam(){camTick(1,true)}
-function camTick(dt,snap){cam.dist+=(cam.tdist-cam.dist)*Math.min(1,dt*6);
+function camTick(dt,snap){if(drone.on)return droneCam(dt);cam.dist+=(cam.tdist-cam.dist)*Math.min(1,dt*6);
   const tgt=tmp.set(P.pos.x,P.pos.y+(P.state==='sit'?1.1:1.55)+(P.ride?.4:0),P.pos.z);
   if(P.state==='sit'&&P.seat){let d=(P.seat.yaw+Math.PI)-cam.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));if(performance.now()-cam.lastDrag>1500)cam.yaw+=d*Math.min(1,dt*2)}
   if(P.ride&&performance.now()-cam.lastDrag>1200){let d=(P.yaw+Math.PI)-cam.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));cam.yaw+=d*Math.min(1,dt*2.5)}
@@ -341,9 +367,10 @@ function ambientTick(dt,T){if(G.cranes)for(const c of G.cranes){c.g.rotation.y+=
   if(party){W.disco.ball.rotation.y+=dt*.8;W.disco.beams.forEach((b,i)=>{const a=b.userData.a+T*(RM?.1:.6);b.rotation.set(Math.sin(a)*.6,a,Math.cos(a)*.6)})}}
 
 /* ================= NPCs ================= */
-function npcTick(dt,T){const px=P.pos.x,pz=P.pos.z,now=performance.now();
-  for(const n of G.npcs){const c=n.c,p=c.position;const far=Math.hypot(p.x-px,p.z-pz)>75;c.visible=!far&&!n.hidden;if(far)continue;
+function npcTick(dt,T){const px=P.pos.x,pz=P.pos.z,now=performance.now(),FC=drone.on?drone.focus:P.pos,FR=drone.on?95:75,FI=fire&&fire.active;
+  for(const n of G.npcs){const c=n.c,p=c.position;const far=Math.hypot(p.x-FC.x,p.z-FC.z)>FR;c.visible=!far&&!n.hidden;if(far&&!(n.panic>0))continue;
     let sp=0,em=n.emote||null;
+    if(n.panic>0){n.panic-=dt;if(FI&&!n.sit&&!n.lie&&n.kind!=='guide'){const dx=p.x-FI.x,dz=p.z-FI.z,d=Math.hypot(dx,dz)||1;if(d<44){sp=6.5;p.x+=dx/d*sp*dt;p.z+=dz/d*sp*dt;turn(c,Math.atan2(dx,dz),dt)}if(c.userData.legL)anim(c,dt,{speed:sp});continue}}
     if(n.kind==='wander'&&!party){if(n.faceT>0){n.faceT-=dt}else if(n.pause>0){n.pause-=dt}else{const t=n.path[n.pi];const dx=t[0]-p.x,dz=t[1]-p.z,d=Math.hypot(dx,dz);if(d<.4){n.pi=(n.pi+1)%n.path.length;if(Math.random()<.35)n.pause=1.5+Math.random()*3}else{sp=n.speed;p.x+=dx/d*sp*dt;p.z+=dz/d*sp*dt;turn(c,Math.atan2(dx,dz),dt)}}}
     else if(n.kind==='chase'){const dx=px-p.x,dz=pz-p.z,d=Math.hypot(dx,dz);
       if(n.flee>0){n.flee-=dt;sp=8;p.x-=dx/d*sp*dt;p.z-=dz/d*sp*dt;turn(c,Math.atan2(-dx,-dz),dt);em=null}
@@ -399,12 +426,13 @@ function mapBG(){const T=TOWNS[curTown];bg=document.createElement('canvas');bg.w
   const bs=T.bus;x.fillStyle='#ffcc3a';x.fillRect((bs.x-MX0)*MS-9,(bs.z-MZ0)*MS-9,18,18);x.strokeStyle='#141414';x.lineWidth=3;x.strokeRect((bs.x-MX0)*MS-9,(bs.z-MZ0)*MS-9,18,18)}
 function drawMini(){const c=$('.ow-map canvas'),x=c.getContext('2d'),W_=c.width,S=2.6;x.clearRect(0,0,W_,W_);x.fillStyle=TOWNS[curTown].snow?'#e6edf2':'#79c267';x.fillRect(0,0,W_,W_);
   if(P.world!=='out'){x.fillStyle='#141414';x.fillRect(0,0,W_,W_);x.fillStyle='#f4efe6';x.font='700 22px "Inter Tight",sans-serif';x.textAlign='center';x.fillText('INSIDE',W_/2,W_/2-8);x.font='600 16px "Inter Tight",sans-serif';const n=G.rooms[P.world].name;x.fillText(n.length>18?n.slice(0,17)+'…':n,W_/2,W_/2+18);return}
-  x.save();x.translate(W_/2,W_/2);x.scale(S/MS,S/MS);x.translate(-(P.pos.x-MX0)*MS,-(P.pos.z-MZ0)*MS);x.drawImage(bg,0,0);
+  const CX=drone.on?drone.pos.x:P.pos.x,CZ=drone.on?drone.pos.z:P.pos.z;x.save();x.translate(W_/2,W_/2);x.scale(S/MS,S/MS);x.translate(-(CX-MX0)*MS,-(CZ-MZ0)*MS);x.drawImage(bg,0,0);
   for(const b of G.beans)if(b.g.visible&&false){}
   x.restore();
-  const dot=(wx,wz,col,r=5)=>{const sx=W_/2+(wx-P.pos.x)*S,sy=W_/2+(wz-P.pos.z)*S;if(sx<0||sy<0||sx>W_||sy>W_)return;x.fillStyle=col;x.beginPath();x.arc(sx,sy,r,0,7);x.fill();x.strokeStyle='#141414';x.lineWidth=2;x.stroke()};
+  const dot=(wx,wz,col,r=5)=>{const sx=W_/2+(wx-CX)*S,sy=W_/2+(wz-CZ)*S;if(sx<0||sy<0||sx>W_||sy>W_)return;x.fillStyle=col;x.beginPath();x.arc(sx,sy,r,0,7);x.fill();x.strokeStyle='#141414';x.lineWidth=2;x.stroke()};
+  const FI=fire&&fire.active;if(FI&&Math.sin(performance.now()/160)>-.3)dot(FI.x,FI.z,'#ff3b1f',7);if(drone.on)dot(P.pos.x,P.pos.z,'#ffffff',5);
   const g=G.npcs.find(n=>n.id==='guide');if(g)dot(g.c.position.x,g.c.position.z,'#ff6a3d',5);if(W.event)dot(W.event.x,W.event.z+8,evPhase?'#c9f26b':'#ffcc3a',6);
-  x.save();x.translate(W_/2,W_/2);x.rotate(-P.yaw+Math.PI);x.fillStyle='#ffffff';x.strokeStyle='#141414';x.lineWidth=2.5;x.beginPath();x.moveTo(0,-10);x.lineTo(7,8);x.lineTo(0,4);x.lineTo(-7,8);x.closePath();x.fill();x.stroke();x.restore()}
+  x.save();x.translate(W_/2,W_/2);x.rotate(drone.on?-cam.yaw:-P.yaw+Math.PI);x.fillStyle=drone.on?'#3fa7e0':'#ffffff';x.strokeStyle='#141414';x.lineWidth=2.5;x.beginPath();x.moveTo(0,-10);x.lineTo(7,8);x.lineTo(0,4);x.lineTo(-7,8);x.closePath();x.fill();x.stroke();x.restore()}
 function openMap(){const o=$('.ow-bigmap');o.hidden=false;const c=o.querySelector('canvas');const ar=MH/MW,w=Math.min(innerWidth-24,820,(innerHeight-130)/ar);c.width=w*2;c.height=w*2*ar;c.style.width=w+'px';c.style.height=w*ar+'px';o.querySelector('.k').textContent=TOWNS[curTown].name+' map · tap a building to walk there';const x=c.getContext('2d');x.drawImage(bg,0,0,c.width,c.height);const k=c.width/bg.width;
   x.font='800 '+Math.round(22*k/1.5)+'px "Bricolage Grotesque",sans-serif';x.textAlign='center';
   for(const b of G.buildings){if(!b.room)continue;const cx=((b.x0+b.x1)/2-MX0)*MS*k,cy=((b.z0+b.z1)/2-MZ0)*MS*k;x.lineWidth=6;x.strokeStyle='#141414';x.strokeText(b.short,cx,cy);x.fillStyle='#ffffff';x.fillText(b.short,cx,cy)}

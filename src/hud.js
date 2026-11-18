@@ -8,7 +8,7 @@ export const HUD=`
     <div class="ow-mid"><button type="button" class="ow-loc" aria-label="Current town (double-tap for menu)">OUTPULSE SPACE</button><p class="ow-zone" aria-live="polite"></p></div>
     <div class="ow-right">
       <span class="ow-beans" role="status" aria-label="Coffee beans found">${bean}<b>0/8</b></span>
-      <div class="ow-row"><button type="button" class="ow-time ow-ib"></button><button type="button" class="ow-mute ow-ib"></button></div>
+      <div class="ow-row"><button type="button" class="ow-drone ow-ib" aria-label="Drone view" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="9" y="10" width="6" height="4" rx="1.2"/><path d="M9.5 10.5L7 8M14.5 10.5L17 8M9.5 13.5L7 16M14.5 13.5L17 16"/><circle cx="5.5" cy="6.5" r="2.3"/><circle cx="18.5" cy="6.5" r="2.3"/><circle cx="5.5" cy="17.5" r="2.3"/><circle cx="18.5" cy="17.5" r="2.3"/></svg></button><button type="button" class="ow-time ow-ib"></button><button type="button" class="ow-mute ow-ib"></button></div>
       <button type="button" class="ow-cvb">Quick CV</button>
     </div>
   </div>
@@ -19,6 +19,7 @@ export const HUD=`
   <div class="ow-btns">
     <button type="button" class="ow-act" hidden></button>
     <div class="ow-brow"><button type="button" class="ow-emo" aria-label="Emotes"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 14.5c2 2.5 6 2.5 8 0"/><circle cx="9" cy="10" r=".8" fill="currentColor"/><circle cx="15" cy="10" r=".8" fill="currentColor"/></svg></button>
+    <button type="button" class="ow-down" aria-label="Fly down" hidden><svg viewBox="0 0 24 24"><path d="M6 10l6 6 6-6"/></svg><span>DOWN</span></button>
     <button type="button" class="ow-jump" aria-label="Jump"><svg viewBox="0 0 24 24"><path d="M6 14l6-6 6 6"/></svg><span>JUMP</span></button></div>
   </div>
   <div class="ow-emotes" hidden><button type="button" data-e="wave">Wave</button><button type="button" data-e="dance">Dance</button><button type="button" data-e="sip">Sip coffee</button><button type="button" data-e="sixseven">Six-seven</button></div>
@@ -81,6 +82,10 @@ export const CSS=`
 .ow-knob{width:58px;height:58px;border-radius:50%;background:#fff;border:3px solid #141414;box-shadow:0 4px 0 #141414;pointer-events:none}
 .ow-btns{position:absolute;right:calc(14px + env(safe-area-inset-right));bottom:calc(22px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:flex-end;gap:12px}
 .ow-brow{display:flex;align-items:flex-end;gap:10px}
+.ow-down{width:66px;height:66px;border-radius:50%;border:3px solid #141414;background:#fff;box-shadow:0 4px 0 #141414;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;font-size:10px;touch-action:none;padding:0}.ow-down[hidden]{display:none}
+.ow-down svg{width:24px;height:24px;fill:none;stroke:#141414;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.ow-down:active{transform:translateY(3px);box-shadow:0 1px 0 #141414}
+.ow-ib[aria-pressed="true"]{background:#ffcc3a}
+.ow.drone .ow-emo,.ow.drone .ow-act{display:none}
 .ow-jump{width:84px;height:84px;border-radius:50%;border:3px solid #141414;background:#fff;box-shadow:0 5px 0 #141414;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;font-size:11px;touch-action:none}
 .ow-jump svg{width:30px;height:30px;fill:none;stroke:#141414;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
 .ow-jump:active,.ow-emo:active,.ow-act:active,.ow-ib:active{transform:translateY(3px);box-shadow:0 1px 0 #141414}

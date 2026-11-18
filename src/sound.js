@@ -1,5 +1,5 @@
 /* Tiny procedural audio: no files, all generated in the browser. */
-let ac=null,master=null,musicG=null,sfxG=null,noiseBuf=null,motorO=null,motorG=null,murmur=null,murG=null;
+const SAMPLES={};let sirO=null,sirG=null;let ac=null,master=null,musicG=null,sfxG=null,noiseBuf=null,motorO=null,motorG=null,murmur=null,murG=null;
 let muted=(()=>{try{return localStorage.getItem('ow_mute')==='1'}catch(e){return false}})();
 let scene={concert:0,rally:false,party:false,indoor:null},mode='chill',step16=0,nextT=0,timer=null,chord=0;
 const N=m=>440*Math.pow(2,(m-69)/12);
@@ -38,5 +38,11 @@ export const snd={get muted(){return muted},
   kick(){if(!ac)return;tone(160,ac.currentTime,.12,'sine',.3,sfxG,60)},
   brew(){if(!ac)return;noise(ac.currentTime,1.2,.12,3000,'bandpass')},
   gibber(n){if(!ac)return;const t=ac.currentTime;for(let i=0;i<Math.min(28,n/2);i++)tone(150+Math.random()*90,t+i*.09,.07,'sawtooth',.03)},
+  /* recorded clips (fetched the first time they are needed) */
+  sample(url,vol=1){if(!ac||muted)return;const c=SAMPLES[url]||(SAMPLES[url]=fetch(url).then(r=>r.arrayBuffer()).then(b=>new Promise((ok,no)=>ac.decodeAudioData(b,ok,no))).catch(()=>null));
+    c.then(buf=>{if(!buf)return;const s=ac.createBufferSource(),g=ac.createGain();s.buffer=buf;g.gain.value=vol*1.6;s.connect(g).connect(sfxG);s.start()})},
+  /* fire-truck siren: a slow two-tone wail, k = loudness 0..1 */
+  siren(k){if(!ac)return;if(!sirO){if(!k)return;sirO=ac.createOscillator();sirO.type='triangle';sirO.frequency.value=760;const lfo=ac.createOscillator(),lg=ac.createGain();lfo.type='triangle';lfo.frequency.value=.45;lg.gain.value=260;lfo.connect(lg).connect(sirO.frequency);lfo.start();
+      sirG=ac.createGain();sirG.gain.value=0;sirO.connect(sirG).connect(sfxG);sirO.start()}sirG.gain.setTargetAtTime(k*k*.09,ac.currentTime,.15)},
   motor(k){if(!ac)return;if(!motorO){motorO=ac.createOscillator();motorO.type='sawtooth';motorG=ac.createGain();motorG.gain.value=0;const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=900;motorO.connect(f).connect(motorG).connect(sfxG);motorO.start()}motorO.frequency.setTargetAtTime(80+k*260,ac.currentTime,.1);motorG.gain.setTargetAtTime(k>0?.03+k*.05:0,ac.currentTime,.1)}
 };
