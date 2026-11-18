@@ -110,9 +110,9 @@ function estate(scene,ctx){const {S,addPlane}=ctx;
   for(const x of[-72,-66]){blk(S,x-.08,x+.08,0,2.2,11.1,11.3,'#5a3f2a')}addPlane(scene,6.4,.8,signTex('KAAPIKUNJ COFFEE ESTATE','#2f5a2a','#f3eee6',1024,128),[-69,2.25,11.06],PI,null)}
 
 /* ---------- Memepura: the sea, a beach strip and meme billboards ---------- */
-function billboard(scene,ctx,x,z,ry,w,h,t){const {S,addPlane}=ctx;const c=Math.cos(ry),sn=Math.sin(ry);for(const s2 of[-1,1]){const px=x+c*s2*(w/2-.4),pz=z-sn*s2*(w/2-.4);blk(S,px-.15,px+.15,0,3+h,pz-.15,pz+.15,'#2c2f36',true)}
+export function billboard(scene,ctx,x,z,ry,w,h,t){const {S,addPlane}=ctx;const c=Math.cos(ry),sn=Math.sin(ry);for(const s2 of[-1,1]){const px=x+c*s2*(w/2-.4),pz=z-sn*s2*(w/2-.4);blk(S,px-.15,px+.15,0,3+h,pz-.15,pz+.15,'#2c2f36',true)}
   bx(S,x-sn*.08,3+h/2,z-c*.08,Math.abs(c)>.5?w+.3:.12,h+.3,Math.abs(c)>.5?.12:w+.3,'#141414');addPlane(scene,w,h,t,[x,3+h/2,z],ry,null)}
-function memeTex(top,big,bg,fg){return tex(900,360,(c,W,H)=>{c.fillStyle=bg;c.fillRect(0,0,W,H);c.fillStyle=fg;c.font='800 30px '+FONT_T;c.fillText(top,36,58);let sz=170;c.font='400 '+sz+'px '+FONT_D;while(c.measureText(big).width>W-70&&sz>60){sz-=8;c.font='400 '+sz+'px '+FONT_D}c.fillText(big,34,70+sz*.95)})}
+export function memeTex(top,big,bg,fg){return tex(900,360,(c,W,H)=>{c.fillStyle=bg;c.fillRect(0,0,W,H);c.fillStyle=fg;c.font='800 30px '+FONT_T;c.fillText(top,36,58);let sz=170;c.font='400 '+sz+'px '+FONT_D;while(c.measureText(big).width>W-70&&sz>60){sz-=8;c.font='400 '+sz+'px '+FONT_D}c.fillText(big,34,70+sz*.95)})}
 function memepura(scene,ctx){const {S}=ctx;
   blk(S,97,104,0,.03,-40,104,'#ecdcaa',false);
   const sea=new THREE.Mesh(new THREE.PlaneGeometry(900,900),new THREE.MeshLambertMaterial({color:'#2a86c8'}));sea.rotation.x=-PI/2;sea.position.set(554,.02,30);sea.receiveShadow=true;scene.add(sea);
@@ -248,6 +248,37 @@ export function extraRooms(room,env){const {scene,addPlane,posterTex,npc,outs}=e
     R.back(-6,2.8,2,2.6,posterTex({w:320,h:416,bg:'#c1693c',fg:'#fff6e6',kicker:'Kunj (n.)',title:'A little garden home.',big:42}),null);
     for(let i=0;i<4;i++)R.left(-4.6+i*1.2,2.9+(i%2)*.5,.9,.7,tex(128,100,(c,W,H)=>{c.fillStyle='#f3eee6';c.fillRect(0,0,W,H);c.fillStyle=['#2f7a6b','#e64a8b','#ffcc3a','#3d7be8'][i];c.fillRect(12,12,W-24,H-24)}),null);
     for(const [x,z] of[[x0+.7,z0+.7],[x1-.7,2.4],[cx+.4,z0+.7]])pot(S,x,z,'#b5552e','#3f9b4a',.7);
+  });
+
+
+  /* ---------- NTH Labs: lobby (L0) and lab floor (L12) ---------- */
+  const skyDeck=()=>G.tp(0,84,-44,PI,'NTH Labs · Sky Deck');
+  room('nth',{name:'NTH Labs · Lobby',w:22,d:14,h:7,wall:'#1b2230',floor:'#2a2f3a',trim:'#3bd1ff',light:'#e8f4ff'},R=>{const {cx,x0,x1,z0,z1,S,WIN}=R;
+    for(let i=0;i<11;i++)blk(S,x0+i*2,x0+i*2+1.96,0,.012,z0,z1,i%2?'#2f3542':'#2a2f3a',false);
+    R.back(0,4.3,9,2.4,tex(900,240,(c,W,H)=>{c.fillStyle='#10151d';c.fillRect(0,0,W,H);c.fillStyle='#3bd1ff';c.font='400 130px '+FONT_D;c.textAlign='center';c.fillText('NTH LABS',W/2,150);c.font='600 30px '+FONT_T;c.fillStyle='#cfe9f5';c.fillText('Building the nth thing.',W/2,205)}),null);
+    bx(WIN,cx,2.95,z0+.06,9.2,.08,.08,'#ffffff');bx(WIN,cx,5.65,z0+.06,9.2,.08,.08,'#ffffff');
+    blk(S,cx-3.2,cx+3.2,0,1.1,z0+3.2,z0+4,'#f4f6f8');bx(S,cx,1.13,z0+3.6,6.5,.06,.9,'#d9dee4');bx(WIN,cx,.6,z0+4.02,6,.06,.04,'#ffffff');
+    R.npc({name:'Receptionist Ria',x:cx,z:z0+2.3,yaw:0,look:{shirt:'#3bd1ff',pants:'#1b2230',hair:'bun',headset:true,face:'smile'},lines:['Welcome to NTH Labs. Elevators are on your left.','What do we build here? The nth thing. That\'s all I\'m allowed to say.','Something\'s cooking upstairs. Smells like solder.'],barks:['Welcome!','Badge, please.']});
+    for(const s2 of[-1,1]){const z=1.2+s2*1.6;blk(S,cx+4.2,cx+7.8,0,.45,z-.5,z+.5,'#4b5566');blk(S,cx+4.2,cx+7.8,.45,1,s2>0?z+.3:z-.5,s2>0?z+.5:z-.3,'#4b5566');G.seats.push({x:cx+6,z,y:.48,yaw:s2>0?PI:0,label:'Wait on the sofa'})}
+    blk(S,cx+5.2,cx+6.8,0,.4,.8,1.6,'#d9dee4');for(const [x,z] of[[x1-.8,z0+.8],[x1-.8,z1-1.8],[cx-6,z0+.8]])pot(S,x,z,'#4b5566','#3f9b4a',.8);
+    for(let z=-3.6;z<=4;z+=1.9)bx(WIN,x1-2.2,2,z,.06,3.4,1.7,'#ffffff');
+    for(const [z,lab,fn] of[[-2.6,'L12 · LAB FLOOR',()=>G.enter('nthlab')],[1.8,'L24 · SKY DECK',skyDeck]]){bx(S,x0+.07,1.45,z,.1,2.9,1.8,'#9aa3ad');bx(S,x0+.13,1.45,z,.02,2.9,.04,'#5a6270');R.left(z,3.35,1.8,.36,signTex(lab,'#141414','#3bd1ff',512,104),null);
+      G.triggers.push({x:x0+1.5,z,r:1.3,label:'Elevator · '+(lab.startsWith('L12')?'Lab floor (L12)':'Sky deck (L24)'),act:fn})}
+    R.right(-4,3.4,2.4,.6,signTex('LOBBY · L0','#141414','#f4f6f8',512,128),null);
+  });
+  room('nthlab',{name:'NTH Labs · Lab floor L12',w:24,d:16,h:6,wall:'#eef2f6',floor:'#cfd6de',trim:'#3bd1ff',light:'#f2f8ff',exit:false,out:outs.nth},R=>{const {cx,x0,x1,z0,z1,S,WIN}=R;
+    R.back(0,3.1,22,3.6,tex(1100,180,(c,W,H)=>{const g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,'#8fc8ee');g.addColorStop(1,'#d9eefb');c.fillStyle=g;c.fillRect(0,0,W,H);const r=rng(5);for(let i=0;i<46;i++){const w=14+r()*26,h=40+r()*120,x=i*24+r()*10;c.fillStyle=r()<.5?'#5d7a92':'#6f8ba3';c.fillRect(x,H-h,w,h);c.fillStyle='rgba(255,255,255,.35)';for(let y=H-h+6;y<H;y+=10)c.fillRect(x+3,y,w-6,3)}
+      c.strokeStyle='#ffcc3a';c.lineWidth=3;for(let i=0;i<5;i++){const x=80+i*230;c.beginPath();c.moveTo(x,H);c.lineTo(x,30);c.lineTo(x+70,30);c.stroke()}c.strokeStyle='#cfd6de';c.lineWidth=8;for(let x=0;x<=W;x+=110){c.beginPath();c.moveTo(x,0);c.lineTo(x,H);c.stroke()}}),null);
+    for(const [u,z] of[[-5,-3],[5,-3],[-5,1.4],[5,1.4]]){const x=cx+u;blk(S,x-2,x+2,0,.95,z-.6,z+.6,'#f4f6f8');bx(S,x,.95,z,4.1,.06,1.3,'#9aa3ad');for(const k of[-1,1]){bx(S,x+k*.9,1.35,z-.3,.9,.6,.06,'#1d1d1d');bx(WIN,x+k*.9,1.35,z-.26,.8,.5,.02,'#ffffff');bx(S,x+k*.9,.4,z+.95,.5,.08,.5,'#2a3442');bx(S,x+k*.9,.2,z+.95,.06,.4,.06,'#555')}}
+    const ra=cx+5,rz=-3.1;cyl(S,ra-1.2,1.05,rz+.3,.22,.26,.2,'#ff6a3d',12);bx(S,ra-1.2,1.45,rz+.3,.16,.7,.16,'#ff6a3d',0,0,.4);bx(S,ra-1.35,1.9,rz+.3,.6,.14,.14,'#ff6a3d',0,0,-.5);bx(S,ra-1.6,1.75,rz+.3,.08,.25,.25,'#2a3442');
+    blk(S,x1-2.4,x1-.6,0,1.9,z0+.6,z0+2.2,'#2a3442');bx(WIN,x1-1.5,1.2,z0+2.22,1.2,.9,.04,'#ffffff');bx(S,x1-1.5,1,z0+1.4,.4,.3,.4,'#ff6a3d');
+    for(let i=0;i<3;i++){const z=-5.5+i*1.5;blk(S,x0+.2,x0+1.2,0,2.6,z-.6,z+.6,'#141414');for(let k=0;k<8;k++)bx(WIN,x0+1.22,.5+k*.27,z-.3+((k*7+i)%4)*.18,.02,.06,.1,'#ffffff')}
+    const wb=tex(640,400,(c,W,H)=>{c.fillStyle='#ffffff';c.fillRect(0,0,W,H);c.strokeStyle='#9aa3ad';c.lineWidth=10;c.strokeRect(0,0,W,H);c.fillStyle='#e53935';c.font='400 64px '+FONT_D;c.fillText('SOMETHING\'S COOKING',30,90);c.fillStyle='#141414';for(let i=0;i<6;i++){c.fillRect(30,130+i*40,120+((i*97)%300),22)}c.strokeStyle='#2f5bff';c.lineWidth=5;c.beginPath();c.arc(520,280,60,0,7);c.stroke();c.beginPath();c.moveTo(460,280);c.lineTo(580,280);c.stroke();c.fillStyle='#2f5bff';c.font='700 24px '+FONT_T;c.fillText('v0.n',490,370)});
+    R.right(-1,2.8,4.2,2.6,wb,()=>G.card({n:'Something\'s cooking',tag:'NTH Labs',st:'Classified',d:'Whatever is on this whiteboard is under NDA. Even the doodles.',href:'',color:'#3bd1ff'}),{reach:6});
+    R.npc({name:'Engineer Neel',x:cx+2.6,z:3.6,yaw:PI*.9,look:{shirt:'#2a3442',pants:'#141414',hair:'curly2',glasses:true,headset:true,face:'grin'},lines:['Can\'t tell you what we\'re building. NDA. Also I forgot.','This 3D printer has been printing the same bracket since Tuesday.','Lab rule: no project names on this floor. Only vibes.'],barks:['Compiling…','Don\'t touch the arm.']});
+    for(const [z,lab,fn] of[[5.2,'L0 · LOBBY',()=>G.enter('nth')],[2,'L24 · SKY DECK',skyDeck]]){bx(S,x0+.07,1.45,z,.1,2.9,1.8,'#9aa3ad');bx(S,x0+.13,1.45,z,.02,2.9,.04,'#5a6270');R.left(z,3.35,1.8,.36,signTex(lab,'#141414','#3bd1ff',512,104),null);
+      G.triggers.push({x:x0+1.5,z,r:1.3,label:'Elevator · '+(lab.startsWith('L0')?'Lobby':'Sky deck (L24)'),act:fn})}
+    R.right(5.6,3.6,2.4,.6,signTex('L12 · LAB FLOOR','#141414','#f4f6f8',512,128),null);
   });
 
   /* ---------- Fire Station ---------- */

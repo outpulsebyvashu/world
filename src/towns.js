@@ -42,10 +42,10 @@ export const TOWNS={
       [-96,-84,-48,-32,'s'],[-80,-68,-48,-32,'s'],[-64,-52,-48,-32,'s'],[-48,-36,-48,-32,'s']],
     zones:[['Lookout',-96,-72,-12,9],['Frozen Pond',-98,-78,9,26]],
     trees:70,flora:'pine',snow:true},
-  delulugarh:{name:'Delulugarh',tag:'Skyscraper city. NTH Labs and a skyline of big dreams.',color:'#3bd1ff',
+  delulugarh:{ready:true,name:'Delulugarh',tag:'Skyscraper city. NTH Labs and a skyline of big dreams.',color:'#3bd1ff',
     b:[-92,92,-156,36],
     roads:[[-92,92,18,26,'x'],[-92,92,-24,-16,'x'],[-92,92,-72,-64,'x'],[-92,92,-120,-112,'x'],[-48,-40,-152,36,'z'],[40,48,-152,36,'z'],[-4,4,-16,18,'z']],
-    bus:{x:12,z:29.6,ry:PI,bx:20,bz:22,bry:PI/2},spawn:{x:9,z:27.2,yaw:PI},scooter:[-9,28.2,0],
+    bus:{x:12,z:29.6,ry:PI,bx:20,bz:22,bry:PI/2},spawn:{x:1.5,z:27.4,yaw:PI},scooter:[-9,28.2,0],
     plots:[],
     zones:[['NTH Labs',-20,20,-64,-26],['Central Lawn',-20,20,-112,-72],['Supertall Row',-92,92,-156,-120]],
     trees:0,flora:'city',city:true}

@@ -305,7 +305,7 @@ function ballTick(dt){const b=W.ball;if(!b)return;const m=b.m;if(P.world==='out'
   const pt=W.pitch;if(m.position.z>pt.gz0&&m.position.z<pt.gz1&&m.position.y<2.1&&((m.position.x<pt.x0+.3&&m.position.x>pt.x0-1.5)||(m.position.x>pt.x1-.3&&m.position.x<pt.x1+1.5))){G.host.egg('ow_goal','GOAL! The crowd (two pigeons) goes wild.');snd.fanfare();m.position.set(32,.42,35);b.v.set(0,0,0)}
   if(Math.abs(m.position.x)>99||m.position.z>91||m.position.z<-52){m.position.set(32,.42,35);b.v.set(0,0,0)}}
 function lakeCheck(){const L=W.lake;if(!L)return;if(Math.hypot(P.pos.x-L.x,P.pos.z-L.z)<L.r-.6&&P.pos.y<.3&&!P.ride){snd.splash();G.host.egg('ow_lake','Splash! You can\'t swim in a portfolio.');fade(()=>{P.pos.set(64,0,45);P.vel.set(0,0,0);snapCam()})}}
-function ambientTick(dt,T){if(G.cranes)for(const c of G.cranes){c.g.rotation.y+=c.sp*dt;c.red.material.color.set(Math.sin(T*3+c.a)>.6?'#ff2d2d':'#5a1010')}
+function ambientTick(dt,T){if(G.cranes)for(const c of G.cranes){c.g.rotation.y+=c.sp*dt;}if(G.cranes&&G.cranes[0])G.cranes[0].red.material.color.set(Math.sin(T*3)>.4?'#ff2d2d':'#5a1010');
   if(W.snow){const a=W.snow.geometry.attributes.position,v=a.array;for(let i=0;i<v.length;i+=3){v[i+1]-=dt*(1.2+(i%7)*.12);v[i]+=Math.sin(T+i)*dt*.3;if(v[i+1]<0)v[i+1]+=26}a.needsUpdate=true;W.snow.position.set(P.pos.x,P.pos.y,P.pos.z)}
   if(W.steam)W.steam.forEach(s=>{const k=(T*.4+s.userData.o)%1;s.position.set(Math.sin(k*9+s.userData.o*7)*.4,1.5+k*3,Math.cos(k*7)*.3);s.material.opacity=.45*(1-k);s.scale.setScalar(.6+k)});
   W.clouds.position.x=((T*.8)%400)-200;

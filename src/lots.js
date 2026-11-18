@@ -31,7 +31,7 @@ export function makeLot(scene,ctx,o){const {S,addPlane}=ctx;const {x0,x1,z0,z1}=
       const h=floors?H:(.8+R()*1.6);blk(S,x-.25,x+.25,.4,.4+h,z-.25,z+.25,'#a9a9a9',true);bx(S,x,.4+h+.5,z,.2,1,.04,'#7a4a2a')}
     for(let f=1;f<=floors;f++){const y=.4+f*3.5;const part=f===floors?.55:1;blk(S,x0+1.2,x0+1.2+(W_-2.4)*part,y-.25,y,z0+1.2,z1-1.2,'#bdbdbd',false)}
     if(floors){const y1=.4+H;bx(S,(x0+x1)/2,y1/2,nz>=0?z1-.6:z0+.6,.08,y1,.08,'#ffcc3a');for(let f=1;f<=floors;f++)bx(S,(x0+x1)/2,.4+f*3.5-1.6,nz>=0?z1-.6:z0+.6,W_-2,.08,.08,'#ffcc3a')}
-    if(area>150&&o.crane!==false)crane(scene,x0+(W_>12?W_*.7:W_/2),z0+2.2,.4+(area>400?24:14+R()*4),area>400?22:13,R)}
+    if(area>150&&o.crane!==false)crane(scene,S,x0+(W_>12?W_*.7:W_/2),z0+2.2,.4+(area>400?24:14+R()*4),area>400?22:13,R)}
   // materials
   bx(S,x1-3.9,.85,z0+3.6,1.5,.9,1.05,'#b5482e');bx(S,x1-3.9,1.32,z0+3.6,1.4,.05,.95,'#9e3d26');col(x1-4.65,x1-3.15,.4,1.3,z0+3.05,z0+4.15);
   const sp=new THREE.ConeGeometry(1.3,1.1,8);sp.translate(x0+3,.95,z0+3);S.add(sp,o.snow?'#f3f6f8':'#d8c08a');col(x0+2,x0+4,.4,1.1,z0+2,z0+4);
@@ -62,10 +62,10 @@ function tower(scene,S,o,R){const {x0,x1,z0,z1}=o;const cx=(x0+x1)/2,cz=(z0+z1)/
   col(ix0-.3,ix1+.3,0,top,iz0-.3,iz1+.3);
   for(let f=built-2;f<=built;f++){if(f<1)continue;const y=.4+f*3.6-1.8;bx(S,cx,y,iz1+.42,ix1-ix0+.6,3.2,.06,'#2e7d32');bx(S,ix1+.42,y,cz,.06,3.2,iz1-iz0+.6,'#2e7d32')}
   for(let k=0;k<3;k++){const y=.4+(built+1+k)*3.6;bx(S,ix0+.2,y-1.8,iz0+.2,.16,3.6,.16,'#7a4a2a')}
-  crane(scene,cx+3.6,cz,top+14,Math.min(26,(ix1-ix0)*1.1+8),R,true)}
-function crane(scene,cx,cz,H,L,R,big){const B=new Batch();const s=big?1.4:1;blk(B,cx-.5*s,cx+.5*s,.4,H,cz-.5*s,cz+.5*s,'#ffcc3a',false);for(let y=1;y<H-.5;y+=1.6)bx(B,cx,y,cz,1.1*s,.08,1.1*s,'#d4a017');col(cx-.5*s,cx+.5*s,0,H,cz-.5*s,cz+.5*s);
-  const m=B.mesh(CHM);m.castShadow=true;scene.add(m);
+  crane(scene,S,cx+3.6,cz,top+14,Math.min(26,(ix1-ix0)*1.1+8),R,true)}
+let REDM=null;
+function crane(scene,B,cx,cz,H,L,R,big){const s=big?1.4:1;blk(B,cx-.5*s,cx+.5*s,.4,H,cz-.5*s,cz+.5*s,'#ffcc3a',false);for(let y=1;y<H-.5;y+=1.6)bx(B,cx,y,cz,1.1*s,.08,1.1*s,'#d4a017');col(cx-.5*s,cx+.5*s,0,H,cz-.5*s,cz+.5*s);
   const a=R()*PI*2;const jib=new THREE.Group();const jb=new Batch();bx(jb,L/2-3,0,0,L,.6*s,.6*s,'#ffcc3a');bx(jb,-4.5,0,0,6,.5*s,.5*s,'#ffcc3a');bx(jb,-6.5,-.8,0,1.6,1.4,1.2,'#7a7f86');bx(jb,0,.9,0,.5,1.8,.5,'#ffcc3a');bx(jb,0,-.9,0,1.2*s,1,1.2*s,'#e8e2d6');
   const hl=Math.min(H*.55,18);bx(jb,L*.7,-hl/2,0,.04,hl,.04,'#333');bx(jb,L*.7,-hl-.4,0,1.4,.8,1.4,'#b5482e');
-  const red=new THREE.Mesh(new THREE.BoxGeometry(.3,.3,.3),new THREE.MeshBasicMaterial({color:'#ff2d2d'}));red.position.set(0,1.9,0);jib.add(red);
+  if(!REDM||REDM.userData.dead){REDM=new THREE.MeshBasicMaterial({color:'#ff2d2d'});REDM.addEventListener('dispose',()=>REDM.userData.dead=true)}const red=new THREE.Mesh(new THREE.BoxGeometry(.3,.3,.3),REDM);red.position.set(0,1.9,0);jib.add(red);
   jib.add(jb.mesh(CHM));jib.position.set(cx,H+.3,cz);jib.rotation.y=a;scene.add(jib);(G.cranes=G.cranes||[]).push({g:jib,a,sp:(.03+R()*.06)*(R()<.5?-1:1),red})}
