@@ -1,4 +1,5 @@
 import {THREE,G,Batch,bx,cyl,col,blk,tex,wrap,signTex,FONT_T,FONT_D,rng,CHM} from './core.js';
+import {mark,move} from './relocate.js';
 const PI=Math.PI;
 export const shade=(c,k=.8)=>{const q=new THREE.Color(c);q.multiplyScalar(k);return '#'+q.getHexString()};
 
@@ -76,7 +77,7 @@ export function buildArch(scene,ctx){const {S,WIN,LMP,building,addPlane,bench,mo
    addPlane(scene,18,3,signTex('OUTPULSE LABS','#141414','#3bd1ff',1024,170),[0,12.6,-23.86],0,null)}
 
   /* ===== TOKI — Japanese-minimal specialty coffee + studio above ===== */
-  if(on('kaapikunj')){outs.cafe=building({real:true,name:'TOKI',short:'TOKI',x0:-40,x1:-22,z0:-22,z1:-8,h:4.2,col:'#f3eee6',trim:'#8b6a4a',door:{side:'s',at:-31},room:'cafe',roof:'none',win:false,awn:false,band:false,doorCol:'#5a3f2a'});
+  if(on('vashupur')){const cpT=mark(scene,[S,WIN,LMP,WARM,NEON,GL]);outs.cafe=building({real:true,name:'TOKI',short:'TOKI',x0:-40,x1:-22,z0:-22,z1:-8,h:4.2,col:'#f3eee6',trim:'#8b6a4a',door:{side:'s',at:-31},room:'cafe',roof:'none',win:false,awn:false,band:false,doorCol:'#5a3f2a'});
   {const b={x0:-40,x1:-22,z0:-22,z1:-8},F=fac(b,'s');
    for(let u=-39.7;u<-22.2;u+=.32){if(Math.abs(u+31)<1.3)continue;if(u>-37.6&&u<-32.6)continue;if(u>-29.4&&u<-24.4)continue;F.box(S,u,2.1,.08,.14,4.2,.12,'#c89b6d')}
    for(const u0 of[-35.1,-26.9]){F.box(WIN,u0,1.9,.04,4.8,2.9,.08,'#ffffff');F.box(S,u0,.25,.12,5,.5,.25,'#8b6a4a');F.box(S,u0,3.4,.12,5,.14,.2,'#5a3f2a');F.box(S,u0,1.9,.12,.1,2.9,.12,'#5a3f2a')}
@@ -102,7 +103,8 @@ export function buildArch(scene,ctx){const {S,WIN,LMP,building,addPlane,bench,mo
    col(-20.2,-20.05,0,5.4,-17.4,-7);
    G.triggers.push({x:-31,z:-10.3,y:4.2,r:1.6,label:'Enter my studio',act:()=>G.enter('home')});
    outs.home={x:-31,y:4.2,z:-10.6,fx:0,fz:1};G.buildings.push({name:"Vashu's studio (above TOKI)",short:'My studio',x0:-38,x1:-24,z0:-22,z1:-12,col:'#c89b6d',door:{x:-21,z:-6.4},room:'home',upper:true});
-   BL(-41,-19,-23,-5)}}
+   BL(-41,-19,-23,-5)}
+   move(cpT,[-31,-14.5],[74,18.6],2,[outs.cafe,outs.home])}
 
   /* ===== GOTHIC — dark gothic boutique ===== */
   if(on('memepura'))outs.gothic=building({name:'Gothic Bakehouse',short:'Gothic',x0:22,x1:36,z0:-22,z1:-8,h:7,col:'#2e2a2d',trim:'#1d1a1c',door:{side:'s',at:29},room:'gothic',win:false,awn:false,doorCol:'#1d1a1c'});

@@ -1,6 +1,8 @@
 import {THREE,G,Batch,bx,cyl,col,blk,tex,wrap,signTex,FONT_T,FONT_D,rng,makeChar,CHM} from './core.js';
 import {prop,fac,pot,rails,shade,gable,stringLights} from './arch.js';
 import {TOWNS,ORDER} from './towns.js';
+import {mark,move} from './relocate.js';
+import {COOKING} from './lots.js';
 import {STORY,NUMS,ROLES,SKILLS} from './data.js';
 const PI=Math.PI;
 const rot=(b,lx,lz)=>{const c=Math.cos(b.ry),s=Math.sin(b.ry);return[b.x+lx*c+lz*s,b.z-lx*s+lz*c]};
@@ -166,13 +168,68 @@ function barfii(scene,ctx){const {S,LMP,addPlane}=ctx;
     {name:'Snowball Sonu',look:{shirt:'#3d7be8',pants:'#2b2b2b',hair:'cap',hat:'#e53935',face:'grin'},x:-40,z:6,kind:'wander',path:[[-36,6],[-70,6],[-70,-5.6],[-36,-5.6]],speed:3.2,lines:['Snowball fight? I have 40 ready. You have zero.','I built the snowman. He doesn\'t talk. Very mysterious.','Bean on the ice! I saw it. Didn\'t take it. I\'m honest.'],barks:['Incoming!','Snowball!']},
     {name:'Yeti Uncle',look:{shirt:'#f3f3f3',pants:'#d9d4c4',hair:'grey',mustache:true,face:'calm',coat:'#e8e2d6'},x:-83,z:12.8,yaw:.4,lines:['I\'m not a yeti. I just haven\'t shaved since November.','The pond freezes every year. The bean on it? New this year.','Sit by the bonfire. No notifications up here.'],barks:['Brrr.','Chai?']})}
 
+/* =================== Vashupur (from Vashu's map) =================== */
+function vashupurStreets(scene,ctx){const {S,LMP,TD,W}=ctx;const R0=TD.round,cx=R0.x,cz=R0.z;
+  const ring=new THREE.RingGeometry(R0.r0,R0.r1,56);ring.rotateX(-PI/2);ring.translate(cx,.04,cz);S.add(ring,'#545861');
+  for(let a=0;a<PI*2;a+=PI/14){const r=(R0.r0+R0.r1)/2;bx(S,cx+Math.cos(a)*r,.046,cz+Math.sin(a)*r,.18,.01,1.1,'#f4efe6',-a)}
+  cyl(S,cx,.15,cz,R0.r0,R0.r0,.3,'#cfc7b6',48);cyl(S,cx,.31,cz,R0.r0-.45,R0.r0-.45,.04,'#5f9a43',48);col(cx-R0.r0*.7,cx+R0.r0*.7,0,.3,cz-R0.r0*.7,cz+R0.r0*.7);
+  const so=R0.r1+1.8,gap=Math.asin(4.1/((R0.r1+so)/2));for(let k=0;k<4;k++){const g=new THREE.RingGeometry(R0.r1,so,14,1,k*PI/2+gap,PI/2-2*gap);g.rotateX(-PI/2);g.translate(cx,.07,cz);S.add(g,'#cfc7b6')}
+  const zebra=(x,z,alongX)=>{for(let u=-3.4;u<=3.41;u+=.85){if(alongX)bx(S,x+u,.05,z,.45,.012,1.8,'#ffffff');else bx(S,x,.05,z+u,1.8,.012,.45,'#ffffff')}};
+  zebra(0,-5,true);zebra(0,5,true);zebra(-5,0,false);zebra(5,0,false);
+  zebra(cx,cz-R0.r1-1.3,true);zebra(cx,cz+R0.r1+1.3,true);zebra(cx-R0.r1-1.3,cz,false);zebra(cx+R0.r1+1.3,cz,false);
+  // signal chowk: four signal poles that cycle
+  W.signals=[];const sig=(x,z,face,axis)=>{const p=prop(S,x,0,z,face);p.box(0,1.5,0,.16,3,.16,'#2c2f36');p.box(0,3.6,0,.5,1.4,.34,'#1d1d1d');p.box(0,3.6,-.2,.56,1.5,.04,'#2c2f36');
+    const s=Math.sin(face),c=Math.cos(face);const mk=(y,col)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(.28,.28,.05),new THREE.MeshBasicMaterial({color:col}));m.position.set(x+.19*s,y,z+.19*c);m.rotation.y=face;scene.add(m);return m};
+    W.signals.push({axis,r:mk(4.02,'#3a0d0d'),a:mk(3.6,'#3a2a05'),g:mk(3.18,'#0b3a1a')});col(x-.14,x+.14,0,4.3,z-.14,z+.14)};
+  sig(-5.1,-5.1,PI,'ns');sig(5.1,5.1,0,'ns');sig(5.1,-5.1,PI/2,'ew');sig(-5.1,5.1,-PI/2,'ew');
+  // shared walls between Outpulse Labs, TOKI and The Boring Wear (the white lines on the map)
+  blk(S,57.75,58.35,0,2.2,5.6,57.6,'#e6dfd0');blk(S,57.65,58.45,2.2,2.36,5.6,57.6,'#c9bfae',false);
+  blk(S,58.35,94,0,2.2,31.3,31.9,'#e6dfd0');blk(S,58.35,94,2.2,2.36,31.2,32,'#c9bfae',false);
+  G.blocked.push([-15,15,48,78]);G.noGrass.push([-13.6,13.6,49.6,76.8],[-44.5,-11.5,13.5,46.5],[-35.6,-20.4,48.8,52.2])}
+
+function outpulseLabs(scene,ctx){const {S,WIN,LMP,addPlane}=ctx;const x0=16,x1=52,z0=12,z1=50,H=12.4,cz=31;
+  blk(S,x0,x1,0,H,z0,z1,'#f2f4f7');
+  for(const [x,z] of[[x0,z0],[x0,z1],[x1,z0],[x1,z1]]){cyl(S,x,(H+1)/2,z,2.2,2.2,H+1,'#ffffff',20);for(let y=1.4;y<H;y+=3.8)cyl(LMP,x,y,z,2.24,2.24,.12,'#3bd1ff',20);col(x-2.2,x+2.2,0,H+1,z-2.2,z+2.2)}
+  for(const side of['w','n','s']){const F=fac({x0,x1,z0,z1},side);const L=side==='w'?[z0+3,z1-3]:[x0+3,x1-3];const mid=(L[0]+L[1])/2,len=L[1]-L[0];
+    for(const y of[2.2,6,9.8]){if(side==='w'&&y===2.2){F.box(WIN,(L[0]+cz-3.6)/2,y,.03,cz-3.6-L[0],2.2,.1,'#ffffff');F.box(WIN,(cz+3.6+L[1])/2,y,.03,L[1]-cz-3.6,2.2,.1,'#ffffff')}else F.box(WIN,mid,y,.03,len,2.2,.1,'#ffffff');
+      F.box(LMP,mid,y+1.25,.08,len,.08,.08,'#3bd1ff');F.box(S,mid,y-1.25,.12,len,.2,.32,'#dfe3e8');for(let u=L[0]+2.4;u<L[1];u+=2.4)if(!(side==='w'&&y===2.2&&Math.abs(u-cz)<3.8))F.box(S,u,y,.1,.14,2.2,.18,'#cfd6de')}}
+  blk(S,x0,x1,H,H+.7,z0,z0+.3,'#ffffff',false);blk(S,x0,x1,H,H+.7,z1-.3,z1,'#ffffff',false);blk(S,x0,x0+.3,H,H+.7,z0,z1,'#ffffff',false);blk(S,x1-.3,x1,H,H+.7,z0,z1,'#ffffff',false);
+  bx(S,40,H+.8,22,4,1.6,3,'#9aa3ad');bx(S,40,H+.8,40,4,1.6,3,'#9aa3ad');for(let i=0;i<6;i++)bx(S,26+i*2.4,H+.35,40,1.8,.5,1.8,'#4fae55');
+  const F=fac({x0,x1,z0,z1},'w');F.box(WIN,cz,1.75,.04,6.6,3.5,.1,'#ffffff');for(const u of[cz-3.3,cz-1.1,cz+1.1,cz+3.3])F.box(S,u,1.75,.1,.14,3.5,.16,'#1d2733');F.box(S,cz,3.55,.1,7,.14,.16,'#1d2733');
+  blk(S,x0-5.6,x0,3.95,4.25,cz-5,cz+5,'#ffffff',false);bx(LMP,x0-5.55,3.92,cz,.08,.06,10,'#3bd1ff');for(const s2 of[-1,1]){cyl(S,x0-5,1.98,cz+s2*4.5,.16,.16,3.96,'#cfd6de',10);col(x0-5.2,x0-4.8,0,3.96,cz+s2*4.5-.2,cz+s2*4.5+.2)}
+  blk(S,x0-6.2,x0,0,.1,cz-5.6,cz+5.6,'#e6e9ee',false);
+  addPlane(scene,17,2.5,signTex('OUTPULSE LABS','#141414','#3bd1ff',1024,150),[x0-.13,H-1.7,cz],-PI/2,null);
+  addPlane(scene,5.6,.75,signTex('OUTPULSE LABS','#ffffff','#141414',768,103),[x0-5.68,4.62,cz],-PI/2,null);
+  addPlane(scene,20,3,signTex('WE BUILD IDENTITY','#ff6a3d','#141414',1024,154),[(x0+x1)/2,H-2.2,z0-.13],PI,null);
+  for(const z of[cz-9,cz+9]){blk(S,x0-4.4,x0-1.6,0,.7,z-1.4,z+1.4,'#ffffff');bx(S,x0-3,1.05,z,2.4,.6,2.4,'#4fae55',.4);bx(S,x0-3,1.55,z,1.5,.5,1.5,'#5cbf5f',.9)}
+  for(const z of[cz-14,cz+14]){blk(S,x0-3.5,x0-1.3,0,.5,z-.35,z+.35,'#c9ccd1');G.seats.push({x:x0-2.4,z,y:.52,yaw:-PI/2,label:'Sit outside Outpulse Labs'})}
+  G.triggers.push({x:x0-1.6,z:cz,r:2.4,label:'Enter Outpulse Labs',act:()=>G.enter('labs')});
+  G.buildings.push({name:'Outpulse Labs',short:'Outpulse Labs',x0,x1,z0,z1,col:'#f2f4f7',door:{x:x0-3,z:cz},room:'labs'});
+  G.blocked.push([5.6,58,5.6,57.6]);G.noGrass.push([x0-6.4,x0,cz-5.8,cz+5.8]);
+  return{x:x0-2.2,z:cz,fx:-1,fz:0}}
+
+function boringWear(scene,ctx){const {S,WIN,addPlane}=ctx;const x0=62,x1=88,z0=36,z1=53,H=7.4,cx=75;
+  blk(S,x0,x1,0,H,z0,z1,'#ecebe8');blk(S,x0-.2,x1+.2,H-.6,H,z0-.2,z1+.2,'#141414',false);
+  const F=fac({x0,x1,z0,z1},'s');
+  F.box(WIN,cx-6.2,2.2,.04,8,3.4,.1,'#ffffff');F.box(WIN,cx+6.2,2.2,.04,8,3.4,.1,'#ffffff');F.box(S,cx,1.6,.06,2.2,3.2,.12,'#141414');
+  for(const u of[cx-10.3,cx-2.1,cx+2.1,cx+10.3])F.box(S,u,2.2,.1,.18,3.6,.2,'#141414');F.box(S,cx,4.05,.1,20.8,.2,.2,'#141414');F.box(S,cx,.3,.1,20.8,.6,.24,'#2b2b2b');
+  blk(S,x0+1.6,x1-1.6,4.3,4.45,z1,z1+1.7,'#141414',false);
+  addPlane(scene,12,1.3,signTex('THE BORING WEAR','#141414','#f4f4f2',1024,111),[cx,5.6,z1+.13],0,null);
+  const C=['#141414','#f4f4f2','#9a9a96','#d8c8a8','#1f2a44'];for(const s2 of[-1,1]){F.box(S,cx+s2*6.2,3.45,.42,6.6,.05,.05,'#888');C.forEach((c,i)=>{const u=cx+s2*6.2-2.6+i*1.3;F.box(S,u,2.55,.45,.9,1.1,.07,c);F.box(S,u,3.02,.45,1.25,.26,.07,c)})}
+  blk(S,x0,x1,0,.1,z1,57.4,'#e6e3dc',false);for(const u of[x0+1.2,x1-1.2])pot(S,u,z1+1.4,'#141414','#4f8f3a',.8);
+  G.triggers.push({x:cx,z:z1+1.6,r:2,label:'Enter The Boring Wear',act:()=>G.enter('boring')});
+  G.buildings.push({name:'The Boring Wear',short:'The Boring Wear',x0,x1,z0,z1,col:'#ecebe8',door:{x:cx,z:z1+2},room:'boring'});
+  G.blocked.push([58,94,31.6,57.6]);G.noGrass.push([x0,x1,z1,57.6]);
+  return{x:cx,z:z1+2.2,fx:0,fz:1}}
+
 export function buildLandmarks(scene,ctx){const {on}=ctx;const outs={};G.blocked=G.blocked||[];
   busStop(scene,ctx);
   if(on('kaapikunj')){outs.kunj=kunj(scene,ctx);estate(scene,ctx);welcomeArch(scene,ctx,-18,'WELCOME TO KAAPIKUNJ','KAAPIKUNJ · CUP FIRST','#8b6a4a')}
   if(on('memepura')){memepura(scene,ctx);welcomeArch(scene,ctx,33,'MEMEPURA · VERY ONLINE','WELCOME TO MEMEPURA','#ff3b8d')}
   if(on('basti')){basti(scene,ctx);welcomeArchZ(scene,ctx,32,'WELCOME TO POLITICAL BASTI','POLITICAL BASTI · VOTE WISELY','#8b1e2d')}
   if(on('barfii')){barfii(scene,ctx);welcomeArch(scene,ctx,-44,'WELCOME TO BARFII TOWN','BARFII TOWN · SNOW & SWEETS','#3d6b8f')}
-  if(on('vashupur')){outs.museum=museum(scene,ctx);G.noGrass.push([-16.5,16.5,-16.5,16.5],[-11.5,11.5,-31,-24.6],[-7.4,7.4,15.5,18.7])}
+  if(on('vashupur')){const cpM=mark(scene,[ctx.S,ctx.WIN,ctx.LMP]);outs.museum=museum(scene,ctx);G.noGrass.push([-11.5,11.5,-31,-24.6]);move(cpM,[0,0],[-20,18],0,[outs.museum]);
+    vashupurStreets(scene,ctx);outs.labs=outpulseLabs(scene,ctx);outs.boring=boringWear(scene,ctx)}
   return outs}
 
 /* =================== interiors for the real buildings =================== */
@@ -295,5 +352,36 @@ export function extraRooms(room,env){const {scene,addPlane,posterTex,npc,outs}=e
     R.back(-4.6,3.4,3.2,2.2,posterTex({w:500,h:344,bg:'#141414',fg:'#ffcc3a',kicker:'Days without a fire',title:'67',big:120}),()=>{G.say('Board','Days without a fire: 67. Six… seven.')},{reach:7});
     R.left(4,3.4,2.6,2.6,posterTex({w:420,h:420,bg:'#c62828',fg:'#ffffff',kicker:'Emergency',title:'Dial 101',body:'Burnt coffee is not an emergency. We checked.',big:70,bs:22}),null);
     R.npc({name:'Captain Agni',x:cx+1.8,z:1.6,yaw:PI,look:{shirt:'#2b2b2b',pants:'#2b2b2b',hair:'short',hat:'#ffcc3a',mustache:true,face:'grin',vest:'#ffcc3a'},lines:['Welcome to the station. The only fire we fight here is burnt coffee.','Days without a fire: 67. Six… seven. Don\'t start.','Try the pole. Everyone tries the pole.'],barks:['Stay safe!','Pole\'s that way.']});
+  });
+
+  /* ---------- Outpulse Labs ---------- */
+  room('labs',{name:'Outpulse Labs',w:24,d:16,h:6,wall:'#f2f4f7',floor:'#d9dde3',trim:'#3bd1ff',light:'#f4fbff'},R=>{const {cx,x0,x1,z0,z1,S,WIN}=R;
+    R.back(0,3.7,12,3.4,tex(1200,340,(c,W_,H_)=>{c.fillStyle='#141414';c.fillRect(0,0,W_,H_);c.fillStyle='#ff6a3d';c.font='400 150px '+FONT_D;c.textAlign='center';c.fillText('WE BUILD IDENTITY',W_/2,190);c.font='600 34px '+FONT_T;c.fillStyle='#f4efe6';c.fillText('OUTPULSE LABS · BRANDS · WEBSITES · APPS',W_/2,268)}),null);
+    bx(WIN,cx,5.55,z0+.08,12.4,.08,.08,'#ffffff');for(let x=x0+3;x<x1-2;x+=5)bx(WIN,x,5.9,0,.8,.06,.8,'#ffffff');
+    for(let i=0;i<3;i++)for(let j=0;j<2;j++){const x=cx-7+i*7,z=-1.8+j*4;blk(S,x-1.6,x+1.6,0,.95,z-.6,z+.6,'#ffffff');bx(S,x,.97,z,3.3,.04,1.3,'#e4e7ec');
+      for(const s2 of[-1,1]){bx(S,x+s2*.8,1.36,z-.36,.9,.55,.04,'#1d1d1d');bx(WIN,x+s2*.8,1.36,z-.33,.8,.45,.01,'#ffffff');bx(S,x+s2*.8,.5,z+.95,.5,.08,.5,'#2b2f36');bx(S,x+s2*.8,.84,z+1.18,.5,.6,.06,'#2b2f36')}}
+    R.left(-2.2,3,6,2.6,tex(900,390,(c,W_,H_)=>{c.fillStyle='#f4efe6';c.fillRect(0,0,W_,H_);['#ff6a3d','#141414','#2f5bff','#c9f26b','#ffcc3a','#ff8fc1','#3bd1ff','#d9d4c4'].forEach((k,i)=>{c.fillStyle=k;c.fillRect(30+(i%4)*215,40+Math.floor(i/4)*150,190,120)});c.fillStyle='#141414';c.font='800 30px '+FONT_T;c.fillText('MOODBOARD · DO NOT TOUCH',30,365)}),()=>G.say('Moodboard','Eight colours, zero arguments. Okay, one argument. About orange.'),{reach:6});
+    R.right(-3.4,3.2,3.2,2.2,posterTex({w:480,h:330,bg:'#141414',fg:'#f4efe6',kicker:'Founder & COO',title:'Vashudev',body:'Outpulse Labs, since July 2026.',big:66,bs:22}),()=>G.card({n:'Outpulse Labs',tag:'Founder & COO',st:'Since July 2026',d:'A studio that builds identity: brands, websites and apps. Whatever is on the desks right now is under wraps.',href:'',color:'#ff6a3d'}),{reach:7});
+    R.right(2.6,2.9,3.4,2,tex(600,360,(c,W_,H_)=>{c.fillStyle='#fbfbfb';c.fillRect(0,0,W_,H_);c.strokeStyle='#9aa3ad';c.lineWidth=10;c.strokeRect(0,0,W_,H_);c.fillStyle='#d7263d';c.font='800 44px '+FONT_T;c.fillText("SOMETHING'S COOKING",34,80);c.fillStyle='#141414';for(let i=0;i<5;i++)c.fillRect(34,120+i*44,180+((i*97)%260),24)}),()=>G.card(COOKING),{reach:6});
+    blk(S,x0+.8,x0+4,0,.5,z1-5.2,z1-2.6,'#ff6a3d');blk(S,x0+.8,x0+1.3,.5,1.25,z1-5.2,z1-2.6,'#ff6a3d');G.seats.push({x:x0+2.6,z:z1-3.9,y:.52,yaw:PI/2,label:'Sit on the studio sofa'});blk(S,x0+4.6,x0+5.8,0,.42,z1-4.5,z1-3.3,'#141414');
+    blk(S,x1-4,x1-.6,0,1,z1-4.8,z1-3.6,'#141414');bx(S,x1-2.8,1.35,z1-4.2,.8,.7,.6,'#c9ccd1');bx(S,x1-1.6,1.15,z1-4.2,.2,.3,.2,'#ffffff');
+    G.triggers.push({x:x1-2.3,z:z1-2.8,r:1.4,label:'Pull a studio espresso',act:()=>{G.host.toast('STUDIO ESPRESSO','Strictly for clients. And for whoever is closest to the machine.');G.player.emote='sip';G.player.emoteT=2.6}});
+    for(const [x,z] of[[x0+.8,z0+.8],[x1-.8,z0+.8],[x1-.8,0]])pot(S,x,z,'#141414','#3f9b4a',.7);
+    R.npc({name:'Designer Dia',x:x0+2.4,z:-2.2,yaw:PI/2,look:{shirt:'#ff6a3d',pants:'#141414',hair:'bun',glasses:true,face:'smile'},lines:['Welcome to Outpulse Labs. We build identity: logos, websites, apps, the whole vibe.','No, we can\'t make the logo bigger. Okay. A little bigger.','What\'s on the screens? Can\'t say. Something\'s cooking.'],barks:['Kerning!','Make it pop? No.']});
+  });
+
+  /* ---------- The Boring Wear ---------- */
+  room('boring',{name:'The Boring Wear',w:16,d:12,h:5,wall:'#f5f5f3',floor:'#d8d4cc',trim:'#141414',light:'#ffffff'},R=>{const {cx,x0,x1,z0,z1,S,WIN}=R;
+    R.back(0,3.6,7,1.1,signTex('THE BORING WEAR','#141414','#f5f5f3',1024,160),null);
+    const C=['#141414','#f4f4f2','#9a9a96','#d8c8a8','#1f2a44','#5b6b4f'];
+    for(const s2 of[-1,1]){const x=s2<0?x0+.7:x1-.7;bx(S,x,2.15,-.4,.06,.06,8.4,'#777');for(let i=0;i<15;i++){const z=-4.2+i*.54;const c=C[i%C.length];bx(S,x,1.62,z,.55,.85,.05,c);bx(S,x,1.98,z,.75,.18,.05,c);bx(S,x,2.1,z,.04,.1,.02,'#777')}}
+    for(const z of[-2.2,1.2]){blk(S,cx-1.4,cx+1.4,0,.85,z-.7,z+.7,'#c9b79a');for(let i=0;i<4;i++)for(let k=0;k<4;k++)bx(S,cx-1+i*.66,.9+k*.07,z,.55,.06,.5,C[(i+k)%C.length])}
+    R.back(-5.6,1.7,1.1,2.4,tex(128,256,(x)=>{const g=x.createLinearGradient(0,0,128,256);g.addColorStop(0,'#eef6fb');g.addColorStop(1,'#bcd3e0');x.fillStyle=g;x.fillRect(0,0,128,256);x.strokeStyle='#141414';x.lineWidth=10;x.strokeRect(0,0,128,256)}),()=>{G.player.emote='pose';G.player.emoteT=2.6;G.say('Mirror','Boring fit. Unreasonably good.')},{reach:4});
+    blk(S,x1-2.7,x1-.2,0,2.5,z0+.2,z0+.35,'#141414');blk(S,x1-2.7,x1-2.55,0,2.5,z0+.35,z0+2.4,'#141414');bx(S,x1-1.45,1.3,z0+2.38,2.3,2.3,.04,'#9a9a96');
+    blk(S,cx+2.6,cx+5.8,0,1,z1-4.2,z1-3.4,'#141414');bx(S,cx+3.4,1.2,z1-3.8,.5,.35,.4,'#2b2b2b');
+    for(const [x,c] of[[cx-4.4,'#141414'],[cx-2.6,'#f4f4f2']]){const m=makeChar({skin:'#e9e5dc',shirt:c,pants:'#3a3a3a',shoes:'#e9e5dc',hair:'none',hairC:'#e9e5dc',face:'flat',seed:9});m.position.set(x,.25,z1-4.6);m.rotation.y=PI;scene.add(m);cyl(S,x,.12,z1-4.6,.55,.55,.25,'#c9b79a',16)}
+    const card={n:'The Boring Wear',tag:'Clothing',st:'Minimal basics',d:'A minimalist clothing brand: plain colours, good fabric, no shouting. Black, white, grey, sand, navy and a brave olive.',href:'',color:'#141414'};
+    G.triggers.push({x:x0+1.8,z:-.4,r:1.6,label:'Browse the rack',act:()=>G.card(card)});G.triggers.push({x:x1-1.8,z:-.4,r:1.6,label:'Browse the rack',act:()=>G.card(card)});
+    R.npc({name:'Store staff Kabir',x:cx+4.2,z:z1-4.8,yaw:PI,look:{shirt:'#141414',pants:'#141414',hair:'short',face:'smile'},lines:['Welcome to The Boring Wear. Plain tees, heavy cotton, zero logos shouting at you.','Boring is a feature, not a bug.','Colours today: black, white, grey, sand, navy and a brave olive.'],barks:['Need a size?','Boring is beautiful.']});
   });
 }
