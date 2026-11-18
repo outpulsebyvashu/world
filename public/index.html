@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Vashu Town · an open-world portfolio</title>
+<meta name="description" content="Explore Vashudev Sharma's portfolio as a tiny 3D open world: projects, clients, CV and coffee beans to find.">
+<meta name="theme-color" content="#141414">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Inter+Tight:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;height:100%;background:#141414;overscroll-behavior:none}
+#owl{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#8fd0ff;font-family:"Inter Tight",system-ui,sans-serif;transition:opacity .5s}
+#owl.out{opacity:0;pointer-events:none}
+#owl .blk{display:grid;grid-template-columns:repeat(4,26px);gap:5px}
+#owl .blk i{width:26px;height:26px;border:3px solid #141414;border-radius:6px;box-shadow:0 3px 0 #141414;transform:scale(0);transition:transform .25s cubic-bezier(.3,1.6,.5,1)}
+#owl .blk i.on{transform:none}
+#owl h1{margin:0;font:800 clamp(34px,10vw,64px)/1 "Bricolage Grotesque",sans-serif;letter-spacing:-.04em;color:#141414}
+#owl p{margin:0;font:700 13px "Inter Tight",sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#141414}
+#owl .err{display:none;max-width:320px;text-align:center;text-transform:none;letter-spacing:0;font-weight:500;font-size:15px}
+@media (prefers-reduced-motion:reduce){#owl .blk i{transition:none}}
+</style>
+</head>
+<body>
+<div id="owl" role="status" aria-label="Loading Vashu Town"><div class="blk" aria-hidden="true"></div><h1>Vashu Town</h1><p id="owl-n">Building the town · 0%</p><p class="err" id="owl-e">Your browser couldn't start 3D (WebGL). Try another browser, or read the <a href="https://vashudev.outpulse.company">portfolio</a> instead.</p></div>
+<main id="ow" aria-label="Vashu Town, an explorable 3D portfolio"></main>
+<script src="ow.js"></script>
+<script>
+(function(){var cols=['#ff6a3d','#2f5bff','#c9f26b','#ffcc3a','#ff8fc1','#ffffff','#a463ff','#5cc46b'],b=document.querySelector('#owl .blk');for(var i=0;i<8;i++){var e=document.createElement('i');e.style.background=cols[i];b.appendChild(e)}
+var n=document.getElementById('owl-n'),bl=b.children;function prog(p){n.textContent='Building the town · '+Math.round(p*100)+'%';for(var i=0;i<8;i++)bl[i].classList.toggle('on',i<Math.ceil(p*8))}
+prog(.05);
+try{var c=document.createElement('canvas');if(!(c.getContext('webgl2')||c.getContext('webgl')))throw 0}catch(e){n.style.display='none';document.getElementById('owl-e').style.display='block';return}
+OW.init(null,document.getElementById('ow'),prog).then(function(){OW.start();setTimeout(function(){document.getElementById('owl').classList.add('out')},250)}).catch(function(e){console.error(e);n.textContent='Something broke while building the town. Refresh to try again.'})})();
+</script>
+</body>
+</html>
