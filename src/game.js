@@ -72,7 +72,7 @@ function setTime(){const h=hourNow(),a=(h-6)/12*Math.PI,alt=Math.sin(a);
 function setNight(k){W.lampMat.color.copy(C('#cfcfcf')).lerp(C('#fff1b8'),k);W.pools.material.opacity=k*.6;W.stars.material.opacity=k;W.clouds.material.opacity=.35+.6*(1-k);W.roofLights.material.color.set(k>.4?'#fff1b8':'#dddddd')}
 
 /* ================= beans ================= */
-const BEANS=[[-31,.9,-24.5],[0,1.95,0],[64,.9,57.4],['home',-5.6,.6,-4.4],['hq',9,.6,-7.6],[-28,1.7,61.5],[86,.9,-24],[96.5,1.75,40]];
+const BEANS=[[-31,.9,-24.5],[0,1.95,0],[64,.9,57.4],['home',-5.6,1.3,-4.4],['hq',9,.6,-7.6],[-28,1.7,61.5],[86,.9,-24],[96.5,1.75,40]];
 function makeBeans(){const geo=new THREE.SphereGeometry(.3,12,10);geo.scale(1,1.3,.8);const mat=new THREE.MeshLambertMaterial({color:'#6b3e22',emissive:'#3a1a08'});const gm=new THREE.MeshBasicMaterial({color:'#2a160a'});
   BEANS.forEach((b,i)=>{let [x,y,z]=b;if(typeof b[0]==='string'){const r=G.rooms[b[0]];x=r.cx+b[1];y=b[2];z=b[3]}const g=new THREE.Group();const m=new THREE.Mesh(geo,mat);g.add(m);const s=new THREE.Mesh(new THREE.BoxGeometry(.04,.62,.05),gm);s.position.z=.24;g.add(s);
     const glow=new THREE.Mesh(new THREE.RingGeometry(.45,.6,20),new THREE.MeshBasicMaterial({color:'#ffcc3a',transparent:true,opacity:.6,side:THREE.DoubleSide,depthWrite:false}));g.add(glow);g.position.set(x,y,z);scene.add(g);G.beans.push({g,id:i,y});if(beansGot.has(i))g.visible=false})}
