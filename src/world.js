@@ -1,5 +1,7 @@
 import {THREE,G,Batch,bx,cyl,col,blk,tex,wrap,lum,plane,signTex,FONT_T,FONT_D,rng,makeChar,CHM} from './core.js';
 import {PROJECTS,NUMS,ROLES,SKILLS,STORY,WA,MEMERS,FREELOADERS} from './data.js';
+import {buildArch} from './arch.js';
+import {buildDistricts,pine,palm} from './districts.js';
 export const W={};
 const PJ=n=>PROJECTS.find(p=>p.n===n)||{n,tag:'',st:'',d:'',href:'',color:'#f4efe6'};
 
@@ -36,8 +38,8 @@ export function buildWorld(scene){
   const mm=new THREE.Matrix4();lampPos.forEach(([x,z],i)=>{mm.makeTranslation(x,.09,z);pools.setMatrixAt(i,mm)});pools.renderOrder=2;scene.add(pools);W.pools=pools;
 
   /* ---------- buildings ---------- */
-  const building=o=>{const {x0,x1,z0,z1,h}=o;blk(S,x0,x1,0,h,z0,z1,o.col);blk(S,x0-.15,x1+.15,h-.5,h,z0-.15,z1+.15,o.trim||'#f4efe6',false);
-    if(o.roof==='step'){const rc=o.roofCol||'#c0392b';for(let i=0;i<3;i++){const k=i*1.3-.5;blk(S,x0+k,x1-k,h+i*.65,h+(i+1)*.65,z0+k,z1-k,i%2?rc:shade(rc),false)}}
+  const building=o=>{const {x0,x1,z0,z1,h}=o;blk(S,x0,x1,0,h,z0,z1,o.col);if(o.band!==false)blk(S,x0-.15,x1+.15,h-.5,h,z0-.15,z1+.15,o.trim||'#f4efe6',false);
+    if(o.roof==='none'){}else if(o.roof==='step'){const rc=o.roofCol||'#c0392b';for(let i=0;i<3;i++){const k=i*1.3-.5;blk(S,x0+k,x1-k,h+i*.65,h+(i+1)*.65,z0+k,z1-k,i%2?rc:shade(rc),false)}}
     else{blk(S,x0,x1,h,h+.7,z0-.15,z0+.25,o.trim||'#f4efe6',!!o.walkRoof);blk(S,x0,x1,h,h+.7,z1-.25,z1+.15,o.trim||'#f4efe6',!!o.walkRoof);blk(S,x0-.15,x0+.25,h,h+.7,z0,z1,o.trim||'#f4efe6',!!o.walkRoof);blk(S,x1-.25,x1+.15,h,h+.7,z0,z1,o.trim||'#f4efe6',!!o.walkRoof);if(!o.walkRoof)bx(S,(x0+x1)/2+1,h+.6,(z0+z1)/2,2,1.2,1.6,'#9aa3ad')}
     const d=o.door,dr=sideRot[d.side];const nx=d.side==='e'?1:d.side==='w'?-1:0,nz=d.side==='s'?1:d.side==='n'?-1:0;
     const dx=nx?(nx>0?x1:x0):d.at,dz=nz?(nz>0?z1:z0):d.at;
@@ -46,12 +48,12 @@ export function buildWorld(scene){
     const wall=(side)=>{const along=side==='s'||side==='n';const a0=along?x0:z0,a1=along?x1:z1;const fixed=side==='s'?z1:side==='n'?z0:side==='e'?x1:x0;
       for(let f=0;f<floors;f++){const y=1.9+f*3.2;if(y>h-1)break;for(let u=a0+1.6;u<a1-1.2;u+=2.7){if(side===d.side&&f===0&&Math.abs(u-d.at)<2.2)continue;
         if(along)bx(WIN,u,y,fixed,1.2,1.4,.1,'#ffffff');else bx(WIN,fixed,y,u,.1,1.4,1.2,'#ffffff')}}};
-    ['s','n','e','w'].forEach(wall);
+    if(o.win!==false)['s','n','e','w'].forEach(wall);
     // door + awning
     const px=(u,y,off)=>nx?[dx+nx*off,y,u]:[u,y,dz+nz*off];
     const dp=px(d.at,1.2,.06);bx(S,dp[0],1.2,dp[2],nx?.12:1.7,2.4,nx?1.7:.12,o.doorCol||'#2b2b2b');
     const fp=px(d.at,2.55,.1);bx(S,fp[0],2.55,fp[2],nx?.2:2.1,.3,nx?2.1:.2,o.trim||'#f4efe6');
-    const ap=px(d.at,2.95,.7);bx(S,ap[0],2.95,ap[2],nx?1.4:3,.18,nx?3:1.4,o.awn||o.trim||'#e94b3c');
+    if(o.awn!==false){const ap=px(d.at,2.95,.7);bx(S,ap[0],2.95,ap[2],nx?1.4:3,.18,nx?3:1.4,o.awn||o.trim||'#e94b3c')}
     const mat=px(d.at,.075,.9);bx(S,mat[0],.075,mat[2],nx?1:1.8,.02,nx?1.8:1,'#7a4a2a');
     if(o.sign){const sw=o.signW||Math.min(8,(nx?z1-z0:x1-x0)-1),sh=sw/4;const sp=px(d.at,o.signY||Math.min(h-.9,3.9+sh/2),.13);
       addPlane(scene,sw,sh,signTex(o.sign,o.signBg||'#141414',o.signFg||'#f4efe6',512,128),sp,dr,null)}
@@ -62,24 +64,12 @@ export function buildWorld(scene){
     return out};
   const shade=c=>{const k=new THREE.Color(c);k.multiplyScalar(.82);return '#'+k.getHexString()};
 
-  const outs={};
-  outs.hq=building({name:'Outpulse Labs HQ',short:'HQ',x0:-12,x1:12,z0:-46,z1:-24,h:15,col:'#f1ead9',trim:'#ff6a3d',awn:'#ff6a3d',door:{side:'s',at:0},room:'hq',walkRoof:true});
-  addPlane(scene,18,3,signTex('OUTPULSE LABS','#ff6a3d','#141414',1024,170),[0,12.3,-23.86],0,null);
-  outs.cafe=building({name:'Brew Bar',x0:-40,x1:-22,z0:-22,z1:-8,h:6.5,col:'#b9553f',trim:'#f4efe6',awn:'#2f5bff',door:{side:'s',at:-31},room:'cafe',sign:'BREW BAR',signBg:'#f4efe6',signFg:'#b9553f'});
-  outs.gothic=building({name:'Gothic Bakehouse',short:'Gothic',x0:22,x1:36,z0:-22,z1:-8,h:7,col:'#3a2a2a',trim:'#d9d4c4',awn:'#d9d4c4',door:{side:'s',at:29},room:'gothic',sign:'GOTHIC · BAKEHOUSE',signBg:'#d9d4c4',signFg:'#3a2a2a'});
-  outs.waff=building({name:'Waff Waff',x0:41,x1:53,z0:-20,z1:-8,h:6,col:'#ffd23f',trim:'#e94b3c',awn:'#e94b3c',door:{side:'s',at:47},room:'waff',sign:'WAFF WAFF',signBg:'#e94b3c',signFg:'#ffd23f'});
-  outs.ogh=building({name:'Old Green House Cafe',short:'Old Green House',x0:58,x1:74,z0:-22,z1:-8,h:6,col:'#3f8f5a',trim:'#f4efe6',awn:'#f4efe6',door:{side:'s',at:66},room:'ogh',sign:'OLD GREEN HOUSE CAFE',signBg:'#f4efe6',signFg:'#2f6b45'});
-  outs.clinic=building({name:'City Clinic',short:'Clinic',x0:79,x1:93,z0:-22,z1:-8,h:7,col:'#f5f7fa',trim:'#e94b3c',awn:'#e94b3c',door:{side:'s',at:86},room:'clinic',sign:'CITY CLINIC',signBg:'#e94b3c',signFg:'#ffffff'});
-  bx(S,91,5,-7.9,.5,1.6,.1,'#e94b3c');bx(S,91,5,-7.9,1.6,.5,.1,'#e94b3c');
-  outs.ajji=building({name:"Ajji's House",x0:-42,x1:-32,z0:10,z1:20,h:4.5,col:'#f2c14e',roof:'step',roofCol:'#c0392b',trim:'#ffffff',awn:'#c0392b',door:{side:'n',at:-37},room:'ajji'});
-  outs.meera=building({name:"Meera's House",x0:-60,x1:-50,z0:10,z1:20,h:4.5,col:'#5bbfb5',roof:'step',roofCol:'#34495e',trim:'#ffffff',awn:'#34495e',door:{side:'n',at:-55},room:'meera'});
-  outs.home=building({name:"Vashu's Home",short:'My home',x0:-90,x1:-74,z0:-8,z1:8,h:5.5,col:'#f4efe6',roof:'step',roofCol:'#1d1d1d',trim:'#1d1d1d',awn:'#ff6a3d',doorCol:'#ff6a3d',door:{side:'e',at:0},room:'home',sign:"VASHU'S HOME",signBg:'#1d1d1d',signFg:'#f4efe6'});
-  building({name:'Townhouse',x0:-60,x1:-46,z0:-22,z1:-8,h:8,col:'#e98a6b',trim:'#f4efe6',awn:'#f4efe6',door:{side:'s',at:-53}});
-  building({name:'Flats',x0:-70,x1:-62,z0:-22,z1:-10,h:11,col:'#8fb3d9',trim:'#f4efe6',awn:'#2f5bff',door:{side:'s',at:-66}});
-  building({name:'Townhouse',x0:-26,x1:-16,z0:10,z1:20,h:6,col:'#c9a0dc',roof:'step',roofCol:'#6c3483',trim:'#ffffff',door:{side:'n',at:-21}});
+  G.seats=[];
+  const bench=(x,z,ry)=>{const b=new Batch();bx(b,0,.5,0,2.2,.12,.6,'#8a5a3b');bx(b,0,.85,-.28,2.2,.5,.08,'#8a5a3b');bx(b,-.9,.25,0,.12,.5,.5,'#2c2f36');bx(b,.9,.25,0,.12,.5,.5,'#2c2f36');const m=b.mesh(CHM);m.castShadow=true;m.position.set(x,0,z);m.rotation.y=ry;scene.add(m);
+    const c=Math.abs(Math.sin(ry))>.5;col(x-(c?.35:1.1),x+(c?.35:1.1),0,.55,z-(c?1.1:.35),z+(c?1.1:.35));G.seats.push({x:x+Math.sin(ry)*.05,z:z+Math.cos(ry)*.05,y:.55,yaw:ry,label:'Sit on bench'})};
+  const ctx={S,WIN,LMP,building,addPlane:(sc,w,h_,map,pos,ry,tap,o)=>addPlane(sc,w,h_,map,pos,ry,tap,o),bench,model,card:p=>G.card(p),W};
+  const outs=buildArch(scene,ctx);Object.assign(outs,buildDistricts(scene,ctx));
   W.outs=outs;
-  // mailbox
-  blk(S,-71.2,-70.8,0,1.1,2.8,3.2,'#2c2f36');bx(S,-71,1.3,3,.5,.4,.7,'#e94b3c');
 
   /* ---------- HQ roof + ladder + scooter ---------- */
   const lad=new Batch();for(const z of[-36.4,-35.6])bx(lad,12.2,7.6,z,.12,15.2,.12,'#ffcc3a');for(let y=.6;y<15;y+=.6)bx(lad,12.2,y,-36,.1,.08,.9,'#ffcc3a');
@@ -105,8 +95,6 @@ export function buildWorld(scene){
   const nb=['#ff6a3d','#2f5bff','#c9f26b','#ff8fc1'];
   [[-11,-11],[11,-11],[-11,11],[11,11]].forEach(([x,z],i)=>{blk(S,x-1.7,x+1.7,0,4.6,z-.4,z+.4,'#141414');const t=tex(512,640,(c,w,h)=>{c.fillStyle=nb[i];c.fillRect(0,0,w,h);c.fillStyle=i===1?'#fff':'#141414';c.font='800 200px '+FONT_T;c.textAlign='center';let s=200;while(c.measureText(NUMS[i][0]).width>w-40){s-=10;c.font='800 '+s+'px '+FONT_T}c.fillText(NUMS[i][0],w/2,330);c.font='600 34px '+FONT_T;wrap(c,NUMS[i][1],w-80).forEach((l,j)=>c.fillText(l,w/2,430+j*44))});
     addPlane(scene,3.2,4,t,[x,2.4,z+.42],0,null);addPlane(scene,3.2,4,t,[x,2.4,z-.42],Math.PI,null)});
-  blk(S,-6,-5,0,5,16.5,17.5,'#ff6a3d');blk(S,5,6,0,5,16.5,17.5,'#ff6a3d');blk(S,-6.4,6.4,5,6.4,16.4,17.6,'#141414',false);
-  const archT=signTex('VASHU TOWN · EST 2023','#141414','#f4efe6',1024,128);addPlane(scene,12.4,1.4,archT,[0,5.7,17.62],0,null);addPlane(scene,12.4,1.4,archT,[0,5.7,16.38],Math.PI,null);
   // phone booth
   blk(S,12,13.6,0,2.8,11.4,13,'#e94b3c');bx(WIN,12.8,1.7,13.02,1,1.2,.05,'#ffffff');bx(S,12.8,3,12.2,1.7,.3,1.7,'#e94b3c');
   addPlane(scene,1.4,.35,signTex('CALL VASHU','#ffffff','#e94b3c',256,64),[12.8,2.55,13.06],0,null);
@@ -131,11 +119,11 @@ export function buildWorld(scene){
   cyl(S,-24,8.5,-36,2.6,2.2,3,'#ffffff',18);cyl(S,-24,8.5,-36,2.62,2.62,.6,'#ff6a3d',18);cyl(S,-24,10.01,-36,2.45,2.45,.04,'#6b3e22',18);
   blk(S,40,92,0,1.4,-46,-45.7,'#ffcc3a',true);for(let x=40;x<92;x+=4)bx(S,x,1.5,-45.85,.3,.3,.3,'#141414');
   blk(S,66,67,0,16,-38,-37,'#ffcc3a');blk(S,56,80,15,16,-38,-37,'#ffcc3a',false);blk(S,64,68,0,2.5,-41,-38.5,'#ffcc3a');
-  addPlane(scene,6,1.5,signTex('OS-NEKO ROBOT GARAGE · COMING SOON','#ffcc3a','#141414',1024,256),[60,3,-45.55],0,null);
+  addPlane(scene,6,1.5,signTex('UNDER CONSTRUCTION · OUTPULSE PROJECTS','#ffcc3a','#141414',1024,256),[60,3,-45.55],0,null);
   blk(S,58,62,0,1.2,-36,-32,'#9aa3ad');blk(S,70,73,0,2,-34,-30,'#e94b3c');
 
   /* ---------- park, lake, pitch, stall ---------- */
-  cyl(S,64,.03,64,14.6,14.6,.06,'#e8d9a8',32);
+  cyl(S,64,.03,64,19,19,.06,'#ecdcaa',40);
   const water=new THREE.Mesh(new THREE.CircleGeometry(13,40),new THREE.MeshLambertMaterial({color:'#3fa7e0',transparent:true,opacity:.92}));water.rotation.x=-Math.PI/2;water.position.set(64,.08,64);scene.add(water);W.water=water;W.lake={x:64,z:64,r:13};
   blk(S,63,65,.25,.35,46,58,'#8a5a3b');for(const z of[50,54,57.5])for(const x of[63.1,64.9])blk(S,x-.12,x+.12,-.2,.35,z-.12,z+.12,'#5e3b24',false);
   blk(S,20,44,0,.07,26,44,'#6dbb5c',false);
@@ -150,9 +138,7 @@ export function buildWorld(scene){
   // low wall (bean spot)
   blk(S,96,97,0,1.2,20,88,'#c9c2b4');
   // benches
-  const bench=(x,z,ry)=>{const b=new Batch();bx(b,0,.5,0,2.2,.12,.6,'#8a5a3b');bx(b,0,.85,-.28,2.2,.5,.08,'#8a5a3b');bx(b,-.9,.25,0,.12,.5,.5,'#2c2f36');bx(b,.9,.25,0,.12,.5,.5,'#2c2f36');const m=b.mesh(CHM);m.castShadow=true;m.position.set(x,0,z);m.rotation.y=ry;scene.add(m);
-    const c=Math.abs(Math.sin(ry))>.5;col(x-(c?.35:1.1),x+(c?.35:1.1),0,.55,z-(c?1.1:.35),z+(c?1.1:.35));G.seats.push({x:x+Math.sin(ry)*.05,z:z+Math.cos(ry)*.05,y:.55,yaw:ry,label:'Sit on bench'})};
-  G.seats=[];bench(-12.5,0,Math.PI/2);bench(52,46,0);bench(78,56,-Math.PI/2);bench(64,80,Math.PI);bench(10,28,-Math.PI/2);
+bench(-12.5,0,Math.PI/2);bench(52,46,0);bench(78,56,-Math.PI/2);bench(64,80,Math.PI);bench(10,28,-Math.PI/2);
 
   /* ---------- event ground ---------- */
   const fence=(x0,x1,z0,z1)=>blk(S,x0,x1,0,.9,z0,z1,'#ffffff');fence(-46,-45.8,26,68);fence(-46,-10,67.8,68);fence(-10.2,-10,44,68);fence(-46,-10,26,26.2);
@@ -168,12 +154,12 @@ export function buildWorld(scene){
 
   /* ---------- trees, flowers, hills, bounds ---------- */
   const R=rng(42);const blocked=[[-17,17,-17,17],[-96,99,-7,7],[-7,7,-26,92],[-13,13,-47,-23],[-41,-21,-23,-7],[21,94,-23,-7],[-43,-15,9,21],[-61,-49,9,21],[-91,-73,-9,9],[-61,-45,-23,-7],[-71,-61,-23,-9],[-47,-9,25,69],[18,46,24,46],[48,56,23,28],[49,79,49,79],[15,98,8,11],[38,94,-47,-28],[-28,-20,-40,-32],[11,15,10,14]];
-  const free=(x,z)=>!blocked.some(b=>x>b[0]-1.5&&x<b[1]+1.5&&z>b[2]-1.5&&z<b[3]+1.5);
+  const free=(x,z)=>!blocked.concat(G.blocked||[]).some(b=>x>b[0]-1.5&&x<b[1]+1.5&&z>b[2]-1.5&&z<b[3]+1.5);
   const tree=(x,z,s=1)=>{const lc=['#3f9b4a','#4fae55','#2f8a45','#5cbf5f'][Math.floor(R()*4)];blk(S,x-.28*s,x+.28*s,0,2.1*s,z-.28*s,z+.28*s,'#7a4a2a',true);bx(S,x,2.7*s,z,2.6*s,1.8*s,2.6*s,lc,R()*.5);bx(S,x,3.9*s,z,1.6*s,1.2*s,1.6*s,lc,R()*.5)};
-  let n=0;for(let i=0;i<900&&n<170;i++){const x=-94+R()*190,z=-50+R()*138;if(free(x,z)&&(Math.abs(x)>20||Math.abs(z)>20)){tree(x,z,.8+R()*.5);n++}}
-  for(let a=0;a<Math.PI*2;a+=.07){for(const rr of[0,1]){const x=Math.cos(a),z=Math.sin(a);const px=x*(112+rr*10)+3,pz=z*(85+rr*10)+20;tree(px,pz,1.2+R())}}
+  let n=0;for(let i=0;i<900&&n<170;i++){const x=-94+R()*190,z=-50+R()*138;if(free(x,z)&&(Math.abs(x)>20||Math.abs(z)>20)){if(x<-18)pine(S,x,z,.9+R()*.5,R()<.5);else if(x>18&&z>8&&R()<.55)palm(S,x,z,5+R()*2.5,.3,i);else tree(x,z,.8+R()*.5);n++}}
+  for(let a=0;a<Math.PI*2;a+=.07){for(const rr of[0,1]){const x=Math.cos(a),z=Math.sin(a);const px=x*(112+rr*10)+3,pz=z*(85+rr*10)+20;if(px<-60)pine(S,px,pz,1.4+R()*.6,true);else if(px>60&&pz>0&&R()<.5)palm(S,px,pz,6+R()*3,.4,Math.floor(a*100));else tree(px,pz,1.2+R())}}
   for(let i=0;i<60;i++){const x=-94+R()*190,z=-50+R()*138;if(free(x,z))bx(S,x,.15,z,.35,.3,.35,['#ff6b9d','#ffcc3a','#ffffff','#a463ff'][i%4])}
-  for(let a=0;a<Math.PI*2;a+=.22){const r=230+R()*40,h=18+R()*40;bx(S,Math.cos(a)*r,h/2-4,Math.sin(a)*r+20,40+R()*30,h,40+R()*30,R()<.5?'#5fa86a':'#4b9160',a)}
+  for(let a=0;a<Math.PI*2;a+=.22){const ca=Math.cos(a);if(ca<-.45){const r=190+R()*50,hh=70+R()*60,rad=35+R()*25;const g=new THREE.ConeGeometry(rad,hh,7);g.rotateY(R()*3);g.translate(ca*r,hh/2-6,Math.sin(a)*r+20);S.add(g,R()<.5?'#5d6b62':'#6b776e');const g2=new THREE.ConeGeometry(rad*.36,hh*.36,7);g2.translate(ca*r,hh-6-hh*.18+.5,Math.sin(a)*r+20);S.add(g2,'#f5f7fa');continue}const r=230+R()*40,h=18+R()*40;bx(S,Math.cos(a)*r,h/2-4,Math.sin(a)*r+20,40+R()*30,h,40+R()*30,R()<.5?'#5fa86a':'#4b9160',a)}
   col(-97,-96,0,6,-52,92,{cam:false});col(98.5,99.5,0,6,-52,92,{cam:false});col(-97,100,0,6,-53,-52,{cam:false});col(-97,100,0,6,91,92,{cam:false});
 
   /* ---------- clouds + stars ---------- */
@@ -222,8 +208,8 @@ function buildRooms(scene,S,RW,WIN,outs){
       G.triggers.push({x,z:z+1.7,r:1.2,label:'View '+n,act:()=>G.card(p)})});
     R.npc({name:'Sigma Intern',x:cx-8.5,z:z0+3.8,yaw:0,look:{shirt:'#141414',pants:'#141414',hair:'short',face:'smug',shades:true,long:true},emote:'pose',lines:['Welcome to Outpulse Labs. I woke up at 4 AM, cold plunged, read 3 books.','I am unpaid. That is the sigma grindset.','Every product here is real or being built. Tap a pedestal.'],barks:['Grindset.','4 AM club.']});
   });
-  room('cafe',{name:'Brew Bar',w:18,d:14,wall:'#3a2a24',floor:'#c8a27a',trim:'#e8e2d6',light:'#ffe2b8'},R=>{const {cx,x0,x1,z0,z1}=R;
-    blk(R.S,cx-6,cx+6,0,1.1,z0+1.4,z0+2.6,'#6b4a35');bx(R.S,cx,1.13,z0+2,12.2,.06,1.4,'#e8e2d6');
+  room('cafe',{name:'TOKI · Specialty Coffee',w:18,d:14,wall:'#efe6d8',floor:'#d9b98f',trim:'#5a3f2a',light:'#fff1dc'},R=>{const {cx,x0,x1,z0,z1}=R;
+    blk(R.S,cx-6,cx+6,0,1.1,z0+1.4,z0+2.6,'#c89b6d');bx(R.S,cx,1.13,z0+2,12.2,.06,1.4,'#f7f2ea');for(let u=-5.8;u<6;u+=.3)bx(R.S,cx+u,.55,z0+2.62,.12,1.1,.05,'#b8895c');
     blk(R.S,cx-1.2,cx+1.2,1.16,2,z0+1.6,z0+2.4,'#c9ccd1',false);for(const dx of[-.6,.6])bx(R.S,cx+dx,1.55,z0+2.45,.24,.16,.2,'#2c2f36');bx(R.S,cx+2,1.6,z0+2,.5,.9,.5,'#1d1d1d');
     for(let i=0;i<10;i++)bx(R.S,cx-5+i*1.1,3.1,z0+.35,.25,.7,.25,['#3fa7e0','#c9f26b','#ff6a3d','#ffcc3a','#a463ff'][i%5]);bx(R.S,cx,2.72,z0+.4,12,.08,.6,'#6b4a35');
     R.back(-4.5,3.6,4,2.6,posterTex({w:512,h:332,bg:'#d7263d',kicker:'Menu',title:'Recipe Book',big:70,foot:'TAP TO OPEN'}),proj('Recipe Book'),{reach:8});
@@ -235,7 +221,7 @@ function buildRooms(scene,S,RW,WIN,outs){
     tables.forEach(([u,z],i)=>{const x=cx+u;cyl(R.S,x,.95,z,.8,.8,.08,'#e8e2d6',14);blk(R.S,x-.08,x+.08,0,.95,z-.08,z+.08,'#2c2f36');cyl(R.S,x,1.05,z,.12,.1,.2,'#ffffff',10);
       R.npc({name:'Café regular',x:x,z:z+1.25,yaw:Math.PI,sit:true,look:lk[i],lines:rev[i],barks:['Mmm.','So good.','Another one.']});blk(R.S,x-.3,x+.3,0,.5,z+1,z+1.6,'#6b4a35')});
   });
-  room('home',{name:"Vashu's Home",w:16,d:12,wall:'#f4efe6',floor:'#b88a5e',trim:'#1d1d1d'},R=>{const {cx,x0,x1,z0}=R;
+  room('home',{name:"Vashu's Studio",w:16,d:12,wall:'#f4efe6',floor:'#b88a5e',trim:'#1d1d1d'},R=>{const {cx,x0,x1,z0}=R;
     blk(R.S,x0+.3,x0+3,0,.6,z0+.3,z0+4.5,'#ffffff');bx(R.S,x0+1.65,.75,z0+2.6,2.6,.3,3.4,'#2f5bff');bx(R.S,x0+1.65,.75,z0+.9,2,.35,.8,'#ffffff');
     blk(R.S,x1-4,x1-.6,0,1,z0+.4,z0+1.8,'#6b4a35');bx(R.S,x1-2.3,1.06,z0+1,1.1,.04,.75,'#555');const lap=new Batch();bx(lap,0,.32,-.2,1.1,.62,.04,'#2b2b2b');bx(lap,0,.32,-.17,1,.52,.01,'#3fa7e0');const lm=lap.mesh(CHM);lm.position.set(x1-2.3,1.06,z0+1.2);scene.add(lm);lm.userData.tap=()=>{G.host.egg('ow_laptop','Xubuntu on a Chromebook. It works. Don\'t ask.');G.say('Laptop','Xubuntu on a Chromebook. It works. Don\'t ask how.')};lm.userData.reach=4;G.pick.push(lm);
     blk(R.S,x1-.9,x1-.3,0,4,z0+3,z0+6,'#6b4a35');for(let i=0;i<4;i++)for(let j=0;j<6;j++)bx(R.S,x1-.65,.6+i*.95,z0+3.3+j*.45,.35,.6,.3,['#e94b3c','#3d7be8','#ffcc3a','#5cc46b','#a463ff'][(i+j)%5]);
@@ -262,7 +248,7 @@ function buildRooms(scene,S,RW,WIN,outs){
   shop('clinic','City Clinic',{w:14,d:10,wall:'#eef3f7',floor:'#cfd8e0',trim:'#e94b3c',light:'#f2f7ff'},R=>{const {cx,x0,z0}=R;blk(R.S,cx-2,cx+2,0,1.1,z0+1.4,z0+2.4,'#ffffff');blk(R.S,x0+1,x0+3.5,0,.8,z0+1,z0+2.2,'#9cc6dd');bx(R.S,x0+2.25,.85,z0+1.6,2.5,.1,1.2,'#ffffff');
     bx(R.S,cx+4.5,3.4,z0+.05,.5,1.6,.05,'#e94b3c');bx(R.S,cx+4.5,3.4,z0+.05,1.6,.5,.05,'#e94b3c');
     R.back(-1.5,3.4,3.4,2.3,posterTex({w:512,h:346,bg:'#ffffff',kicker:'Client · Website',title:'Clinic website',body:'A clean, trustworthy site for a doctor\'s practice. In build.',big:58,bs:22}),()=>G.card({n:'Clinic website',tag:'Website',st:'In build',d:'A clean, trustworthy website for a doctor\'s practice, built by Vashu.',href:'',color:'#ffffff'}),{reach:8});
-    R.npc({id:'doctor',name:'Dr. Rao',x:cx,z:z0+.9,yaw:0,look:{shirt:'#cfe3f7',pants:'#2b2b2b',hair:'grey',coat:'#ffffff',glasses:true,face:'flat'},lines:['I haven\'t had a decent coffee in a week.','Doctor\'s orders: someone brew me a coffee at Brew Bar.'],barks:['Next!','Say aaah.']})});
+    R.npc({id:'doctor',name:'Dr. Rao',x:cx,z:z0+.9,yaw:0,look:{shirt:'#cfe3f7',pants:'#2b2b2b',hair:'grey',coat:'#ffffff',glasses:true,face:'flat'},lines:['I haven\'t had a decent coffee in a week.','Doctor\'s orders: someone brew me a coffee at TOKI.'],barks:['Next!','Say aaah.']})});
   shop('ajji','Ajji\'s House',{w:12,d:10,wall:'#f6e3b4',floor:'#9c6b3f',trim:'#c0392b',light:'#ffe9c4'},R=>{const {cx,z0}=R;bx(R.S,cx,.7,z0+2,3,.15,1.1,'#6b4a35');for(const dx of[-1.4,1.4])bx(R.S,cx+dx,2.7,z0+2,.04,4,.04,'#555');
     blk(R.S,cx+3,cx+4.4,0,.8,z0+1,z0+2.2,'#6b4a35');cyl(R.S,cx+3.4,1,z0+1.5,.14,.12,.4,'#c9ccd1',8);cyl(R.S,cx+3.9,.92,z0+1.5,.22,.22,.12,'#c9ccd1',10);
     R.back(-3.5,3.2,2.4,2.4,posterTex({w:400,h:400,bg:'#c0392b',kicker:'Ajji\'s rule',title:'Filter coffee only.',big:54}),null);
@@ -271,6 +257,24 @@ function buildRooms(scene,S,RW,WIN,outs){
     bx(R.S,cx+3.5,.4,z0+4,1.4,.8,1.4,'#a463ff');
     R.back(-4,3.6,2.2,2.6,posterTex({w:400,h:472,bg:'#c9f26b',kicker:'Streak',title:'412 days',body:'Sleep: optional.',big:60}),null);
     R.npc({name:'Meera (CS student)',x:cx,z:z0+2.4,yaw:Math.PI,look:{shirt:'#a463ff',pants:'#141414',hair:'long',glasses:true,headset:true,face:'calm'},sit:true,lines:['3 AM. 4 monitors. 1 bug. It\'s a semicolon. It\'s always a semicolon.','Vashu builds apps from his PHONE. I have 3 monitors and I\'m still stuck.','If you see Skill-Issue Sid, tell him I beat his score.'],barks:['Compiling…','One more bug.']})});
+  shop('police','Police Station',{w:16,d:12,wall:'#dfe7f2',floor:'#9aa3ad',trim:'#1d3f8f',light:'#eef4ff'},R=>{const {cx,x0,x1,z0}=R;blk(R.S,cx-4,cx+1,0,1.1,z0+2,z0+3,'#1d3f8f');bx(R.S,cx-1.5,1.13,z0+2.5,5.2,.06,1.2,'#f4f4f4');
+    for(let u=0;u<=4;u+=.4)blk(R.S,cx+3+u-.04,cx+3+u+.04,0,3.2,z0+4.5,z0+4.58,'#555',false);col(cx+3,cx+7.6,0,3.2,z0+4.4,z0+4.7);col(cx+2.9,cx+3.1,0,3.2,z0,z0+4.7);bx(R.S,cx+5,3.2,z0+2.3,4.2,.1,4.6,'#555');bx(R.S,cx+5.5,.4,z0+1,2.6,.3,1,'#8a5a3b');
+    R.back(-5.5,3.4,1.8,2.3,posterTex({w:300,h:384,bg:'#f4e6c8',fg:'#3a2a1a',kicker:'Wanted',title:'Unpaid Invoice',big:44,body:'Last seen: "next week, pakka".',bs:20}),null);
+    R.back(-2.8,3.4,1.8,2.3,posterTex({w:300,h:384,bg:'#f4e6c8',fg:'#3a2a1a',kicker:'Wanted',title:'"Make it pop"',big:44,body:'Armed with vague feedback.',bs:20}),null);
+    R.npc({name:'Inspector Kavya',x:cx-1.5,z:z0+1.2,yaw:0,look:{shirt:'#c9b48a',pants:'#c9b48a',hair:'bun',hat:'#1d3f8f',face:'flat',long:true},lines:['Lost something? Beans don\'t count as stolen property.','We arrested Scope Creep this morning. Caught adding "one small feature".','Freeloader complaints get priority. Say "50% advance" and they flee.'],barks:['Order!','Next.']});
+    R.npc({name:'Scope Creep (in custody)',x:cx+5,z:z0+2.4,yaw:0,look:{shirt:'#ff8a3d',pants:'#ff8a3d',hair:'short',face:'o',long:true},emote:'beg',lines:['I only asked for ONE small change!','Okay, two. And a dashboard. And dark mode.','Is this jail cell responsive on mobile?'],barks:['Just one tweak!','Can we add AI?']})});
+  shop('school','Vashu Town Public School',{w:18,d:14,wall:'#f6e7b8',floor:'#c8a27a',trim:'#8b1e2d',light:'#fff6dc'},R=>{const {cx,z0}=R;
+    R.back(0,3.2,8,2.6,tex(1024,334,(x,W_,H)=>{x.fillStyle='#24452f';x.fillRect(0,0,W_,H);x.strokeStyle='#8a5a3b';x.lineWidth=18;x.strokeRect(0,0,W_,H);x.fillStyle='#f4f4f4';x.font='600 46px "Inter Tight",sans-serif';x.fillText("Today's lesson:",50,80);x.font='800 64px "Bricolage Grotesque",sans-serif';x.fillText('Cup first, then the numbers.',50,165);x.font='500 38px "Inter Tight",sans-serif';x.fillText('Homework: find all 8 coffee beans.',50,240);x.fillText('Extra credit: say no to freeloaders.',50,295)}),null);
+    blk(R.S,cx-2,cx+2,0,1,z0+2.4,z0+3.4,'#6b4a35');R.npc({name:'Teacher Lakshmi',x:cx,z:z0+1.4,yaw:0,look:{shirt:'#2e7d4f',pants:'#2e7d4f',hair:'bun',glasses:true,face:'smile',long:true},emote:'talk',lines:['Welcome to class. Today: how a barista became a founder.','Rule one: taste everything. Rule two: write down the numbers.','Pop quiz: what comes first? The cup. Always the cup.'],barks:['Silence!','Chapter 3.']});
+    for(let r=0;r<3;r++)for(let c=0;c<4;c++){const x=cx-5.2+c*3.4,z=-.4+r*2.4;blk(R.S,x-.9,x+.9,0,.9,z-.4,z+.2,'#c89b6d');blk(R.S,x-.8,x+.8,0,.48,z+.5,z+.9,'#8a5a3b')}
+    const st=[{shirt:'#ffffff',pants:'#1d3f8f',hair:'short',face:'grin'},{shirt:'#ffffff',pants:'#1d3f8f',hair:'long',face:'smile'},{shirt:'#ffffff',pants:'#1d3f8f',hair:'curly2',face:'o'}];
+    [[cx-5.2,.3],[cx+1.6,2.7],[cx+5,.3]].forEach(([x,z],i)=>R.npc({name:'Student',x,z:z+.4,yaw:Math.PI,sit:true,look:st[i],lines:[['Is this going to be on the exam?'],['My project is a coffee robot. Like OS-NEKO, but it does homework.'],['Sir said the bean on the fountain needs a jump. Don\'t tell anyone.']][i],barks:['Huh?','Lunch?']}))});
+  shop('ev','Outpulse.EV Showroom',{w:16,d:12,wall:'#f4f4f4',floor:'#2b2b2b',trim:'#d7263d',light:'#ffffff'},R=>{const {cx,z0}=R;const p=PJ('Arc-Street');
+    R.back(0,3.4,6,2.4,posterTex({w:768,h:307,bg:'#d7263d',kicker:'Outpulse.EV',title:'Arc-Street',big:96,body:'600W belt drive. Built for long, quiet rides.',bs:28}),()=>G.card(p),{reach:8});
+    [-4.5,0,4.5].forEach((u,i)=>{const x=cx+u,z=-1.5;cyl(R.S,x,.15,z,1.4,1.4,.3,'#141414',24);const b=new Batch();model(b,'Arc-Street','#d7263d');const m=b.mesh(CHM);m.scale.setScalar(1.9);m.position.set(x,.3,z);m.rotation.y=.6+i*.3;scene.add(m);m.userData.tap=()=>G.card(p);m.userData.reach=5;G.pick.push(m);col(x-1.4,x+1.4,0,1.5,z-1.4,z+1.4)});
+    for(const u of[-6.5,6.5]){blk(R.S,cx+u-.3,cx+u+.3,0,1.6,z0+.4,z0+1,'#ffffff');bx(R.S,cx+u,1.2,z0+1.01,.3,.3,.02,'#2ee66b')}
+    R.npc({name:'EV Advisor Rohan',x:cx+3,z:2.2,yaw:Math.PI,look:{shirt:'#d7263d',pants:'#141414',hair:'short',face:'grin',logo:'#ffffff'},emote:'talk',lines:['Range anxiety? Never heard of her.','600W belt drive. Silent. Smooth. Zero petrol bills.','Test ride? Find all 8 beans and the one parked outside HQ is yours.'],barks:['Zero emissions!','Test ride?']})});
+
 }
 function model(b,n,c){
   if(n==='OS-NEKO'){bx(b,0,.45,0,.8,.55,.9,'#16224a');bx(b,0,.85,.1,.6,.35,.5,'#f4efe6');for(const s of[-1,1]){bx(b,s*.18,1.1,.1,.12,.18,.08,'#16224a');for(const z of[-.3,.3]){const g=new THREE.CylinderGeometry(.14,.14,.1,10);g.rotateZ(Math.PI/2);g.translate(s*.42,.16,z);b.add(g,'#1d1d1d')}}bx(b,-.12,.88,.36,.08,.08,.02,'#3bd1ff');bx(b,.12,.88,.36,.08,.08,.02,'#3bd1ff')}
@@ -284,6 +288,7 @@ export function npc(scene,cfg){const c=makeChar(Object.assign({seed:Math.floor(M
   const n=Object.assign({c,kind:'static',speed:0,pi:0,pause:0,emote:cfg.emote||null},cfg);if(cfg.sit){c.position.y+=.18}
   c.traverse(o=>{if(o.isMesh)o.userData.npc=n});c.userData.tap=()=>G.talk(n);c.userData.reach=4;G.pick.push(c);G.npcs.push(n);return n}
 export function spawnTown(scene){
+  (G.extraNPCs||[]).forEach(c=>npc(scene,c));
   const loops={plaza:[[-17,-17],[17,-17],[17,17],[-17,17]],east:[[18,6],[96,6],[96,-6],[18,-6]],west:[[-18,6],[-70,6],[-70,-6],[-18,-6]],south:[[6,18],[6,86],[-6,86],[-6,18]],park:[[48,48],[80,48],[82,80],[48,82]]};
   const L=Object.keys(loops);
   MEMERS.forEach((m,i)=>{const base={name:m.name,look:m.look,lines:m.lines,barks:m.barks,emote:m.emote||null};

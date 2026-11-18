@@ -14,8 +14,8 @@ const cam={yaw:0,pitch:.36,dist:8.5,tdist:8.5,lastDrag:0};
 const inp={jx:0,jy:0,keys:{},target:null,pend:null,jump:false};
 let player,cupMesh,marker,timeMode=LS.get('ow_time','auto'),zoneName='',beansGot=new Set(LS.get('ow_beans',[])),unlocked=LS.get('ow_unlocked',false),party=false;
 let quest=LS.get('ow_quest',{doctor:0}),dlgState=null,tour=null,evPhase=-1,rallyI=0,rallyT=0,heard=0,concertT=0;
-G.player=P;OW._={P,G,cam,W,get party(){return party}};
-export const EGGS=['ow_beans','ow_roof','ow_call','ow_laptop','ow_mirror','ow_lake','ow_goal','ow_freeloader','ow_rally','ow_concert','ow_doctor','ow_party','ow_scooter','ow_dog','ow_tour'];
+G.player=P;G.snd=snd;OW._={P,G,cam,W,get party(){return party}};
+export const EGGS=['ow_beans','ow_roof','ow_call','ow_laptop','ow_mirror','ow_lake','ow_goal','ow_freeloader','ow_rally','ow_concert','ow_doctor','ow_party','ow_scooter','ow_dog','ow_tour','ow_fire','ow_bonfire'];
 
 /* ================= host (standalone or inside portfolio) ================= */
 function standaloneHost(){const found=new Set(LS.get('ow_eggs',[]));return{RM,
@@ -69,7 +69,7 @@ function setTime(){const h=hourNow(),a=(h-6)/12*Math.PI,alt=Math.sin(a);
   hemi.color.copy(C('#5b6fb0')).lerp(C('#d6ecff'),dayK);hemi.groundColor.copy(C('#26304a')).lerp(C('#6a8f4e'),dayK);hemi.intensity=.75+.45*dayK;amb.intensity=.18+.12*dayK;
   W.winMat.color.copy(C('#ffd27a')).lerp(C('#9fc4e6'),dayK);setNight(1-dayK);
   W.sun.visible=alt>-.02;W.moon.visible=dayK<.5}
-function setNight(k){W.lampMat.color.copy(C('#cfcfcf')).lerp(C('#fff1b8'),k);W.pools.material.opacity=k*.6;W.stars.material.opacity=k;W.clouds.material.opacity=.35+.6*(1-k);W.roofLights.material.color.set(k>.4?'#fff1b8':'#dddddd')}
+function setNight(k){if(W.neonMat)W.neonMat.color.copy(C('#a8a8a8')).lerp(C('#ffffff'),k);W.lampMat.color.copy(C('#cfcfcf')).lerp(C('#fff1b8'),k);W.pools.material.opacity=k*.6;W.stars.material.opacity=k;W.clouds.material.opacity=.35+.6*(1-k);W.roofLights.material.color.set(k>.4?'#fff1b8':'#dddddd')}
 
 /* ================= beans ================= */
 const BEANS=[[-31,.9,-24.5],[0,1.95,0],[64,.9,57.4],['home',-5.6,1.3,-4.4],['hq',9,.6,-7.6],[-28,1.7,61.5],[86,.9,-24],[96.5,1.75,40]];
@@ -139,7 +139,7 @@ const rayBox=(o,d,c)=>{let t0=0,t1=1;for(const [a,b0,b1] of[['x',c.x0,c.x1],['y'
 /* ================= rooms ================= */
 function fade(fn){const f=$('.ow-fade');f.classList.add('on');setTimeout(()=>{fn();setTimeout(()=>f.classList.remove('on'),60)},RM?0:260)}
 function enterRoom(id){const r=G.rooms[id];if(!r)return;snd.door();fade(()=>{if(P.ride)dismount();P.pos.set(r.spawn.x,0,r.spawn.z);P.vel.set(0,0,0);P.world=id;cam.yaw=0;cam.pitch=.55;cam.tdist=Math.min(cam.tdist,7.5);P.yaw=Math.PI;inp.target=null;marker.visible=false;setTime();zone(r.name,true);snapCam()})}
-function exitRoom(id){const r=G.rooms[id];snd.door();fade(()=>{const o=r.out;P.pos.set(o.x+o.fx*1.2,0,o.z+o.fz*1.2);P.vel.set(0,0,0);P.world='out';P.yaw=Math.atan2(o.fx,o.fz);cam.yaw=Math.atan2(o.fx,o.fz)+.7;cam.pitch=.42;inp.target=null;marker.visible=false;setTime();zone('',true);snapCam()})}
+function exitRoom(id){const r=G.rooms[id];snd.door();fade(()=>{const o=r.out;P.pos.set(o.x+o.fx*1.2,o.y||0,o.z+o.fz*1.2);P.vel.set(0,0,0);P.world='out';P.yaw=Math.atan2(o.fx,o.fz);cam.yaw=Math.atan2(o.fx,o.fz)+.7;cam.pitch=.42;inp.target=null;marker.visible=false;setTime();zone('',true);snapCam()})}
 
 /* ================= main loop ================= */
 let curAct=null,actT=0,timeT=0,mapT=0,barkT=2;
@@ -240,9 +240,9 @@ function closeDlg(){$('.ow-dlg').hidden=true;clearInterval(typer);dlgState=null}
 function talk(n){if(n.c&&n.c.rotation&&n.kind!=='dog'&&n.kind!=='cat'&&!n.lie&&!n.sit){n.c.rotation.y=Math.atan2(P.pos.x-n.c.position.x,P.pos.z-n.c.position.z);n.faceT=4}
   if(n.id==='guide')return guideTalk(n);
   if(n.id==='farmer')return dlg('Kaveri (coffee farmer)',beansGot.size>=8?['You found all 8 of my beans! Best roast of the year.','The scooter, the rooftop and the DJ booth are open for you. Enjoy!']:['Ayyo! My Coorg beans rolled all over town.','There are 8. Some are high up, some are inside buildings. One is even near the water.','You have '+beansGot.size+' so far. Find them all and I\'ll unlock something special.']);
-  if(n.id==='doctor'){if(quest.doctor===0){quest.doctor=1;LS.set('ow_quest',quest);updQuest();return dlg('Dr. Rao',['I haven\'t had a decent coffee in a week.','Doctor\'s orders: go to Brew Bar, brew me a coffee and bring it here.'])}
+  if(n.id==='doctor'){if(quest.doctor===0){quest.doctor=1;LS.set('ow_quest',quest);updQuest();return dlg('Dr. Rao',['I haven\'t had a decent coffee in a week.','Doctor\'s orders: go to TOKI, brew me a coffee and bring it here.'])}
     if(quest.doctor===1&&P.cup){quest.doctor=2;LS.set('ow_quest',quest);P.cup=false;cupMesh.visible=false;updQuest();G.host.egg('ow_doctor','Coffee delivered. The doctor approves.');return dlg('Dr. Rao',['Ahh. Perfect extraction. Pulse is back to normal.','Prescription: hire this barista. Take twice daily.'])}
-    if(quest.doctor===1)return dlg('Dr. Rao',['Still waiting on that coffee. Brew Bar is on the west street.']);
+    if(quest.doctor===1)return dlg('Dr. Rao',['Still waiting on that coffee. TOKI is on the west street, the Manali side.']);
     return dlg('Dr. Rao',['Thanks again for the coffee. My website? Vashu is building it. Clean and calm, like a good waiting room.'])}
   if(n.free)return dlg(n.name,n.lines,[{t:'Rate card first. 50% advance.',f:()=>{n.repel=performance.now()+60000;n.flee=2.5;G.host.egg('ow_freeloader','You quoted a 50% advance. The freeloader vanished.');toast('BOUNDARIES','"50% advance" is the strongest spell in freelancing.')}},{t:'Sure, for exposure!',f:()=>toast('MISTAKE','They now also want an app. And a mascot. By Monday.')}],n);
   if(n.kind==='dog'){n.hearts=2;G.host.egg('ow_dog','You petted Biscuit. Good boy.');return dlg(n.name,['Woof! (Tail wagging at 200 bpm.)'])}
@@ -261,7 +261,7 @@ function openMenu(){$('.ow-menu').hidden=false}
 function closeAll(){root.querySelectorAll('.ow-ov').forEach(o=>o.hidden=true);closeDlg();$('.ow-emotes').hidden=true}
 
 /* ================= quests ================= */
-function updQuest(){const q=[];q.push((beansGot.size>=8?'✓ ':'')+'Find Kaveri\'s coffee beans ('+beansGot.size+'/8)');if(quest.doctor===1)q.push(P.cup?'Bring the coffee to Dr. Rao (City Clinic)':'Brew a coffee at Brew Bar for Dr. Rao');if(quest.doctor===2)q.push('✓ Doctor\'s orders');
+function updQuest(){const q=[];q.push((beansGot.size>=8?'✓ ':'')+'Find Kaveri\'s coffee beans ('+beansGot.size+'/8)');if(quest.doctor===1)q.push(P.cup?'Bring the coffee to Dr. Rao (City Clinic)':'Brew a coffee at TOKI for Dr. Rao');if(quest.doctor===2)q.push('✓ Doctor\'s orders');
   $('.ow-quest').innerHTML=q.map(s=>'<span>'+s+'</span>').join('');$('.ow-beans b').textContent=beansGot.size+'/8'}
 
 /* ================= beans / ball / lake ================= */
@@ -275,6 +275,15 @@ function ballTick(dt){const b=W.ball,m=b.m;if(P.world==='out'&&!P.ride){const dx
 function lakeCheck(){const L=W.lake;if(Math.hypot(P.pos.x-L.x,P.pos.z-L.z)<L.r-.6&&P.pos.y<.3&&!P.ride){snd.splash();G.host.egg('ow_lake','Splash! You can\'t swim in a portfolio.');fade(()=>{P.pos.set(64,0,45);P.vel.set(0,0,0);snapCam()})}}
 function ambientTick(dt,T){W.steam.forEach(s=>{const k=(T*.4+s.userData.o)%1;s.position.set(Math.sin(k*9+s.userData.o*7)*.4,1.5+k*3,Math.cos(k*7)*.3);s.material.opacity=.45*(1-k);s.scale.setScalar(.6+k)});
   W.clouds.position.x=((T*.8)%400)-200;
+  if(W.holo){W.holo[0].rotation.set(Math.PI/2+Math.sin(T*.6)*.3,T*.8,0);W.holo[1].rotation.set(Math.PI/2,0,T*1.2);W.holo[1].rotation.x=T*.9}
+  if(W.rgb)W.rgb.material.color.setHSL((T*.08)%1,.9,.55);
+  if(W.siren)W.siren.material.color.set(Math.sin(T*3)>0?'#3b6bff':'#ff3b3b');
+  if(W.policeLights){const on=Math.sin(T*3)>0;W.policeLights[0].material.color.set(on?'#ff2d2d':'#551010');W.policeLights[1].material.color.set(on?'#10205a':'#2d6bff')}
+  if(W.fireLights){W.fireT=Math.max(0,(W.fireT||0)-dt);W.fireLights.material.color.set(W.fireT>0&&Math.sin(T*8)>0?'#ff2d2d':'#661111')}
+  if(W.craneHook){W.craneHook.rotation.z=Math.sin(T*.7)*.06;W.craneHook.position.x=74+Math.sin(T*.15)*4}
+  if(W.bonfire){W.bonfire.children.forEach((c,i)=>{c.scale.set(1,.85+Math.sin(T*9+i*2)*.18,1)})}
+  if(W.evTurntable)W.evTurntable.rotation.y=T*.5;
+  if(W.flag)W.flag.rotation.y=Math.sin(T*1.3)*.25;
   if(party){W.disco.ball.rotation.y+=dt*.8;W.disco.beams.forEach((b,i)=>{const a=b.userData.a+T*(RM?.1:.6);b.rotation.set(Math.sin(a)*.6,a,Math.cos(a)*.6)})}}
 
 /* ================= NPCs ================= */
@@ -294,7 +303,7 @@ function npcTick(dt,T){const px=P.pos.x,pz=P.pos.z,now=performance.now();
     if(n.lie){c.rotation.x=-Math.PI/2;p.y=.3}
     if(c.userData.legL)anim(c,dt,{speed:sp,sit:n.sit&&!sp,emote:sp?null:em})}}
 function turn(c,ty,dt){let d=ty-c.rotation.y;d=Math.atan2(Math.sin(d),Math.cos(d));c.rotation.y+=d*Math.min(1,dt*8)}
-const STOPS=[{p:[[0,8]],t:'Town Square. Those four giant numbers? My actual results at work.'},{p:[[0,-21]],t:'Outpulse Labs HQ, my company. Every product I\'m building is inside.'},{p:[[-6,0],[-31,-4.5]],t:'Brew Bar. Where it all started: barista first, everything else after.'},{p:[[-6,0],[16,0],[30,3]],t:'Poster Street. Every billboard is a project. Tap any of them.'},{p:[[64,-4.5]],t:'Client Row: a bakehouse, a waffle shop, a Kannada restaurant and a clinic. Walk in.'},{p:[[64,4],[8,10],[8,24],[30,24]],t:'Lakeside Park. Kick the ball, find beans, touch some grass.'},{p:[[8,24],[-8,30],[-12,36]],t:'Event Ground. Rallies and concerts all day. Grab a chair.'},{p:[[-8,24],[-8,6],[-40,0],[-70,0]],t:'And this is my home. My CV is on the wall inside. Tour done. Thanks for walking with me!'}];
+const STOPS=[{p:[[0,8]],t:'Welcome to the Mumbai centre. Those four giant numbers? My actual results at work.'},{p:[[0,-21]],t:'North is Raipur, my hometown. This is Outpulse Labs HQ, my company. Every product is inside.'},{p:[[-6,0],[-31,-4.5]],t:'Manali side: TOKI, my specialty coffee spot. Barista first, everything else after. I live upstairs.'},{p:[[-6,0],[16,0],[30,5.5]],t:'East is Goa. Poster Street: every billboard is a project. The Outpulse.EV showroom is right behind you.'},{p:[[64,-4.5]],t:'Client Row: a bakehouse, a waffle shop, a Kannada restaurant and a clinic. Walk in.'},{p:[[64,4],[44,5.5],[46,24],[48,44]],t:'The Goa beach. Kick the ball, chill in the hammock, grab a kokum soda at the shack.'},{p:[[46,24],[8,24],[-8,30],[-12,36]],t:'South is Mysuru. Palace Grounds: rallies and concerts all day. Grab a chair.'},{p:[[-8,24],[-8,6],[-21,-5.5]],t:'Last stop: these stairs go up to my studio above TOKI. My CV is on the wall. Tour done, thanks for walking with me!'}];
 function guideTick(n,dt){const c=n.c,p=c.position;if(!tour){const dx=3.5-p.x,dz=20-p.z,d=Math.hypot(dx,dz);if(d>.5){p.x+=dx/d*5*dt;p.z+=dz/d*5*dt;turn(c,Math.atan2(dx,dz),dt);return 5}turn(c,Math.atan2(P.pos.x-p.x,P.pos.z-p.z),dt);return 0}
   const st=STOPS[tour.i];const wp=st.p[tour.w||0];const dx=wp[0]-p.x,dz=wp[1]-p.z,d=Math.hypot(dx,dz);const pd=Math.hypot(P.pos.x-p.x,P.pos.z-p.z);
   if(P.world!=='out'){return 0}
@@ -323,7 +332,7 @@ const pv=new THREE.Vector3();function bubblesTick(){for(let i=bubs.length-1;i>=0
   if(b.t<=0||pv.z>1){b.el.remove();bubs.splice(i,1);continue}const r=root.getBoundingClientRect();b.el.style.transform=`translate(${(pv.x*.5+.5)*r.width}px,${(-pv.y*.5+.5)*r.height}px) translate(-50%,-100%)`}}
 
 /* ================= zones & maps ================= */
-const ZONES=[['Town Square',-17,17,-17,17],['Outpulse HQ',-14,14,-50,-17],['Poster Street',16,99,-6,12],['Client Row',20,95,-30,-6],['Brew Bar',-44,-18,-26,-5],['Home Street',-96,-18,-8,22],['Event Ground',-47,-9,24,69],['Lakeside Park',14,99,20,92],['Garage Lot',38,95,-50,-28]];
+const ZONES=[['Mumbai · Town Square',-17,17,-17,19],['Raipur · Outpulse HQ',-14,14,-50,-17],['Raipur · Marine Drive',-30,-10,-36,-24],['Raipur · Fire Station',-48,-29,-48,-25],['Raipur · Police Station',15,36,-48,-23],['Construction Site',38,95,-50,-27],['Goa · Outpulse.EV',16,40,10,24],['Goa · Poster Street',16,99,-6,12],['Goa · Client Row',20,95,-27,-6],['Goa · Beach & Lagoon',14,99,24,92],['Manali · TOKI',-42,-18,-24,-5],['Manali · Lookout',-96,-71,-10,10],['Manali · Café Strip',-72,-18,-24,22],['Mysuru · Palace Grounds',-47,-9,24,69],['Mysuru · School Road',-47,8,69,92],['Mysuru · South Road',-9,14,19,92]];
 function zoneCheck(){if(P.world!=='out')return;const z=ZONES.find(z=>P.pos.x>z[1]&&P.pos.x<z[2]&&P.pos.z>z[3]&&P.pos.z<z[4]);zone(z?z[0]:'')}
 let zt;function zone(name,force){if(name===zoneName&&!force)return;zoneName=name;if(!name)return;const el=$('.ow-zone');el.textContent=name;el.classList.remove('on');void el.offsetWidth;el.classList.add('on')}
 const MX0=-100,MZ0=-56,MS=3;let bg;
