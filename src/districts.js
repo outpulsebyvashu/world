@@ -1,6 +1,7 @@
 import {THREE,G,Batch,bx,cyl,col,blk,tex,signTex,FONT_T,FONT_D,rng,CHM} from './core.js';
 import {prop,fac,gable,leanTo,banana,pot,lantern,stringLights,rails,shade,scooterGeo} from './arch.js';
 import {mark,move} from './relocate.js';
+import {inst} from './inst.js';
 import {PROJECTS} from './data.js';
 const PI=Math.PI;
 const PJ=n=>PROJECTS.find(p=>p.n===n)||{n,tag:'',st:'',d:'',href:'',color:'#f4efe6'};
@@ -9,7 +10,7 @@ export function palm(B,x,z,h=6,lean=.25,seed=1){const r=rng(seed);let px=x,pz=z,
   for(let i=0;i<7;i++){const s=.34-i*.02;cyl(B,px,py+h/14,pz,s*.9,s,h/7+.05,i%2?'#8a6a45':'#9c7a52',8);py+=h/7;px+=dx*(i/7);pz+=dz*(i/7)}
   for(let k=0;k<7;k++){const g=new THREE.BoxGeometry(.5,.05,2.6);g.translate(0,0,1.3);g.rotateX(.35+(k%2)*.25);g.rotateY(k*PI*2/7+r());g.translate(px,py+.1,pz);B.add(g,k%2?'#3d9a40':'#4caf50')}
   for(let k=0;k<3;k++)bx(B,px+Math.cos(k*2)*.25,py-.2,pz+Math.sin(k*2)*.25,.28,.3,.28,'#6b4a1f');col(x-.3,x+.3,0,h,z-.3,z+.3)}
-export function pine(B,x,z,s=1,snow){cyl(B,x,.7*s,z,.18*s,.25*s,1.4*s,'#5a3f2a',6);for(let i=0;i<4;i++){const g=new THREE.ConeGeometry((1.7-i*.35)*s,1.5*s,7);g.translate(x,(1.5+i*1.05)*s,z);B.add(g,i%2?'#2f6b45':'#2a5e3d');if(snow&&i===3){const g2=new THREE.ConeGeometry(.55*s,.6*s,7);g2.translate(x,(1.5+i*1.05+.5)*s,z);B.add(g2,'#f5f7fa')}}col(x-.25*s,x+.25*s,0,3*s,z-.25*s,z+.25*s);(G.camCols=G.camCols||[]).push({x0:x-1.5*s,x1:x+1.5*s,y0:.8*s,y1:5*s,z0:z-1.5*s,z1:z+1.5*s})}
+export function pine(B,x,z,s=1,snow){inst('pTrunk',x,.7*s,z,s,s,s,0,'#5a3f2a');for(let i=0;i<4;i++){const rr=(1.7-i*.35)*s;inst('pCone',x,(1.5+i*1.05)*s,z,rr,s,rr,i*.7,i%2?'#2f6b45':'#2a5e3d');if(snow&&i===3)inst('pCone',x,(1.5+i*1.05+.5)*s,z,.55*s,.4*s,.55*s,0,'#f5f7fa')}col(x-.25*s,x+.25*s,0,3*s,z-.25*s,z+.25*s);(G.camCols=G.camCols||[]).push({x0:x-1.5*s,x1:x+1.5*s,y0:.8*s,y1:5*s,z0:z-1.5*s,z1:z+1.5*s})}
 function apple(B,x,z){cyl(B,x,.9,z,.15,.2,1.8,'#6b4a35',6);bx(B,x,2.4,z,2,1.6,2,'#4f9a45',.3);bx(B,x,3.2,z,1.3,.9,1.3,'#5cae52',.7);const r=rng(Math.floor(x*7+z));for(let i=0;i<10;i++)bx(B,x-1+r()*2,1.8+r()*1.8,z-1.02+(i%2)*2.04,.18,.18,.18,'#e53935');col(x-.25,x+.25,0,1.8,z-.25,z+.25)}
 
 export function buildDistricts(scene,ctx){const {S,WIN,LMP,building,addPlane,bench,W}=ctx;const on=ctx.on;
@@ -27,32 +28,32 @@ export function buildDistricts(scene,ctx){const {S,WIN,LMP,building,addPlane,ben
    blk(S,-7.4,7.4,8,8.35,15.6,18.6,dk,false);for(let x=-7;x<=7;x+=1)bx(S,x,8.6,15.65,.5,.5,.3,sand);for(let x=-7;x<=7;x+=1)bx(S,x,8.6,18.35,.5,.5,.3,sand);
    for(const s of[-1,1])for(const y of[2,4.2])for(const z of[15.75,18.45]){bx(S,s*4.8,y,z,1.2,1.5,.1,dk);bx(S,s*4.8,y+.9,z,.9,.3,.1,dk)}
    const t=signTex('VASHUPUR · EST 2023','#141414','#f4efe6',1024,128);addPlane(scene,8.8,1.1,t,[0,6.9,18.43],0,null);addPlane(scene,8.8,1.1,t,[0,6.9,15.77],PI,null);
-   for(let x=-7;x<=7;x+=.7){bx(LMP,x,8.4,15.55,.12,.12,.12,'#ffffff');bx(LMP,x,8.4,18.65,.12,.12,.12,'#ffffff')};move(cpR,[0,17.1],[-28,50.5],0,[])}
+   for(let x=-7;x<=7;x+=.7){bx(LMP,x,8.4,15.55,.12,.12,.12,'#ffffff');bx(LMP,x,8.4,18.65,.12,.12,.12,'#ffffff')};move(cpR,[0,17.1],[-53,95.5],0,[])}
   const taxi=(x,z,ry)=>{const p=prop(S,x,0,z,ry);p.box(0,.62,0,1.6,.7,3.6,'#141414');p.box(0,1.25,-.2,1.45,.6,1.9,'#ffd23f');p.box(0,1.25,-.2,1.47,.42,1.7,'#26323d');p.box(0,1.65,-.2,.6,.22,.3,'#ffd23f');
     for(const zz of[1.15,-1.15])for(const s of[-1,1])p.wheel(s*.78,.32,zz,.32,.2);p.box(0,.7,1.82,1.2,.2,.04,'#e8e8e8');const r=Math.abs(Math.sin(ry))>.5;col(x-(r?1.9:.85),x+(r?1.9:.85),0,1.6,z-(r?.85:1.9),z+(r?.85:1.9))};
-  if(on('vashupur')){taxi(34,2.6,PI/2);taxi(-21,-2.6,-PI/2)}if(on('basti'))taxi(-2.6,40,PI);
-  if(on('vashupur')){const p=prop(S,22,0,2.7,PI/2);p.box(0,1.45,0,2.5,2.2,10,'#d7263d');p.box(0,3.65,0,2.5,2.1,9.8,'#d7263d');p.box(0,2.58,0,2.52,.12,10,'#f4efe6');p.box(0,4.72,0,2.4,.1,9.6,'#b71c2b');
+  if(on('vashupur')){taxi(64,4.9,PI/2);taxi(-39.7,-4.9,-PI/2)}if(on('basti'))taxi(-2.6,40,PI);
+  if(on('vashupur')){const cpR=mark(scene,RB);const p=prop(S,22,0,2.7,PI/2);p.box(0,1.45,0,2.5,2.2,10,'#d7263d');p.box(0,3.65,0,2.5,2.1,9.8,'#d7263d');p.box(0,2.58,0,2.52,.12,10,'#f4efe6');p.box(0,4.72,0,2.4,.1,9.6,'#b71c2b');
     for(let i=0;i<6;i++)for(const y of[1.8,3.8])for(const s of[-1,1])p.box(s*1.26,y,-4+i*1.5,.04,.9,1.2,'#26323d');p.box(0,1.8,5.01,2.1,1.1,.04,'#26323d');p.box(0,3.8,5.01,2.1,.9,.04,'#26323d');
     for(const zz of[3.4,-3.2])for(const s of[-1,1])p.wheel(s*1.12,.5,zz,.5,.35);col(17,27,0,4.8,1.45,3.95);
-    const d=new THREE.Mesh(new THREE.PlaneGeometry(1.8,.35),new THREE.MeshBasicMaterial({map:signTex('VASHUPUR · LTD','#141414','#ffcc3a',512,100)}));d.position.set(27.02,3.15,2.7);d.rotation.y=PI/2;scene.add(d)}
-  if(on('vashupur')){const p=prop(S,-12.6,0,12.6,PI*.75);p.box(0,.5,0,1.9,1,1,'#ff8a3d');p.box(0,1.05,0,2,.08,1.1,'#c9ccd1');p.cyl(-.5,1.25,0,.35,.35,.25,'#555',12);p.cyl(-.5,1.4,0,.3,.3,.04,'#d9963b',12);for(let i=0;i<4;i++)p.sph(.2+i*.2,1.18,.2,.1,'#d9963b');
+    const d=new THREE.Mesh(new THREE.PlaneGeometry(1.8,.35),new THREE.MeshBasicMaterial({map:signTex('VASHUPUR · LTD','#141414','#ffcc3a',512,100)}));d.position.set(27.02,3.15,2.7);d.rotation.y=PI/2;scene.add(d);move(cpR,[0,0],[19.6,2.4],0,[])}
+  if(on('vashupur')){const cpR=mark(scene,RB);const p=prop(S,-12.6,0,12.6,PI*.75);p.box(0,.5,0,1.9,1,1,'#ff8a3d');p.box(0,1.05,0,2,.08,1.1,'#c9ccd1');p.cyl(-.5,1.25,0,.35,.35,.25,'#555',12);p.cyl(-.5,1.4,0,.3,.3,.04,'#d9963b',12);for(let i=0;i<4;i++)p.sph(.2+i*.2,1.18,.2,.1,'#d9963b');
    p.box(0,2.4,0,2.2,.08,1.4,'#e94b3c');for(const s of[-1,1])p.box(s*1,1.7,-.5,.05,1.4,.05,'#555');col(-13.7,-11.5,0,1.2,11.5,13.7);
    G.triggers.push({x:-11.3,z:11.3,r:1.6,label:'Grab a vada pav',act:()=>G.host.toast('VADA PAV','Mumbai\'s burger. ₹20, with dry garlic chutney.')});
-   const s2=new THREE.Mesh(new THREE.PlaneGeometry(1.8,.45),new THREE.MeshLambertMaterial({map:signTex('VADA PAV ₹20','#ffcc3a','#e94b3c',512,120),side:THREE.DoubleSide}));s2.position.set(-12.6,2.05,12.6);s2.rotation.y=PI*.75;scene.add(s2)}
-  if(on('vashupur')){const p=prop(S,-8,0,9);p.box(0,1.8,0,.16,3.6,.16,'#5a3f2a');const arms=[['VASHU MUSEUM',PI/2,3.3,'#8a6a3a'],['BUS · 5 TOWNS',-PI/2,2.9,'#2f5bff'],['POLICE STN',0,2.5,'#1d3f8f'],['FIRE STN',PI,2.1,'#c62828']];
-   for(const [t,a,y,c] of arms){const m=new THREE.Mesh(new THREE.PlaneGeometry(1.8,.38),new THREE.MeshLambertMaterial({map:signTex(t,c,'#ffffff',512,110),side:THREE.DoubleSide}));m.position.set(-8+Math.cos(a)*.95,y,9-Math.sin(a)*.95);m.rotation.y=a;scene.add(m)}col(-8.15,-7.85,0,3.6,8.85,9.15)}
+   const s2=new THREE.Mesh(new THREE.PlaneGeometry(1.8,.45),new THREE.MeshLambertMaterial({map:signTex('VADA PAV ₹20','#ffcc3a','#e94b3c',512,120),side:THREE.DoubleSide}));s2.position.set(-12.6,2.05,12.6);s2.rotation.y=PI*.75;scene.add(s2);move(cpR,[0,0],[-11.2,11.2],0,[])}
+  if(on('vashupur')){const cpR=mark(scene,RB);const p=prop(S,-8,0,9);p.box(0,1.8,0,.16,3.6,.16,'#5a3f2a');const arms=[['VASHU MUSEUM',PI/2,3.3,'#8a6a3a'],['BUS · 5 TOWNS',-PI/2,2.9,'#2f5bff'],['POLICE STN',0,2.5,'#1d3f8f'],['FIRE STN',PI,2.1,'#c62828']];
+   for(const [t,a,y,c] of arms){const m=new THREE.Mesh(new THREE.PlaneGeometry(1.8,.38),new THREE.MeshLambertMaterial({map:signTex(t,c,'#ffffff',512,110),side:THREE.DoubleSide}));m.position.set(-8+Math.cos(a)*.95,y,9-Math.sin(a)*.95);m.rotation.y=a;scene.add(m)}col(-8.15,-7.85,0,3.6,8.85,9.15);move(cpR,[0,0],[-7.1,8],0,[])}
   BL(-14,-11,11,14);BL(16,28,0,5);
 
   /* ================= RAIPUR — north ================= */
   if(on('vashupur')){const cpR=mark(scene,RB);const p=prop(S,14.2,0,-20.6);p.box(0,.2,0,2.6,.4,2.6,'#e6e1d6');p.box(0,.55,0,2,.3,2,'#e6e1d6');p.box(0,5.7,0,1,10,1,'#f4efe6');p.box(0,1.6,0,1.3,1.8,1.3,'#f4efe6');
    p.box(0,9.2,0,1.08,.5,1.08,'#ff9933');p.box(0,8.7,0,1.08,.5,1.08,'#ffffff');p.box(0,8.2,0,1.08,.5,1.08,'#138808');p.box(0,10.9,0,1.4,.3,1.4,'#e6e1d6');p.cone(0,11.6,0,.7,1.2,'#e6e1d6',4);
-   col(12.9,15.5,0,11,-21.9,-19.3);addPlane(scene,1.25,.5,signTex('JAI STAMBH CHOWK','#141414','#ffcc3a',512,128),[14.2,1.7,-19.94],0,null);move(cpR,[0,0],[-5.2,11.6],0,[])}
+   col(12.9,15.5,0,11,-21.9,-19.3);addPlane(scene,1.25,.5,signTex('JAI STAMBH CHOWK','#141414','#ffcc3a',512,128),[14.2,1.7,-19.94],0,null);move(cpR,[0,0],[2.8,3.6],0,[])}
   if(on('vashupur')){const cpR=mark(scene,RB);if(G.LOT)building({name:'Spreewalk',x0:-22,x1:-16,z0:-30.5,z1:-26.5,h:3,door:{side:'s',at:-19}});else{const k=prop(S,-19,0,-28.6);k.box(0,1.5,0,4,3,3,'#e94b3c');k.box(0,3.1,0,4.6,.25,3.6,'#ffffff');k.box(0,1.1,1.6,3.6,.12,.6,'#ffffff');k.box(0,1.9,1.52,3,1.3,.06,'#3a1a10');
    k.cyl(0,4.1,0,1.3,1.3,.4,'#d9963b',18);k.cyl(0,3.8,0,1.35,1.35,.2,'#6b3e22',18);k.cyl(0,3.62,0,1.45,1.45,.12,'#ffcc3a',18);k.cyl(0,3.5,0,1.4,1.4,.12,'#4caf50',18);k.cyl(0,3.32,0,1.3,1.3,.24,'#d9963b',18);
    col(-21,-17,0,3.3,-30.1,-27.1);for(const x of[-20.2,-17.8])cyl(S,x,.38,-26.2,.24,.2,.06,'#e94b3c',12);addPlane(scene,3.6,.6,signTex('SPREEWALK · COMING SOON','#ffffff','#e94b3c',512,90),[-19,2.75,-27.04],0,null);
    info(-19,-25.8,0,1.6,'Spreewalk (coming soon)',{n:'Spreewalk',tag:'Future venture',st:'Planned',d:'A burger kiosk planned for Marine Drive, Raipur. Smash patties, quick lines, lakefront vibes.',href:'',color:'#e94b3c'});}
    blk(S,-28,-11,0,.06,-34.6,-31.4,'#3fa7e0',false);rails(S,-28,-11,-31.3,-31.3,0,1,'#9aa3ad',.8);col(-28,-11,0,1.1,-31.5,-31.2);for(let x=-27;x<-11;x+=4)lantern(S,WARM,x,1.4,-31.3);
-   addPlane(scene,3.4,.6,signTex('MARINE DRIVE','#1f7a4c','#ffffff',512,90),[-13.4,1.6,-31.1],0,null);BL(-29,-10,-35,-26);move(cpR,[-19.5,-30.5],[77,82],2,[])}
+   addPlane(scene,3.4,.6,signTex('MARINE DRIVE','#1f7a4c','#ffffff',512,90),[-13.4,1.6,-31.1],0,null);BL(-29,-10,-35,-26);move(cpR,[-19.5,-30.5],[145.6,155.1],2,[])}
   // police station
   if(on('vashupur')){const cpR=mark(scene,RB);outs.police=building({real:true,name:'Police Station',x0:16,x1:34,z0:-46,z1:-31,h:7,col:'#f4f1ea',trim:'#1d3f8f',door:{side:'s',at:25},room:'police',win:false,awn:false,doorCol:'#1d3f8f'});
   {const b={x0:16,x1:34,z0:-46,z1:-31},F=fac(b,'s');F.box(S,25,3.6,.05,18,.35,.12,'#1d3f8f');F.box(S,25,3.95,.05,18,.2,.12,'#c62828');
@@ -62,7 +63,7 @@ export function buildDistricts(scene,ctx){const {S,WIN,LMP,building,addPlane,ben
    const fp=prop(S,17.5,0,-29.5);fp.cyl(0,4,0,.07,.07,8,'#c9ccd1',8);fp.box(0,.2,0,1,.4,1,'#d6d2c8');const fl=new THREE.Mesh(new THREE.PlaneGeometry(1.8,1.2),new THREE.MeshLambertMaterial({map:tex(96,64,(x)=>{x.fillStyle='#ff9933';x.fillRect(0,0,96,22);x.fillStyle='#fff';x.fillRect(0,21,96,22);x.fillStyle='#138808';x.fillRect(0,42,96,22);x.strokeStyle='#000080';x.lineWidth=2;x.beginPath();x.arc(48,32,8,0,7);x.stroke()}),side:THREE.DoubleSide}));fl.position.set(18.4,7.3,-29.5);scene.add(fl);W.flag=fl;col(17.3,17.7,0,8,-29.7,-29.3);
    const j=prop(S,30.5,0,-28.6,PI/2);j.box(0,.9,0,1.9,1,4,'#f4f4f4');j.box(0,1.75,-.5,1.8,.8,2.2,'#f4f4f4');j.box(0,1.75,-.5,1.82,.55,2,'#26323d');j.box(0,.95,0,1.92,.22,4.02,'#1d3f8f');for(const zz of[1.3,-1.3])for(const s of[-1,1])j.wheel(s*.9,.42,zz,.42,.28);col(28.5,32.5,0,2.2,-29.6,-27.6);
    W.policeLights=[new THREE.Mesh(new THREE.BoxGeometry(.3,.16,.3),new THREE.MeshBasicMaterial({color:'#ff2d2d'})),new THREE.Mesh(new THREE.BoxGeometry(.3,.16,.3),new THREE.MeshBasicMaterial({color:'#2d6bff'}))];W.policeLights[0].position.set(30,2.25,-28.3);W.policeLights[1].position.set(30,2.25,-28.9);scene.add(...W.policeLights);
-   for(const x of[20,22.2])blk(S,x-.9,x+.9,0,1,-29.2,-28.9,'#ffcc3a');BL(15,35,-47,-27)};move(cpR,[0,0],[0,19],0,[outs.police])}
+   for(const x of[20,22.2])blk(S,x-.9,x+.9,0,1,-29.2,-28.9,'#ffcc3a');BL(15,35,-47,-27)};move(cpR,[0,0],[14,16],0,[outs.police])}
   // fire station
   if(on('vashupur')){const cpR=mark(scene,RB);outs.fire=building({real:true,name:'Fire Station',x0:-46,x1:-30,z0:-46,z1:-30,h:8,col:'#c62828',trim:'#ffffff',door:{side:'s',at:-33},room:'fire',win:false,awn:false,doorCol:'#ffffff'});
   {
@@ -75,7 +76,7 @@ export function buildDistricts(scene,ctx){const {S,WIN,LMP,building,addPlane,ben
    addPlane(scene,7,1,signTex('FIRE STATION · 101','#ffffff','#c62828',1024,150),[-38,6.4,-29.86],0,null);
    const bell=prop(S,-31.4,0,-29.2);bell.box(0,1.2,0,.12,2.4,.12,'#555');bell.cyl(0,2.6,0,.12,.42,.55,'#c9a227',12);col(-31.6,-31.2,0,2.6,-29.4,-29);
    G.triggers.push({x:-31.4,z:-28.2,r:1.5,label:'Ring the fire bell',act:()=>{G.snd&&G.snd.fanfare();W.fireT=6;G.host.egg('ow_fire','You rang the fire bell. Nobody panicked. Mostly.')}});
-   blk(S,-46,-30,0,.05,-30,-26.4,'#9aa3ad',false);BL(-47,-29,-47,-26)};move(cpR,[0,0],[116,18],0,[outs.fire])}
+   blk(S,-46,-30,0,.05,-30,-26.4,'#9aa3ad',false);BL(-47,-29,-47,-26)};move(cpR,[-38,-38],[-62,148],2,[outs.fire])}
   // Construction site — projects under construction
   if(false){const site={x0:40,x1:92,z0:-46,z1:-29};blk(S,40,92,0,.05,-45.7,-29,'#b9a27a',false);
    for(const x of[44,48,52,56])for(const z of[-43,-39,-35])blk(S,x-.25,x+.25,0,7.6,z-.25,z+.25,'#a9a9a9',true);

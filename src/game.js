@@ -1,4 +1,4 @@
-import {THREE,G,clamp,lerp,anim,makeChar,Batch,bx,cyl,CHM} from './core.js';
+import {THREE,G,clamp,lerp,anim,makeChar,Batch,bx,cyl,CHM,drawTex} from './core.js';
 import {buildWorld,spawnTown,W} from './world.js';
 import {PROJECTS,WA,STORY,NUMS,ROLES,SKILLS,RALLY} from './data.js';
 import {CSS,HUD} from './hud.js';
@@ -31,8 +31,10 @@ OW.init=async(host,el,progress=()=>{})=>{
   const st=document.createElement('style');st.textContent=CSS;document.head.appendChild(st);
   root.classList.add('ow');root.insertAdjacentHTML('beforeend',HUD);
   progress(.1);
-  try{await Promise.race([Promise.all(['800 64px "Bricolage Grotesque"','400 64px Anton','600 20px "Inter Tight"'].map(f=>document.fonts.load(f))),new Promise(r=>setTimeout(r,2500))])}catch(e){}
-  progress(.25);
+  /* fonts load while the town builds; sign textures are only painted once they are in */
+  const css=()=>new Promise(r=>{const l=document.getElementById('owf');if(!l||l.media==='all')return r();l.addEventListener('load',()=>setTimeout(r),{once:true});l.addEventListener('error',()=>r(),{once:true})});
+  let fontsP;try{fontsP=Promise.race([css().then(()=>Promise.all(['800 64px "Bricolage Grotesque"','400 64px Anton','600 20px "Inter Tight"'].map(f=>document.fonts.load(f)))),new Promise(r=>setTimeout(r,2200))]).catch(()=>{})}catch(e){fontsP=Promise.resolve()}
+  progress(.2);
   renderer=new THREE.WebGLRenderer({antialias:devicePixelRatio<2,powerPreference:'high-performance'});
   renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.9;
   root.prepend(renderer.domElement);renderer.domElement.className='ow-cv3';renderer.domElement.setAttribute('aria-hidden','true');
@@ -47,7 +49,7 @@ OW.init=async(host,el,progress=()=>{})=>{
   const cb=new Batch();cyl(cb,0,0,0,.11,.09,.22,'#ffffff',10);cyl(cb,0,.11,0,.1,.1,.01,'#8a5a3b',10);cupMesh=cb.mesh(CHM);cupMesh.position.set(0,-.72,.12);cupMesh.visible=false;player.userData.armR.add(cupMesh);
   marker=new THREE.Mesh(new THREE.RingGeometry(.35,.5,24).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:.9,depthWrite:false}));marker.visible=false;scene.add(marker);
   if(!TOWNS[curTown]||!TOWNS[curTown].ready)curTown='vashupur';
-  loadTown(curTown);progress(.85);await new Promise(r=>setTimeout(r,0));
+  loadTown(curTown);progress(.75);await fontsP;fontsOK=true;streamNear(P.pos,70);progress(.9);await new Promise(r=>setTimeout(r,0));
   bindInput();resize();addEventListener('resize',resize);
   setTime();
   progress(1);
@@ -62,11 +64,13 @@ function resize(){const w=root.clientWidth||innerWidth,h=root.clientHeight||inne
 const C=c=>new THREE.Color(c);const NIGHT=C('#0a0f1e'),DAY=C('#c4d6e6'),DUSK=C('#e9a57c'),tc=new THREE.Color(),sunDir=new THREE.Vector3();
 let dayK=1;
 function hourNow(){if(timeMode==='day')return 12.5;if(timeMode==='sunset')return 17.55;if(timeMode==='night')return 22.5;const d=new Date();return d.getHours()+d.getMinutes()/60}
+/* nothing past the fog is drawn: far chunks of town are skipped entirely */
+function setFar(){camera.far=scene.fog.far+25;camera.updateProjectionMatrix();if(sky)sky.scale.setScalar(camera.far*1.1)}
 function setTime(){const h=hourNow(),a=(h-6)/12*Math.PI,alt=Math.sin(a);
   dayK=clamp((alt+.08)/.38,0,1);const dusk=clamp(1-Math.abs(alt-.04)/.28,0,1);
   if(sky)sky.visible=P.world==='out';if(grass)grass.mesh.visible=P.world==='out'&&!TOWNS[curTown].snow;
-  if(P.world!=='out'){const r=G.rooms[P.world];scene.background=tc.set('#141414').clone();scene.fog.color.set('#141414');scene.fog.near=34;scene.fog.far=60;hemi.color.set(r.light);hemi.groundColor.set('#8a7a6a');hemi.intensity=1.25;amb.intensity=.35;sunL.intensity=1.1;sunL.color.set('#fff4e0');sunDir.set(.3,1,.5).normalize();W.winMat.color.set('#bfe0ff');setNight(0);return}
-  tc.copy(NIGHT).lerp(DAY,dayK).lerp(DUSK,dusk*.55);scene.background=sky?null:tc.clone();scene.fog.color.copy(tc);scene.fog.near=90;scene.fog.far=dayK>.3?520:260;
+  if(P.world!=='out'){const r=G.rooms[P.world];scene.background=tc.set('#141414').clone();scene.fog.color.set('#141414');scene.fog.near=34;scene.fog.far=60;hemi.color.set(r.light);hemi.groundColor.set('#8a7a6a');hemi.intensity=1.25;amb.intensity=.35;sunL.intensity=1.1;sunL.color.set('#fff4e0');sunDir.set(.3,1,.5).normalize();W.winMat.color.set('#bfe0ff');setNight(0);setFar();return}
+  tc.copy(NIGHT).lerp(DAY,dayK).lerp(DUSK,dusk*.55);scene.background=sky?null:tc.clone();scene.fog.color.copy(tc);scene.fog.near=90;scene.fog.far=dayK>.3?520:260;setFar();
   const twi=alt<0?clamp((alt+.24)/.24,0,1):1;
   if(sky){const sAlt=alt>-.24?Math.max(alt,.012):alt;const sd=new THREE.Vector3(Math.cos(a)*.85,sAlt,-.45).normalize();sky.material.uniforms.sunPosition.value.copy(sd);renderer.toneMappingExposure=(.5+.42*dayK)*(.25+.75*twi)}
   if(alt>-.05){sunDir.set(Math.cos(a)*.8,Math.max(alt,.18),-.45).normalize();sunL.color.copy(C('#ffc58a')).lerp(C('#fff4e2'),dayK);sunL.intensity=.8+2.6*dayK}
@@ -148,7 +152,7 @@ function loadTown(id){if(!TOWNS[id])id='vashupur';
   Object.assign(G,{colliders:[],triggers:[],pick:[],npcs:[],zones:[],buildings:[],rooms:{},beans:[],seats:[],chairs:[],blocked:[],camCols:[],cranes:[],extraNPCs:[],noGrass:[],grassPolys:[],mapPolys:[]});
   for(const k of Object.keys(W))delete W[k];
   curTown=id;G.TOWN=id;LS.set('ow_town',id);const T=TOWNS[id];party=false;evPhase=-1;tour=null;closeDlg&&$('.ow-dlg')&&closeDlg();
-  townRoot=new THREE.Group();scene.add(townRoot);
+  townRoot=new THREE.Group();scene.add(townRoot);lazy=[];
   buildWorld(townRoot);spawnTown(townRoot);
   W.ground.material=groundMaterial(!!T.snow);W.clouds.visible=false;W.sun.visible=false;
   if(T.snow){const n=1600,v=new Float32Array(n*3);for(let i=0;i<n;i++){v[i*3]=(Math.random()-.5)*70;v[i*3+1]=Math.random()*26;v[i*3+2]=(Math.random()-.5)*70}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(v,3));W.snow=new THREE.Points(g,new THREE.PointsMaterial({color:'#ffffff',size:.12,transparent:true,opacity:.85,depthWrite:false}));townRoot.add(W.snow)}
@@ -156,8 +160,19 @@ function loadTown(id){if(!TOWNS[id])id='vashupur';
   grass.U.uMaskMin.value.set(MASK.x0,MASK.z0);grass.U.uMaskSize.value.set(MASK.w,MASK.h);
   makeBeans();if(unlocked)applyUnlock(false);
   MX0=T.b[0];MZ0=T.b[2];MW=T.b[1]-T.b[0];MH=T.b[3]-T.b[2];mapBG();
-  placeAtSpawn();if(running||renderer){setTime();snapCam()}zone(T.name,true);const lb=$('.ow-loc');if(lb){lb.textContent=T.name.toUpperCase();lb.setAttribute('aria-label',T.name+' (double-tap for menu)')}updQuestSafe();
+  placeAtSpawn();collectLazy();if(fontsOK)streamNear(P.pos,70);if(running||renderer){setTime();snapCam()}zone(T.name,true);const lb=$('.ow-loc');if(lb){lb.textContent=T.name.toUpperCase();lb.setAttribute('aria-label',T.name+' (double-tap for menu)')}updQuestSafe();
   if(!visited.has(id)){visited.add(id);LS.set('ow_visited',[...visited]);if(visited.size>=6)G.host.egg('ow_alltowns','You visited all six towns. Frequent rider.')}}
+/* ---- texture streaming: signs and posters are painted nearest-first, a few ms per frame ---- */
+let lazy=[],fontsOK=false,lazyT=0;const _v=new THREE.Vector3(),_s=new THREE.Sphere();
+function collectLazy(){const seen=new Set(lazy.map(e=>e.t));townRoot.updateMatrixWorld(true);
+  townRoot.traverse(o=>{const ms=o.material?(Array.isArray(o.material)?o.material:[o.material]):null;if(!ms)return;for(const m of ms)for(const k of['map','emissiveMap','alphaMap']){const t=m[k];if(!t||!t.userData||!t.userData.lazy)continue;
+    if(o.geometry){if(!o.geometry.boundingSphere)o.geometry.computeBoundingSphere();_s.copy(o.geometry.boundingSphere).applyMatrix4(o.matrixWorld)}else{o.getWorldPosition(_s.center);_s.radius=1}
+    const e=lazy.find(q=>q.t===t);if(e){e.p.push(_s.center.clone());e.r=Math.max(e.r,_s.radius)}else{seen.add(t);lazy.push({t,p:[_s.center.clone()],r:_s.radius,d:0})}}})}
+function distOf(e,p){let d=1e9;for(const q of e.p){const v=Math.hypot(q.x-p.x,q.z-p.z);if(v<d)d=v}return d-e.r}
+function streamNear(p,R){lazy=lazy.filter(e=>{if(!e.t.userData.lazy)return false;if(distOf(e,p)<R){drawTex(e.t);return false}return true})}
+function lazyTick(){if(!fontsOK||!lazy.length)return;const t0=performance.now();lazyT-=1;
+  if(lazyT<=0){lazyT=15;const p=P.world==='out'?P.pos:(G.rooms[P.world]?_v.set(G.rooms[P.world].spawn.x,0,G.rooms[P.world].spawn.z):P.pos);for(const e of lazy)e.d=distOf(e,p);lazy.sort((a,b)=>a.d-b.d)}
+  const budget=lazy[0].d<60?6:3;while(lazy.length&&performance.now()-t0<budget){const e=lazy.shift();drawTex(e.t)}}
 function updQuestSafe(){try{updQuest()}catch(e){}}
 function beanHint(){const left=ORDER.filter(t=>BEANS.some((b,i)=>b.t===t&&!beansGot.has(i))).map(t=>TOWNS[t].name);return left.length?' Still missing some in: '+left.join(', ')+'.':''}
 function openBus(){const o=$('.ow-bus');const l=o.querySelector('.ow-towns');l.innerHTML='';
@@ -172,12 +187,12 @@ function openLift(T){const o=$('.ow-lift');o.querySelector('.k').textContent='Li
 function tpTo(x,y,z,yaw,label){snd.door();fade(()=>{if(P.ride)dismount();P.world='out';P.pos.set(x,y,z);P.vel.set(0,0,0);P.yaw=yaw||0;cam.yaw=(yaw||0)+Math.PI;cam.pitch=.42;inp.target=null;marker.visible=false;setTime();zone(label||TOWNS[curTown].name,true);snapCam()})}
 
 function fade(fn){const f=$('.ow-fade');f.classList.add('on');setTimeout(()=>{fn();setTimeout(()=>f.classList.remove('on'),60)},RM?0:260)}
-function enterRoom(id){const r=G.rooms[id];if(!r)return;snd.door();fade(()=>{if(r.build){r.build();r.build=null}if(r.refresh)r.refresh();if(P.ride)dismount();P.pos.set(r.spawn.x,0,r.spawn.z);P.vel.set(0,0,0);P.world=id;cam.yaw=0;cam.pitch=.55;cam.tdist=Math.min(cam.tdist,7.5);P.yaw=Math.PI;inp.target=null;marker.visible=false;setTime();zone(r.name,true);snapCam()})}
+function enterRoom(id){const r=G.rooms[id];if(!r)return;snd.door();fade(()=>{if(r.build){r.build();r.build=null;collectLazy()}if(r.refresh)r.refresh();streamNear(new THREE.Vector3(r.spawn.x,0,r.spawn.z),40);if(P.ride)dismount();P.pos.set(r.spawn.x,0,r.spawn.z);P.vel.set(0,0,0);P.world=id;cam.yaw=0;cam.pitch=.55;cam.tdist=Math.min(cam.tdist,7.5);P.yaw=Math.PI;inp.target=null;marker.visible=false;setTime();zone(r.name,true);snapCam()})}
 function exitRoom(id){const r=G.rooms[id];snd.door();fade(()=>{const o=r.out;P.pos.set(o.x+o.fx*1.2,o.y||0,o.z+o.fz*1.2);P.vel.set(0,0,0);P.world='out';P.yaw=Math.atan2(o.fx,o.fz);cam.yaw=Math.atan2(o.fx,o.fz)+.7;cam.pitch=.42;inp.target=null;marker.visible=false;setTime();zone('',true);snapCam()})}
 
 /* ================= main loop ================= */
 let curAct=null,actT=0,timeT=0,mapT=0,barkT=2;
-function loop(t){if(!running)return;requestAnimationFrame(loop);const dt=Math.min(.05,(t-last)/1000);last=t;
+function loop(t){if(!running)return;requestAnimationFrame(loop);const dt=Math.min(.05,(t-last)/1000);last=t;lazyTick();
   try{update(dt,t/1000)}catch(e){console.error(e)}
   renderer.render(scene,camera)}
 const fw=new THREE.Vector3(),tmp=new THREE.Vector3();
@@ -284,7 +299,7 @@ function talk(n){if(n.c&&n.c.rotation&&n.kind!=='dog'&&n.kind!=='cat'&&!n.lie&&!
   if(n.kind==='cat')return dlg(n.name,['Mrrp. (The cat permits exactly one pat.)']);
   if(n===W.politician)return dlg(n.name,evPhase===0?['Brother! Sister! You came to my rally!','Vote Kettle! I promise… everything. Details after elections.']:['The rally is over. Come back later. Also, vote Kettle.']);
   dlg(n.name,n.lines||['…'],null,n)}
-function guideTalk(n){if(tour)return dlg(n.name,['We\'re on the tour! Follow me.'],[{t:'Keep going',f:null},{t:'End the tour',f:()=>{tour=null;n.c.position.set(-15,0,69.8)}}]);
+function guideTalk(n){if(tour)return dlg(n.name,['We\'re on the tour! Follow me.'],[{t:'Keep going',f:null},{t:'End the tour',f:()=>{tour=null;n.c.position.set(-120,0,141.5)}}]);
   dlg('Mini-Vashu (guide)',['Hey! I\'m Mini-Vashu, the tiny tour guide of Vashupur.','There are six towns, and the bus is the only way between them. This one is the capital. Want the tour?'],[{t:'Yes, show me around',f:()=>{tour={i:0,wait:0,said:-1};toast('TOUR STARTED','Follow Mini-Vashu. He waits for you.')}},{t:'I\'ll explore myself',f:null}])}
 
 /* ================= info card & CV ================= */
@@ -311,7 +326,7 @@ function lakeCheck(){const L=W.lake;if(!L)return;if(Math.hypot(P.pos.x-L.x,P.pos
 function ambientTick(dt,T){if(G.cranes)for(const c of G.cranes){c.g.rotation.y+=c.sp*dt;}if(G.cranes&&G.cranes[0])G.cranes[0].red.material.color.set(Math.sin(T*3)>.4?'#ff2d2d':'#5a1010');
   if(W.snow){const a=W.snow.geometry.attributes.position,v=a.array;for(let i=0;i<v.length;i+=3){v[i+1]-=dt*(1.2+(i%7)*.12);v[i]+=Math.sin(T+i)*dt*.3;if(v[i+1]<0)v[i+1]+=26}a.needsUpdate=true;W.snow.position.set(P.pos.x,P.pos.y,P.pos.z)}
   if(W.signals){const t=T%16;for(const L of W.signals){const ns=L.axis==='ns';const ph=ns?(t<6.5?'g':t<8?'a':'r'):(t<8?'r':t<14.5?'g':'a');L.r.material.color.set(ph==='r'?'#ff2d2d':'#3a0d0d');L.a.material.color.set(ph==='a'?'#ffb300':'#3a2a05');L.g.material.color.set(ph==='g'?'#2ee66b':'#0b3a1a')}}
-  if(W.booms)for(const b of W.booms){const near=P.world==='out'&&Math.abs(P.pos.x-b.x)<9&&P.pos.z>b.z-12&&P.pos.z<b.z+9;b.open+=((near?1:0)-b.open)*Math.min(1,dt*3);b.g.rotation.z=b.open*1.35}
+  if(W.booms)for(const b of W.booms){const near=P.world==='out'&&Math.abs(P.pos.x-b.x)<(b.w||5)+5&&P.pos.z>b.z-14&&P.pos.z<b.z+12;b.open+=((near?1:0)-b.open)*Math.min(1,dt*3);b.g.rotation.z=b.open*1.35}
   if(W.steam)W.steam.forEach(s=>{const k=(T*.4+s.userData.o)%1;const sa=W.steamAt||[0,0];s.position.set(sa[0]+Math.sin(k*9+s.userData.o*7)*.4,1.5+k*3,sa[1]+Math.cos(k*7)*.3);s.material.opacity=.45*(1-k);s.scale.setScalar(.6+k)});
   W.clouds.position.x=((T*.8)%400)-200;
   if(W.holo){W.holo[0].rotation.set(Math.PI/2+Math.sin(T*.6)*.3,T*.8,0);W.holo[1].rotation.set(Math.PI/2,0,T*1.2);W.holo[1].rotation.x=T*.9}
@@ -342,8 +357,8 @@ function npcTick(dt,T){const px=P.pos.x,pz=P.pos.z,now=performance.now();
     if(n.lie){c.rotation.x=-Math.PI/2;p.y=.3}
     if(c.userData.legL)anim(c,dt,{speed:sp,sit:n.sit&&!sp,emote:sp?null:em})}}
 function turn(c,ty,dt){let d=ty-c.rotation.y;d=Math.atan2(Math.sin(d),Math.cos(d));c.rotation.y+=d*Math.min(1,dt*8)}
-const STOPS=[{p:[[-10,69.5]],t:'Welcome to Vashupur, the capital. Roundabout, coffee-cup fountain, and a bus to five more towns.'},{p:[[-10,58.4],[12,58.4],[60,58.4]],t:'The Boring Wear. Plain clothes, done properly. Walk in and have a look.'},{p:[[12,58.4],[5,52],[5,31]],t:'Outpulse Labs, my company. We build identity. The front door is right here.'},{p:[[5,5],[60,5]],t:'TOKI. Specialty coffee downstairs, my studio upstairs. Brew yourself a cup.'},{p:[[5,5],[-5,-3.5],[-74,-3.5]],t:'Outpulse Residential Towers. Two towers, thirteen floors of flats, lifts that actually work. Entry gate here, exit gate there.'},{p:[[-5,-3.5],[5,-5],[25,-5]],t:'The Police Station. They arrested Scope Creep this morning.'},{p:[[52,-5]],t:'The Vashu Museum. My whole journey under one dome. Entry is free.'},{p:[[78,-5]],t:'The Fire Station. Ring the bell outside, slide down the pole inside.'},{p:[[5,-5],[-5,6],[-28,12]],t:'The town square: my results in giant numbers, a phone booth and a DJ booth. Tour done, thanks for walking with me!'}];
-function guideTick(n,dt){const c=n.c,p=c.position;if(!tour){const dx=-15-p.x,dz=69.8-p.z,d=Math.hypot(dx,dz);if(d>.5){p.x+=dx/d*5*dt;p.z+=dz/d*5*dt;turn(c,Math.atan2(dx,dz),dt);return 5}turn(c,Math.atan2(P.pos.x-p.x,P.pos.z-p.z),dt);return 0}
+const STOPS=[{p:[[-120,141.5]],t:'Welcome to Vashupur, the capital. This is the bus stand: buses to all five other towns leave from here.'},{p:[[-120,128.5],[-62,128.5]],t:'The Fire Station, right next to the bus stand. Ring the bell outside, slide down the pole inside.'},{p:[[-26,128.5],[-26,110.5],[26,110.5],[140,110.5]],t:'The Boring Wear. Plain clothes, done properly. Walk in and have a look.'},{p:[[26,110.5],[9,96],[9,60]],t:'Outpulse Labs, my company. We build identity. The front door is right here.'},{p:[[9,9],[140,9]],t:'TOKI. Specialty coffee downstairs, my studio upstairs. Brew yourself a cup.'},{p:[[9,9],[-9,-9],[-141,-9]],t:'Outpulse Residential Towers. Two towers, thirteen floors of flats, lifts that actually work. Entry gate here, exit gate further on.'},{p:[[-9,-9],[39,-9]],t:'The Police Station. They arrested Scope Creep this morning.'},{p:[[100,-9]],t:'The Vashu Museum. My whole journey under one dome. Entry is free.'},{p:[[9,-9],[-9,9],[-53,30]],t:'The town square: my results in giant numbers, a phone booth and a DJ booth. Tour done, thanks for walking with me!'}];
+function guideTick(n,dt){const c=n.c,p=c.position;if(!tour){const dx=-120-p.x,dz=141.5-p.z,d=Math.hypot(dx,dz);if(d>.5){p.x+=dx/d*5*dt;p.z+=dz/d*5*dt;turn(c,Math.atan2(dx,dz),dt);return 5}turn(c,Math.atan2(P.pos.x-p.x,P.pos.z-p.z),dt);return 0}
   const st=STOPS[tour.i];const wp=st.p[tour.w||0];const dx=wp[0]-p.x,dz=wp[1]-p.z,d=Math.hypot(dx,dz);const pd=Math.hypot(P.pos.x-p.x,P.pos.z-p.z);
   if(P.world!=='out'){return 0}
   if(d>.5){if(pd>11){if(!tour.kept){tour.kept=1;bubble(n,'Keep up!')}turn(c,Math.atan2(P.pos.x-p.x,P.pos.z-p.z),dt);return 0}tour.kept=0;p.x+=dx/d*5.2*dt;p.z+=dz/d*5.2*dt;turn(c,Math.atan2(dx,dz),dt);return 5.2}
@@ -359,7 +374,7 @@ function eventTick(dt,T){if(!W.event){snd.setScene({concert:0,rally:false,party:
   if(evPhase===0){rallyT-=dt;if(near&&rallyT<=0){rallyT=4.6;const line=RALLY[rallyI%RALLY.length];rallyI++;sub('Shri Vaada Kumar',line);snd.gibber(line.length);W.crowd.forEach(c=>{c.emote=Math.random()<.5?'clap':null});if(P.state==='sit'&&P.seat&&P.seat.event){heard++;if(heard>=5)G.host.egg('ow_rally','You sat through a whole rally. Patience: maxed.')}}if(!near)sub(null)}
   else{sub(null);if(near){concertT+=dt;if(concertT>20)G.host.egg('ow_concert','You attended The Crema Boys live.')}}
   snd.setScene({concert:evPhase===1&&near?clamp(1-(d-8)/16,0,1):0,rally:evPhase===0&&near,party:party&&P.world==='out'&&Math.hypot(P.pos.x-(W.partyAt||[0,0])[0],P.pos.z-(W.partyAt||[0,0])[1])<40,indoor:P.world!=='out'?P.world:null})}
-function setPhase(){const rally=evPhase===0;W.bannerMesh.material.map=rally?W.banner.rally:W.banner.concert;W.bannerMesh.material.needsUpdate=true;W.podium.visible=rally;W.politician.hidden=!rally;W.band.forEach(b=>b.hidden=rally);
+function setPhase(){const rally=evPhase===0;W.bannerMesh.material.map=rally?W.banner.rally:W.banner.concert;drawTex(W.bannerMesh.material.map);W.bannerMesh.material.needsUpdate=true;W.podium.visible=rally;W.politician.hidden=!rally;W.band.forEach(b=>b.hidden=rally);
   const seats=[1,2,4,7,8,10,13,15,19,22];G.chairs.forEach(c=>c.taken=false);
   W.crowd.forEach((n,i)=>{const p=n.c.position;if(rally){const ch=G.chairs[seats[i]];ch.taken=true;G.seats.filter(s=>s.event&&Math.abs(s.x-ch.x)<.1&&Math.abs(s.z-.05-ch.z)<.1).forEach(s=>s.taken=true);p.set(ch.x,.18,ch.z);n.c.rotation.y=0;n.sit=true;n.emote=null}else{n.sit=false;p.set(-36+(i%5)*4+Math.random(),0,53+Math.floor(i/5)*2.2);n.c.rotation.y=0;n.emote=i%3?'cheer':'dance'}})}
 function sub(name,line){const s=$('.ow-sub');if(!name){s.hidden=true;return}s.hidden=false;s.innerHTML='<b></b> <span></span>';s.firstChild.textContent=name+':';s.lastChild.textContent=line}
@@ -376,7 +391,7 @@ let zt;function zone(name,force){if(name===zoneName&&!force)return;zoneName=name
 let MX0=-100,MZ0=-56,MW=200,MH=150;const MS=3;let bg;
 function mapBG(){const T=TOWNS[curTown];bg=document.createElement('canvas');bg.width=MW*MS;bg.height=MH*MS;const x=bg.getContext('2d');const R=(x0,x1,z0,z1,c)=>{x.fillStyle=c;x.fillRect((x0-MX0)*MS,(z0-MZ0)*MS,(x1-x0)*MS,(z1-z0)*MS)};
   R(MX0,MX0+MW,MZ0,MZ0+MH,T.snow?'#e6edf2':'#79c267');for(const r of T.roads){if(r[4]==='x')R(r[0],r[1],r[2]-2,r[3]+2,'#cfc7b6');else R(r[0]-2,r[1]+2,r[2],r[3],'#cfc7b6')}for(const r of T.roads)R(r[0],r[1],r[2],r[3],'#545861');
-  if(curTown==='vashupur'){R(-44,-12,14,46,'#e9dfca');x.fillStyle='#545861';x.beginPath();x.arc((0-MX0)*MS,(63.2-MZ0)*MS,11.7*MS,0,7);x.fill();x.fillStyle='#cfe3c0';x.beginPath();x.arc((0-MX0)*MS,(63.2-MZ0)*MS,7.5*MS,0,7);x.fill()}
+  if(curTown==='vashupur'){R(-69,-37,40.7,72.7,'#e9dfca');const rd=T.round;x.fillStyle='#545861';x.beginPath();x.arc((rd.x-MX0)*MS,(rd.z-MZ0)*MS,rd.r1*MS,0,7);x.fill();x.fillStyle='#cfe3c0';x.beginPath();x.arc((rd.x-MX0)*MS,(rd.z-MZ0)*MS,rd.r0*MS,0,7);x.fill()}
   if(curTown==='memepura'){R(20,44,26,44,'#6dbb5c');x.fillStyle='#3fa7e0';x.beginPath();x.arc((64-MX0)*MS,(64-MZ0)*MS,13*MS,0,7);x.fill();R(22,94,9,9.6,'#141414')}
   if(curTown==='basti'){R(-46,-10,26,68,'#8fd07a');R(-40,-16,58,64,'#2b2b2b')}
   for(const p of(G.mapPolys||[])){x.fillStyle=p.col;x.beginPath();p.pts.forEach(([px,pz],i)=>{const X=(px-MX0)*MS,Y=(pz-MZ0)*MS;i?x.lineTo(X,Y):x.moveTo(X,Y)});x.closePath();x.fill()}

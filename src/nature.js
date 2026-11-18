@@ -1,4 +1,4 @@
-import {THREE,G,rng,tex} from './core.js';
+import {THREE,G,rng,texNow as tex} from './core.js';
 import {Sky} from 'three/examples/jsm/objects/Sky.js';
 
 const NOISE=`

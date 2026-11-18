@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import {mergeGeometries} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 export {THREE};
 export const G={colliders:[],triggers:[],pick:[],npcs:[],zones:[],buildings:[],rooms:{},beans:[],tick:[],host:{egg(){},toast(){},open(){},RM:false}};
 export const clamp=(v,a,b)=>v<a?a:v>b?b:v;
@@ -7,15 +6,27 @@ export const lerp=(a,b,t)=>a+(b-a)*t;
 export function rng(seed){let s=seed>>>0;return()=>{s+=0x6D2B79F5;let t=s;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
 const tmpC=new THREE.Color();
 export class Batch{constructor(){this.g=[]}
-  add(geo,col){const n=geo.attributes.position.count,a=new Float32Array(n*3);tmpC.set(col);for(let i=0;i<n;i++){a[i*3]=tmpC.r;a[i*3+1]=tmpC.g;a[i*3+2]=tmpC.b}geo.setAttribute('color',new THREE.BufferAttribute(a,3));if(!geo.index){geo=geo}this.g.push(geo);return geo}
-  mesh(mat){if(!this.g.length)return new THREE.Object3D();const gs=this.g.map(g=>g.index?g.toNonIndexed():g);const m=new THREE.Mesh(mergeGeometries(gs),mat);this.g=[];return m}}
+  add(geo,col){tmpC.set(col);geo.userData.c=[tmpC.r,tmpC.g,tmpC.b];this.g.push(geo);return geo}
+  mesh(mat){if(!this.g.length)return new THREE.Object3D();const m=new THREE.Mesh(mergeFast(this.g),mat);this.g=[];return m}
+  meshes(mat,cell=64){if(!this.g.length)return[];const groups=new Map();const v=new THREE.Vector3();
+    for(const g of this.g){if(!g.boundingBox)g.computeBoundingBox();g.boundingBox.getCenter(v);const sz=g.boundingBox.max.x-g.boundingBox.min.x+g.boundingBox.max.z-g.boundingBox.min.z;const k=sz>cell*1.5?'big':Math.floor(v.x/cell)+','+Math.floor(v.z/cell);(groups.get(k)||groups.set(k,[]).get(k)).push(g)}
+    const out=[];for(const gs of groups.values())out.push(new THREE.Mesh(mergeFast(gs),mat));this.g=[];return out}}
+function mergeFast(gs){let n=0;for(const g of gs)n+=g.index?g.index.count:g.attributes.position.count;
+  const P=new Float32Array(n*3),N=new Float32Array(n*3),C=new Float32Array(n*3);let o=0;
+  for(const g of gs){const p=g.attributes.position.array;let nr=g.attributes.normal;if(!nr){g.computeVertexNormals();nr=g.attributes.normal}const q=nr.array;const c=g.userData.c||[1,1,1];const idx=g.index?g.index.array:null;const cnt=idx?idx.length:p.length/3;
+    for(let i=0;i<cnt;i++){const j=(idx?idx[i]:i)*3,k=o*3;P[k]=p[j];P[k+1]=p[j+1];P[k+2]=p[j+2];N[k]=q[j];N[k+1]=q[j+1];N[k+2]=q[j+2];C[k]=c[0];C[k+1]=c[1];C[k+2]=c[2];o++}}
+  const r=new THREE.BufferGeometry();r.setAttribute('position',new THREE.BufferAttribute(P,3));r.setAttribute('normal',new THREE.BufferAttribute(N,3));r.setAttribute('color',new THREE.BufferAttribute(C,3));r.computeBoundingSphere();return r}
 export function bx(b,x,y,z,w,h,d,col,ry=0,rx=0,rz=0){const g=new THREE.BoxGeometry(w,h,d);if(rx)g.rotateX(rx);if(rz)g.rotateZ(rz);if(ry)g.rotateY(ry);g.translate(x,y,z);b.add(g,col);return g}
 export function cyl(b,x,y,z,r1,r2,h,col,seg=12){const g=new THREE.CylinderGeometry(r1,r2,h,seg);g.translate(x,y,z);b.add(g,col);return g}
 export function col(x0,x1,y0,y1,z0,z1,o){const c={x0:Math.min(x0,x1),x1:Math.max(x0,x1),y0,y1,z0:Math.min(z0,z1),z1:Math.max(z0,z1)};if(o)Object.assign(c,o);G.colliders.push(c);return c}
 export function blk(b,x0,x1,y0,y1,z0,z1,c,collide=true,o){bx(b,(x0+x1)/2,(y0+y1)/2,(z0+z1)/2,Math.abs(x1-x0),y1-y0,Math.abs(z1-z0),c);if(collide)return col(x0,x1,y0,y1,z0,z1,o)}
 
 /* ---------- canvas textures ---------- */
-export function tex(w,h,draw){const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');draw(x,w,h);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t}
+/* Canvas textures are drawn lazily: a cheap placeholder until the thing using it comes near (see game.js lazyTick). */
+const PH=(()=>{const c=document.createElement('canvas');c.width=c.height=4;const x=c.getContext('2d');x.fillStyle='#cfcac0';x.fillRect(0,0,4,4);return c})();
+export function texNow(w,h,draw){const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');draw(x,w,h);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t}
+export function tex(w,h,draw){const t=new THREE.CanvasTexture(PH);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;t.userData.lazy={w,h,draw};return t}
+export function drawTex(t){const L=t&&t.userData.lazy;if(!L)return false;const c=document.createElement('canvas');c.width=L.w;c.height=L.h;L.draw(c.getContext('2d'),L.w,L.h);t.image=c;t.needsUpdate=true;t.userData.lazy=null;return true}
 export function wrap(x,text,maxW){const words=String(text).split(' '),lines=[];let l='';for(const w of words){const t=l?l+' '+w:w;if(x.measureText(t).width>maxW&&l){lines.push(l);l=w}else l=t}if(l)lines.push(l);return lines}
 export function lum(hex){tmpC.set(hex);return .2126*tmpC.r+.7152*tmpC.g+.0722*tmpC.b}
 export const FONT_T='"Bricolage Grotesque","Inter Tight",Arial,sans-serif',FONT_D='Anton,Impact,sans-serif';
@@ -26,7 +37,7 @@ export function signTex(text,bg,fg,w=512,h=128,font=FONT_D){return tex(w,h,(x,W,
 export const CHM=new THREE.MeshLambertMaterial({vertexColors:true});
 const faceCache={};
 function faceMat(style,skin){const k=style;if(faceCache[k])return faceCache[k];
-  const t=tex(64,64,(x)=>{x.clearRect(0,0,64,64);x.fillStyle='#1a1410';
+  const t=texNow(64,64,(x)=>{x.clearRect(0,0,64,64);x.fillStyle='#1a1410';
     const eye=(cx)=>{if(style==='calm'){x.fillRect(cx-5,27,10,3)}else{x.fillRect(cx-4,22,8,10);x.fillStyle='#fff';x.fillRect(cx-2,23,3,3);x.fillStyle='#1a1410'}};
     if(style==='cry'){eye(20);eye(44);x.fillStyle='#4aa8ff';x.fillRect(16,32,4,14);x.fillRect(44,32,4,14);x.fillStyle='#1a1410';x.fillRect(24,48,16,3);x.fillRect(22,51,3,3);x.fillRect(39,51,3,3)}
     else{eye(20);eye(44);x.lineWidth=4;x.strokeStyle='#1a1410';x.beginPath();

@@ -5,6 +5,7 @@ import {buildDistricts,pine,palm} from './districts.js';
 import {makeLot,COOKING} from './lots.js';
 import {TOWNS} from './towns.js';
 import {mark,move} from './relocate.js';
+import {inst,flushInst} from './inst.js';
 import {buildLandmarks,extraRooms} from './landmarks.js';
 import {buildDowntown} from './downtown.js';
 export const W={};
@@ -31,25 +32,25 @@ export function buildWorld(scene){
   /* ground */
   const gnd=new THREE.Mesh(new THREE.PlaneGeometry(900,900),new THREE.MeshLambertMaterial({color:'#79c267'}));gnd.rotation.x=-Math.PI/2;gnd.receiveShadow=true;scene.add(gnd);W.ground=gnd;
   const minus=(a0,a1,cuts)=>{let sg=[[a0,a1]];for(const [c0,c1] of cuts){const n=[];for(const [s0,s1] of sg){if(c1<=s0||c0>=s1){n.push([s0,s1]);continue}if(c0>s0)n.push([s0,c0]);if(c1<s1)n.push([c1,s1])}sg=n}return sg.filter(s=>s[1]-s[0]>.3)};
-  const road=r=>{const [x0,x1,z0,z1,along]=r;blk(S,x0,x1,0,.04,z0,z1,'#545861',false);
-    if(along==='x'){const cr=RD.filter(q=>q[4]==='z'&&q[2]<z1+2&&q[3]>z0-2);
+  const SW=(TD.road&&TD.road.side)||2;const road=r=>{const [x0,x1,z0,z1,along]=r;blk(S,x0,x1,0,.04,z0,z1,'#545861',false);
+    if(along==='x'){const cr=RD.filter(q=>q[4]==='z'&&q[2]<z1+SW&&q[3]>z0-SW);
       for(const [a,b] of minus(x0,x1,cr.map(q=>[q[0],q[1]])))for(let x=a+1.5;x<b-1;x+=3.2)bx(S,x,.045,(z0+z1)/2,1.6,.01,.18,'#f4efe6');
-      for(const [a,b] of minus(x0,x1,cr.filter(q=>q[2]<z0-1).map(q=>[q[0],q[1]])))blk(S,a,b,0,.07,z0-2,z0,'#cfc7b6',false);
-      for(const [a,b] of minus(x0,x1,cr.filter(q=>q[3]>z1+1).map(q=>[q[0],q[1]])))blk(S,a,b,0,.07,z1,z1+2,'#cfc7b6',false)}
-    else{const cr=RD.filter(q=>q[4]==='x'&&q[0]<x1+2&&q[1]>x0-2);
+      for(const [a,b] of minus(x0,x1,cr.filter(q=>q[2]<z0-1).map(q=>[q[0],q[1]])))blk(S,a,b,0,.07,z0-SW,z0,'#cfc7b6',false);
+      for(const [a,b] of minus(x0,x1,cr.filter(q=>q[3]>z1+1).map(q=>[q[0],q[1]])))blk(S,a,b,0,.07,z1,z1+SW,'#cfc7b6',false)}
+    else{const cr=RD.filter(q=>q[4]==='x'&&q[0]<x1+SW&&q[1]>x0-SW);
       for(const [a,b] of minus(z0,z1,cr.map(q=>[q[2],q[3]])))for(let z=a+1.5;z<b-1;z+=3.2)bx(S,(x0+x1)/2,.045,z,.18,.01,1.6,'#f4efe6');
-      for(const [a,b] of minus(z0,z1,cr.map(q=>[q[2]-2,q[3]+2]))){blk(S,x0-2,x0,0,.07,a,b,'#cfc7b6',false);blk(S,x1,x1+2,0,.07,a,b,'#cfc7b6',false)}}};
+      for(const [a,b] of minus(z0,z1,cr.map(q=>[q[2]-SW,q[3]+SW]))){blk(S,x0-SW,x0,0,.07,a,b,'#cfc7b6',false);blk(S,x1,x1+SW,0,.07,a,b,'#cfc7b6',false)}}};
   RD.forEach(road);
 
 
 
   /* plaza */
-  if(on('vashupur'))for(let i=0;i<8;i++)for(let j=0;j<8;j++)blk(S,-44+i*4,-40+i*4,0,.06,14+j*4,18+j*4,(i+j)%2?'#e9dfca':'#ddd0b4',false);
+  if(on('vashupur'))for(let i=0;i<8;i++)for(let j=0;j<8;j++)blk(S,-69+i*4,-65+i*4,0,.06,40.7+j*4,44.7+j*4,(i+j)%2?'#e9dfca':'#ddd0b4',false);
   /* lamps */
   const lampPos=[];const lamp=(x,z)=>{blk(S,x-.1,x+.1,0,4.4,z-.1,z+.1,'#2c2f36',true);bx(S,x,4.45,z,.5,.12,.5,'#2c2f36');bx(LMP,x,4.3,z,.36,.2,.36,'#ffffff');lampPos.push([x,z])};
   const onRoad=(x,z)=>RD.some(q=>x>q[0]-.7&&x<q[1]+.7&&z>q[2]-.7&&z<q[3]+.7);
-  for(const q of RD){const [x0,x1,z0,z1,ax]=q;let k=0;if(ax==='x'){for(let x=x0+6;x<x1-3;x+=13){const z=(k++%2)?z1+1.4:z0-1.4;if(!onRoad(x,z))lamp(x,z)}}else{for(let z=z0+6;z<z1-3;z+=13){const x=(k++%2)?x1+1.4:x0-1.4;if(!onRoad(x,z))lamp(x,z)}}}
-  if(on('vashupur'))for(const [x,z] of [[-43,15],[-13,15],[-43,45],[-13,45]])lamp(x,z);
+  for(const q of RD){const [x0,x1,z0,z1,ax]=q;let k=0;if(ax==='x'){for(let x=x0+6;x<x1-3;x+=13){const z=(k++%2)?z1+SW*.7:z0-SW*.7;if(!onRoad(x,z))lamp(x,z)}}else{for(let z=z0+6;z<z1-3;z+=13){const x=(k++%2)?x1+SW*.7:x0-SW*.7;if(!onRoad(x,z))lamp(x,z)}}}
+  if(on('vashupur'))for(const [x,z] of [[-68,41.7],[-38,41.7],[-68,71.7],[-38,71.7]])lamp(x,z);
   const poolTex=tex(64,64,(x)=>{const g=x.createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,64,64)});
   const pools=new THREE.InstancedMesh(new THREE.PlaneGeometry(8,8).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({map:poolTex,color:'#ffc870',transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}),lampPos.length);
   const mm=new THREE.Matrix4();lampPos.forEach(([x,z],i)=>{mm.makeTranslation(x,.09,z);pools.setMatrixAt(i,mm)});pools.renderOrder=2;scene.add(pools);W.pools=pools;
@@ -115,7 +116,7 @@ export function buildWorld(scene){
   cyl(S,0,.7,0,1.75,1.5,1.4,'#ffffff',20);cyl(S,0,1.39,0,1.55,1.55,.04,'#6b3e22',20);bx(S,2,.8,0,.5,.9,.25,'#ffffff');col(-1.6,1.6,0,1.4,-1.6,1.6);
   cyl(S,0,.03,0,3.2,3.2,.06,'#b9e3f5',24);
   W.steam=[];for(let i=0;i<5;i++){const m=new THREE.Mesh(new THREE.BoxGeometry(.4,.4,.4),new THREE.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:.5,depthWrite:false}));m.userData.o=i/5;scene.add(m);W.steam.push(m)}
-  move(cpF,[0,0],[0,63.2]);W.steamAt=[0,63.2];const cpP=mark(scene,[S,WIN,LMP]);
+  move(cpF,[0,0],[0,119.5]);W.steamAt=[0,119.5];const cpP=mark(scene,[S,WIN,LMP]);
   const nb=['#ff6a3d','#2f5bff','#c9f26b','#ff8fc1'];
   [[-11,-11],[11,-11],[-11,11],[11,11]].forEach(([x,z],i)=>{blk(S,x-1.7,x+1.7,0,4.6,z-.4,z+.4,'#141414');const t=tex(512,640,(c,w,h)=>{c.fillStyle=nb[i];c.fillRect(0,0,w,h);c.fillStyle=i===1?'#fff':'#141414';c.font='800 200px '+FONT_T;c.textAlign='center';let s=200;while(c.measureText(NUMS[i][0]).width>w-40){s-=10;c.font='800 '+s+'px '+FONT_T}c.fillText(NUMS[i][0],w/2,330);c.font='600 34px '+FONT_T;wrap(c,NUMS[i][1],w-80).forEach((l,j)=>c.fillText(l,w/2,430+j*44))});
     addPlane(scene,3.2,4,t,[x,2.4,z+.42],0,null);addPlane(scene,3.2,4,t,[x,2.4,z-.42],Math.PI,null)});
@@ -130,7 +131,7 @@ export function buildWorld(scene){
   const disco=new THREE.Group();const dball=new THREE.Mesh(new THREE.IcosahedronGeometry(1,1),new THREE.MeshLambertMaterial({color:'#e8e8f0',flatShading:true,emissive:'#333'}));dball.position.y=9;disco.add(dball);
   const beamG=new THREE.ConeGeometry(2.4,9,16,1,true);beamG.translate(0,-4.5,0);const beams=[];['#ff3b8d','#3bd1ff','#c9f26b','#ffcc3a','#a463ff','#ff6a3d'].forEach((c,i)=>{const m=new THREE.Mesh(beamG,new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.18,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}));m.position.y=9;m.rotation.z=.5;m.userData.a=i/6*Math.PI*2;disco.add(m);beams.push(m)});
   const pole=new THREE.Mesh(new THREE.BoxGeometry(.2,2.6,.2),new THREE.MeshLambertMaterial({color:'#333'}));pole.position.y=10.3;disco.add(pole);disco.visible=false;scene.add(disco);W.disco={g:disco,ball:dball,beams};
-  move(cpP,[0,0],[-28,30]);W.partyAt=[-28,30];}
+  move(cpP,[0,0],[-53,56.7]);W.partyAt=[-53,56.7];}
 
   /* ---------- poster street ---------- */
   if(on('memepura'))PROJECTS.forEach((p,i)=>{const x=24+i*5.2;const nn=String(i+1).padStart(2,'0');blk(S,x-2.25,x+2.25,1,6.5,9.2,9.5,'#141414');blk(S,x-.15,x+.15,0,1,9.25,9.45,'#141414');
@@ -142,7 +143,7 @@ export function buildWorld(scene){
 
   /* ---------- water tower cup + construction lot ---------- */
   if(on('vashupur')){const cpW=mark(scene,[S]);for(const [x,z] of[[-26,-38],[-22,-38],[-26,-34],[-22,-34]])blk(S,x-.25,x+.25,0,7,z-.25,z+.25,'#6b6f78');
-  cyl(S,-24,8.5,-36,2.6,2.2,3,'#ffffff',18);cyl(S,-24,8.5,-36,2.62,2.62,.6,'#ff6a3d',18);cyl(S,-24,10.01,-36,2.45,2.45,.04,'#6b3e22',18);move(cpW,[-24,-36],[-30,82]);}
+  cyl(S,-24,8.5,-36,2.6,2.2,3,'#ffffff',18);cyl(S,-24,8.5,-36,2.62,2.62,.6,'#ff6a3d',18);cyl(S,-24,10.01,-36,2.45,2.45,.04,'#6b3e22',18);move(cpW,[-24,-36],[-78,166]);}
 
 
 
@@ -166,7 +167,7 @@ export function buildWorld(scene){
   // low wall (bean spot)
   if(on('memepura'))blk(S,96,97,0,1.2,20,88,'#c9c2b4');
   // benches
-  if(on('vashupur')){bench(-44.8,30,Math.PI/2);bench(-11.2,30,-Math.PI/2)}if(on('memepura')){bench(52,46,0);bench(78,56,-Math.PI/2);bench(64,80,Math.PI)}if(on('basti'))bench(10,28,-Math.PI/2);
+  if(on('vashupur')){bench(-69.8,56.7,Math.PI/2);bench(-36.2,56.7,-Math.PI/2)}if(on('memepura')){bench(52,46,0);bench(78,56,-Math.PI/2);bench(64,80,Math.PI)}if(on('basti'))bench(10,28,-Math.PI/2);
 
   /* ---------- event ground ---------- */
   if(on('basti')){
@@ -185,16 +186,15 @@ export function buildWorld(scene){
   /* ---------- trees, flowers, hills, bounds ---------- */
   const R=rng(42+TN.length*7);const [bx0,bx1,bz0,bz1]=TD.b;
   const blocked=RD.map(q=>[q[0]-2.5,q[1]+2.5,q[2]-2.5,q[3]+2.5]);
-  if(on('vashupur'))blocked.push([-46,-10,12,48],[-36,-20,47,54],[-15,15,48,78],[5,94,5,58],[38,66,-30,-5],[66,90,74,92],[-33,-27,79,85],[-98,-5,-58,-5],[-32,-19,68,72],[-14,-10,9,14]);
+  if(on('vashupur'))blocked.push([-71,-35,39,75],[-62,-44,92,99],[-27,27,92,147],[10,172,10,109],[85,115,-40,-10],[128,160,148,163],[-81,-75,163,169],[-186,-10,-111,-10],[-172,-82,127,176],[-27,-21,21,27],[-17,-13,15,19]);
   if(on('memepura'))blocked.push([18,46,24,46],[49,79,49,79],[15,98,8,11],[95,99,18,90],[14,22,6,10]);
   if(on('basti'))blocked.push([-47,-9,25,69],[2,12,18,32]);
   if(on('kaapikunj'))blocked.push([-76,-62,6,25],[-16,-9,6,10]);
   if(on('barfii'))blocked.push([-95,-81,10,24],[-36,-26,6,10],[-86,-70,-3,15]);
   blocked.push([TD.spawn.x-6,TD.spawn.x+6,TD.spawn.z-6,TD.spawn.z+6]);
   const free=(x,z)=>!blocked.concat(G.blocked).some(b=>x>b[0]-1.5&&x<b[1]+1.5&&z>b[2]-1.5&&z<b[3]+1.5);
-  const tree=(x,z,s=1)=>{const lc=['#3d6b2c','#4a7a33','#355f28','#557f38','#46702f'];s*=1.25;const tg=new THREE.CylinderGeometry(.13*s,.24*s,2.4*s,7);tg.translate(x,1.2*s,z);S.add(tg,'#5b4330');col(x-.2*s,x+.2*s,0,2.4*s,z-.2*s,z+.2*s);
-    const n=3+Math.floor(R()*3);for(let i=0;i<n;i++){const r=(.9+R()*.7)*s;const g=new THREE.IcosahedronGeometry(r,1);const pa=g.attributes.position;for(let k=0;k<pa.count;k++){const f=.82+R()*.3;pa.setXYZ(k,pa.getX(k)*f,pa.getY(k)*f*.85,pa.getZ(k)*f)}g.computeVertexNormals();
-      g.translate(x+(R()-.5)*1.6*s,(2.6+R()*1.4)*s,z+(R()-.5)*1.6*s);S.add(g,lc[Math.floor(R()*lc.length)])}(G.camCols=G.camCols||[]).push({x0:x-1.7*s,x1:x+1.7*s,y0:1.7*s,y1:5*s,z0:z-1.7*s,z1:z+1.7*s})};
+  const tree=(x,z,s=1)=>{const lc=['#3d6b2c','#4a7a33','#355f28','#557f38','#46702f'];s*=1.25;inst('trunk',x,1.2*s,z,s,s,s,R()*6,'#5b4330');col(x-.2*s,x+.2*s,0,2.4*s,z-.2*s,z+.2*s);
+    const n=3+Math.floor(R()*3);for(let i=0;i<n;i++){const r=(.9+R()*.7)*s;inst('crown'+(i%3),x+(R()-.5)*1.6*s,(2.6+R()*1.4)*s,z+(R()-.5)*1.6*s,r,r*.85,r,R()*6.28,lc[Math.floor(R()*lc.length)])}(G.camCols=G.camCols||[]).push({x0:x-1.7*s,x1:x+1.7*s,y0:1.7*s,y1:5*s,z0:z-1.7*s,z1:z+1.7*s})};
   const plant=(x,z,s)=>{const f=TD.flora;if(f==='pine'||(f==='mix'&&x<-60))pine(S,x,z,s*.8+.3,!!TD.snow||R()<.25);else if(f==='palm'&&R()<.6)palm(S,x,z,5+R()*2.5,.3,Math.floor(Math.abs(x*z)));else tree(x,z,s)};
   let n=0;for(let i=0;i<900&&n<TD.trees;i++){const x=bx0+3+R()*(bx1-bx0-6),z=bz0+3+R()*(bz1-bz0-6);if(free(x,z)){plant(x,z,.8+R()*.5);n++}}
   const cxT=(bx0+bx1)/2,czT=(bz0+bz1)/2,hx=(bx1-bx0)/2,hz=(bz1-bz0)/2;const rect=a=>1/Math.max(Math.abs(Math.cos(a))/hx,Math.abs(Math.sin(a))/hz);
@@ -216,9 +216,10 @@ export function buildWorld(scene){
   /* ---------- rooms ---------- */
   buildRooms(scene,S,RW,WIN,outs);
 
-  /* ---------- finalize batches ---------- */
-  const sm=S.mesh(new THREE.MeshLambertMaterial({vertexColors:true}));sm.castShadow=true;sm.receiveShadow=true;scene.add(sm);
-  W.winMat=new THREE.MeshBasicMaterial({vertexColors:true,color:'#9fc4e6'});scene.add(WIN.mesh(W.winMat));
+  /* ---------- finalize batches: spatial chunks so off-screen parts are skipped ---------- */
+  flushInst(scene);
+  const LM=new THREE.MeshLambertMaterial({vertexColors:true});for(const sm of S.meshes(LM,56)){sm.castShadow=true;sm.receiveShadow=true;scene.add(sm)}
+  W.winMat=new THREE.MeshBasicMaterial({vertexColors:true,color:'#9fc4e6'});for(const wm of WIN.meshes(W.winMat,56))scene.add(wm);
   W.lampMat=new THREE.MeshBasicMaterial({vertexColors:true,color:'#d8d8d8'});scene.add(LMP.mesh(W.lampMat));
   const rw=RW.mesh(new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.BackSide}));rw.receiveShadow=true;scene.add(rw);
   return W}
@@ -341,7 +342,7 @@ export function npc(scene,cfg){const c=makeChar(Object.assign({seed:Math.floor(M
   c.traverse(o=>{if(o.isMesh)o.userData.npc=n});c.userData.tap=()=>G.talk(n);c.userData.reach=4;G.pick.push(c);G.npcs.push(n);return n}
 export function spawnTown(scene){const T=G.TOWN||'vashupur',on=(...a)=>a.includes(T);
   (G.extraNPCs||[]).forEach(c=>npc(scene,c));
-  const LOOPS={vashupur:[[[-44,13],[-12,13],[-12,47],[-44,47]],[[6,5],[88,5],[88,-5],[6,-5]],[[-6,5],[-90,5],[-90,-5],[-6,-5]]],
+  const LOOPS={vashupur:[[[-70,40],[-36,40],[-36,73],[-70,73]],[[12,9],[165,9],[165,-9],[12,-9]],[[-12,9],[-178,9],[-178,-9],[-12,-9]]],
     memepura:[[[18,6],[96,6],[96,-6],[18,-6]],[[48,48],[80,48],[82,80],[48,82]],[[20,6],[60,6],[60,25],[20,25]]],
     kaapikunj:[[[-18,6],[-72,6],[-72,-6],[-18,-6]]],basti:[[[6,18],[6,90],[-6,90],[-6,18]]],barfii:[[[-34,6],[-70,6],[-70,-6],[-34,-6]]],
     delulugarh:[[[-39,17],[39,17],[39,-15],[-39,-15]],[[-50,28],[50,28],[50,15],[-50,15]]]};
@@ -349,12 +350,12 @@ export function spawnTown(scene){const T=G.TOWN||'vashupur',on=(...a)=>a.include
   const lp=LOOPS[T]||[];let li=0;
   MEMERS.forEach((m,i)=>{if(HOME[m.name]!==T)return;const base={name:m.name,look:m.look,lines:m.lines,barks:m.barks,emote:m.emote||null};
     if(m.lie)return npc(scene,Object.assign(base,{x:32,z:48.5,yaw:0,lie:true}));
-    if(m.name.startsWith('Aura'))return npc(scene,Object.assign(base,{x:-28,z:24,yaw:0,emote:'pose'}));
+    if(m.name.startsWith('Aura'))return npc(scene,Object.assign(base,{x:-53,z:48,yaw:0,emote:'pose'}));
     const path=lp[li++%lp.length];npc(scene,Object.assign(base,{x:path[0][0],z:path[0][1],kind:'wander',path,pi:(i*2)%path.length,speed:2.2+((i*37)%10)/10}))});
-  if(on('vashupur')){FREELOADERS.forEach((m,i)=>npc(scene,{name:m.name+' (freeloader client)',look:m.look,lines:m.lines,barks:m.barks,x:i?40:-30,z:i?5:5,kind:'chase',home:[i?40:-30,i?5:5],emote:'beg',free:true}));
-    npc(scene,{id:'guide',name:'Mini-Vashu (guide)',look:{shirt:'#141414',pants:'#8a7f5a',cargo:'#7a6f4c',hair:'curly',glasses:true,hat:null,sash:'#ff6a3d',face:'grin',seed:3},x:-15,z:69.8,yaw:Math.PI,kind:'guide',lines:[],barks:['Tap me for a tour!','Lost? I\'m the guide.']})}
+  if(on('vashupur')){FREELOADERS.forEach((m,i)=>npc(scene,{name:m.name+' (freeloader client)',look:m.look,lines:m.lines,barks:m.barks,x:i?60:-40,z:9,kind:'chase',home:[i?60:-40,9],emote:'beg',free:true}));
+    npc(scene,{id:'guide',name:'Mini-Vashu (guide)',look:{shirt:'#141414',pants:'#8a7f5a',cargo:'#7a6f4c',hair:'curly',glasses:true,hat:null,sash:'#ff6a3d',face:'grin',seed:3},x:-120,z:141.5,yaw:Math.PI,kind:'guide',lines:[],barks:['Tap me for a tour!','Lost? I\'m the guide.']})}
   if(on('kaapikunj')){npc(scene,{id:'farmer',name:'Kaveri (coffee farmer)',look:{shirt:'#5cc46b',pants:'#6b5a3a',hair:'long',hat:'#c9a26b',face:'smile'},x:-70,z:7.3,yaw:Math.PI,lines:[],barks:['My beans!','Have you seen my beans?']})}
-  if(on('vashupur')){npc(scene,{id:'doctor',name:'Dr. Rao',look:{shirt:'#cfe3f7',pants:'#2b2b2b',hair:'grey',coat:'#ffffff',glasses:true,face:'flat'},x:-28,z:11.2,yaw:Math.PI,lines:[],barks:['Coffee, anyone?','Doctor\'s orders: caffeine.']})}
+  if(on('vashupur')){npc(scene,{id:'doctor',name:'Dr. Rao',look:{shirt:'#cfe3f7',pants:'#2b2b2b',hair:'grey',coat:'#ffffff',glasses:true,face:'flat'},x:-53,z:36,yaw:Math.PI,lines:[],barks:['Coffee, anyone?','Doctor\'s orders: caffeine.']})}
   if(on('basti')){
     W.politician=npc(scene,{name:'Shri Vaada Kumar',look:{shirt:'#ffffff',pants:'#ffffff',hair:'bald',mustache:true,face:'grin',long:true,vest:'#ff6a3d'},x:-28,y:1.2,z:59.8,yaw:Math.PI,emote:'talk',lines:['Brother! Sister! Vote Kettle!','I promise… everything. Details later.'],barks:['Vote Kettle!']});
     W.band=[['guitar','#c9f26b','play'],['bass','#3bd1ff','play'],['drums','#ff3b8d','drum'],['keys','#ffcc3a','play']].map(([r,cl,e],i)=>npc(scene,{name:'The Crema Boys ('+r+')',look:{shirt:cl,pants:'#141414',hair:['curly2','long','cap','short'][i],hat:'#141414',shades:i%2===0,face:'grin'},x:-34+i*4,y:1.2,z:60,yaw:Math.PI,emote:e,lines:['We only know one song. It\'s about coffee.','Next song: "Extraction Ballad (Part 2)".'],barks:['Rock on!']}));

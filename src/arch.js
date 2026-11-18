@@ -104,7 +104,7 @@ export function buildArch(scene,ctx){const {S,WIN,LMP,building,addPlane,bench,mo
    G.triggers.push({x:-31,z:-10.3,y:4.2,r:1.6,label:'Enter my studio',act:()=>G.enter('home')});
    outs.home={x:-31,y:4.2,z:-10.6,fx:0,fz:1};G.buildings.push({name:"Vashu's studio (above TOKI)",short:'My studio',x0:-38,x1:-24,z0:-22,z1:-12,col:'#c89b6d',door:{x:-21,z:-6.4},room:'home',upper:true});
    BL(-41,-19,-23,-5)}
-   move(cpT,[-31,-14.5],[74,18.6],2,[outs.cafe,outs.home])}
+   move(cpT,[-31,-14.5],[140,31.5],2,[outs.cafe,outs.home])}
 
   /* ===== GOTHIC — dark gothic boutique ===== */
   if(on('memepura'))outs.gothic=building({name:'Gothic Bakehouse',short:'Gothic',x0:22,x1:36,z0:-22,z1:-8,h:7,col:'#2e2a2d',trim:'#1d1a1c',door:{side:'s',at:29},room:'gothic',win:false,awn:false,doorCol:'#1d1a1c'});
