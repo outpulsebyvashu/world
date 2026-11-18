@@ -104,9 +104,23 @@ function estate(scene,ctx){const {S,addPlane}=ctx;
   for(const [x,z] of[[-74.5,18],[-68.2,14],[-64,22.3]]){cyl(S,x,3.2,z,.14,.2,6.4,'#8a7a66',7);const g=new THREE.ConeGeometry(1.5,3.6,7);g.translate(x,7.4,z);S.add(g,'#5d7f4a');col(x-.2,x+.2,0,6.4,z-.2,z+.2)}
   for(const x of[-72,-66]){blk(S,x-.08,x+.08,0,2.2,11.1,11.3,'#5a3f2a')}addPlane(scene,6.4,.8,signTex('KAAPIKUNJ COFFEE ESTATE','#2f5a2a','#f3eee6',1024,128),[-69,2.25,11.06],PI,null)}
 
+/* ---------- Memepura: the sea, a beach strip and meme billboards ---------- */
+function billboard(scene,ctx,x,z,ry,w,h,t){const {S,addPlane}=ctx;const c=Math.cos(ry),sn=Math.sin(ry);for(const s2 of[-1,1]){const px=x+c*s2*(w/2-.4),pz=z-sn*s2*(w/2-.4);blk(S,px-.15,px+.15,0,3+h,pz-.15,pz+.15,'#2c2f36',true)}
+  bx(S,x-sn*.08,3+h/2,z-c*.08,Math.abs(c)>.5?w+.3:.12,h+.3,Math.abs(c)>.5?.12:w+.3,'#141414');addPlane(scene,w,h,t,[x,3+h/2,z],ry,null)}
+function memeTex(top,big,bg,fg){return tex(900,360,(c,W,H)=>{c.fillStyle=bg;c.fillRect(0,0,W,H);c.fillStyle=fg;c.font='800 30px '+FONT_T;c.fillText(top,36,58);let sz=170;c.font='400 '+sz+'px '+FONT_D;while(c.measureText(big).width>W-70&&sz>60){sz-=8;c.font='400 '+sz+'px '+FONT_D}c.fillText(big,34,70+sz*.95)})}
+function memepura(scene,ctx){const {S}=ctx;
+  blk(S,97,104,0,.03,-40,104,'#ecdcaa',false);
+  const sea=new THREE.Mesh(new THREE.PlaneGeometry(900,900),new THREE.MeshLambertMaterial({color:'#2a86c8'}));sea.rotation.x=-PI/2;sea.position.set(554,.02,30);sea.receiveShadow=true;scene.add(sea);
+  for(let z=-36;z<100;z+=6)bx(S,104.3,.04,z+(z%12?1:0),.6,.02,4.6,'#f4f8fb');
+  billboard(scene,ctx,32,24.6,PI,6.4,2.4,memeTex('LIVE FROM THE PITCH','SKILL ISSUE?','#8a63d2','#ffffff'));
+  billboard(scene,ctx,93.6,34,-PI/2,7,2.6,memeTex('HOW OLD IS THIS BEACH?','SIX SEVEN','#ff8a3d','#141414'));
+  billboard(scene,ctx,57,44.6,PI,6.4,2.4,memeTex('PUBLIC SERVICE ANNOUNCEMENT','TOUCH GRASS →','#5cc46b','#141414'));
+  G.noGrass.push([96,105,-40,104])}
+
 export function buildLandmarks(scene,ctx){const {on}=ctx;const outs={};G.blocked=G.blocked||[];
   busStop(scene,ctx);
   if(on('kaapikunj')){outs.kunj=kunj(scene,ctx);estate(scene,ctx);welcomeArch(scene,ctx,-18,'WELCOME TO KAAPIKUNJ','KAAPIKUNJ · CUP FIRST','#8b6a4a')}
+  if(on('memepura')){memepura(scene,ctx);welcomeArch(scene,ctx,33,'MEMEPURA · VERY ONLINE','WELCOME TO MEMEPURA','#ff3b8d')}
   if(on('vashupur')){outs.museum=museum(scene,ctx);G.noGrass.push([-16.5,16.5,-16.5,16.5],[-11.5,11.5,-31,-24.6],[-7.4,7.4,15.5,18.7])}
   return outs}
 

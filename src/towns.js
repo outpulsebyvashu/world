@@ -19,7 +19,7 @@ export const TOWNS={
     plots:[[-74,-62,-48,-30,'s'],[-58,-46,-48,-30,'s'],[-42,-30,-48,-30,'s'],[-26,-14,-48,-30,'s']],
     zones:[['TOKI',-42,-18,-24,-5],['Vedshree Kunj',-62,-32,6,24],['Coffee Estate',-78,-62,6,26],['Café Strip',-78,-8,-6,6]],
     trees:30,flora:'mix'},
-  memepura:{name:'Memepura',tag:'Meme town. Poster Street, the beach and everyone who is very online.',color:'#ff3b8d',
+  memepura:{ready:true,name:'Memepura',tag:'Meme town. Poster Street, the beach and everyone who is very online.',color:'#ff3b8d',
     b:[12,99,-28,92],
     roads:[[12,99,-4,4,'x']],
     bus:{x:17.4,z:8,ry:PI,bx:21.5,bz:2.4,bry:PI/2},spawn:{x:18,z:5.4,yaw:PI/2},scooter:[27,6.2,0],
