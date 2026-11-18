@@ -61,10 +61,15 @@ function museum(scene,ctx){const {S,WIN,LMP,addPlane,W}=ctx;const st='#efe4cc',d
 
 
 /* ---------- welcome arch across an x-road at x ---------- */
-function welcomeArch(scene,ctx,x,east,west,col){const {S,LMP,addPlane}=ctx;
-  for(const z of[-5.2,5.2]){blk(S,x-.4,x+.4,0,6.6,z-.4,z+.4,col);bx(S,x,6.75,z,1,.3,1,'#f4efe6')}
-  blk(S,x-.35,x+.35,5.3,6.6,-5.2,5.2,col,false);for(let z=-4.8;z<=4.8;z+=.6)bx(LMP,x,5.22,z,.12,.12,.12,'#ffffff');
-  addPlane(scene,8.6,1.1,signTex(east,col,'#ffffff',1024,130),[x+.37,5.95,0],PI/2,null);addPlane(scene,8.6,1.1,signTex(west,col,'#ffffff',1024,130),[x-.37,5.95,0],-PI/2,null)}
+function welcomeArch(scene,ctx,x,east,west,col,zc=0){const {S,LMP,addPlane}=ctx;
+  for(const z of[-5.2,5.2]){blk(S,x-.4,x+.4,0,6.6,zc+z-.4,zc+z+.4,col);bx(S,x,6.75,zc+z,1,.3,1,'#f4efe6')}
+  blk(S,x-.35,x+.35,5.3,6.6,zc-5.2,zc+5.2,col,false);for(let z=-4.8;z<=4.8;z+=.6)bx(LMP,x,5.22,zc+z,.12,.12,.12,'#ffffff');
+  addPlane(scene,8.6,1.1,signTex(east,col,'#ffffff',1024,130),[x+.37,5.95,zc],PI/2,null);addPlane(scene,8.6,1.1,signTex(west,col,'#ffffff',1024,130),[x-.37,5.95,zc],-PI/2,null)}
+/* same arch over a road that runs along z (pillars at x = xc ± 5.2), faces north/south */
+function welcomeArchZ(scene,ctx,z,north,south,col,xc=0){const {S,LMP,addPlane}=ctx;
+  for(const x of[-5.2,5.2]){blk(S,xc+x-.4,xc+x+.4,0,6.6,z-.4,z+.4,col);bx(S,xc+x,6.75,z,1,.3,1,'#f4efe6')}
+  blk(S,xc-5.2,xc+5.2,5.3,6.6,z-.35,z+.35,col,false);for(let x=-4.8;x<=4.8;x+=.6)bx(LMP,xc+x,5.22,z,.12,.12,.12,'#ffffff');
+  addPlane(scene,8.6,1.1,signTex(north,col,'#ffffff',1024,130),[xc,5.95,z-.37],PI,null);addPlane(scene,8.6,1.1,signTex(south,col,'#ffffff',1024,130),[xc,5.95,z+.37],0,null)}
 
 /* ---------- Vedshree Kunj (Kaapikunj): a garden home ---------- */
 function kunj(scene,ctx){const {S,WIN,LMP,addPlane}=ctx;const cr='#f6efe2',tc='#c1693c',wl='#efe2c8';
@@ -117,10 +122,27 @@ function memepura(scene,ctx){const {S}=ctx;
   billboard(scene,ctx,57,44.6,PI,6.4,2.4,memeTex('PUBLIC SERVICE ANNOUNCEMENT','TOUCH GRASS →','#5cc46b','#141414'));
   G.noGrass.push([96,105,-40,104])}
 
+/* ---------- Political Basti: lanes, bunting, two joke parties, a loudspeaker van ---------- */
+function partyTex(name,line,bg,fg,sym){return tex(400,520,(c,W,H)=>{c.fillStyle=bg;c.fillRect(0,0,W,H);c.fillStyle=fg;c.font='800 26px '+FONT_T;c.fillText('VOTE',30,60);let sz=88;c.font='400 '+sz+'px '+FONT_D;while(c.measureText(name).width>W-50&&sz>40){sz-=6;c.font='400 '+sz+'px '+FONT_D}c.fillText(name,28,60+sz);
+  c.lineWidth=10;c.strokeStyle=fg;c.fillStyle=fg;if(sym==='kettle'){c.beginPath();c.arc(W/2,330,70,PI,0);c.lineTo(W/2+70,380);c.lineTo(W/2-70,380);c.closePath();c.fill();c.beginPath();c.moveTo(W/2+70,330);c.lineTo(W/2+130,280);c.stroke();c.beginPath();c.arc(W/2,250,22,PI,0);c.stroke()}
+  else{c.beginPath();c.ellipse(W/2,335,90,55,0,0,7);c.fill();c.beginPath();c.moveTo(W/2+80,320);c.lineTo(W/2+140,280);c.stroke();c.beginPath();c.arc(W/2-95,335,28,PI*.5,PI*1.5,false);c.stroke();c.fillRect(W/2-20,268,40,18)}
+  c.font='700 24px '+FONT_T;wrap(c,line,W-60).forEach((l,i)=>c.fillText(l,30,440+i*30))})}
+function basti(scene,ctx){const {S,LMP,addPlane}=ctx;const NEON=LMP;const path='#d8c7a5';
+  for(const x of[-80,-64,-50])blk(S,x-1.1,x+1.1,0,.05,19,90,path,false);for(const z of[37,55,73])blk(S,-96,-49,0,.05,z-1.1,z+1.1,path,false);blk(S,-96,-6,0,.05,19.2,21.2,path,false);
+  for(const x of[-80,-64,-50])G.noGrass.push([x-1.3,x+1.3,19,90]);for(const z of[37,55,73])G.noGrass.push([-96,-49,z-1.3,z+1.3]);G.noGrass.push([-96,-6,19,21.4]);
+  const K=partyTex('KETTLE','We whistle when we boil.','#ff6a3d','#141414','kettle'),T=partyTex('TEAPOT','Short and stout. Mostly stout.','#2ab3a6','#ffffff','teapot');
+  const post=(x,z,ry,t)=>{const c=Math.cos(ry),sn=Math.sin(ry);blk(S,x-.07-sn*.12,x+.07-sn*.12,0,3,z-.07-c*.12,z+.07-c*.12,'#3a2a1a',true);addPlane(scene,1.4,1.82,t,[x,2,z],ry,()=>G.say(t===K?'Kettle party':'Teapot party',t===K?'"Every pothole becomes a swimming pool!" Details after the election.':'"Two chais for the price of one!" Terms and conditions apply. Many.'),{reach:5})};
+  [[-6.2,30,PI/2],[6.2,38,-PI/2],[-6.2,46,PI/2],[6.2,54,-PI/2],[-6.2,72,PI/2],[6.2,80,-PI/2],[-48.6,30,PI/2],[-48.6,48,PI/2],[-48.6,66,PI/2]].forEach(([x,z,ry],i)=>post(x,z,ry,i%2?T:K));
+  const BC=['#ff6a3d','#ffffff','#2ab3a6'];for(const z of[36,50,64,86])stringLights(NEON,[-6,5.6,z],[6,5.6,z],14,.7,BC);for(const z of[37,55,73])for(let x=-94;x<-52;x+=14)stringLights(NEON,[x,4.4,z-1.6],[x+12,4.4,z-1.6],16,.6,BC);
+  const v=prop(S,-2.4,0,58,0);v.box(0,1.15,0,2,1.5,4.6,'#f4efe6');v.box(0,1.25,1.8,1.9,1.2,1,'#26323d');v.box(0,.55,0,2.04,.25,4.62,'#ff6a3d');for(const zz of[1.5,-1.5])for(const s2 of[-1,1])v.wheel(s2*.95,.38,zz,.38,.26);
+  v.box(0,2,0,.2,.5,.2,'#555');for(const s2 of[-1,1])v.cone(s2*.4,2.3,-.2+s2*.1,.35,.7,'#c9ccd1',10,0);v.box(0,1.3,-2.31,1.6,.6,.02,'#2ab3a6');col(-3.45,-1.35,0,2.6,55.6,60.4);
+  G.triggers.push({x:-.6,z:58,r:1.8,label:'Listen to the loudspeaker',act:()=>G.say('Loudspeaker van','"Attention! Attention! Free chai at the rally. Chai is not a promise. The rally is a promise. Mostly."')})}
+
 export function buildLandmarks(scene,ctx){const {on}=ctx;const outs={};G.blocked=G.blocked||[];
   busStop(scene,ctx);
   if(on('kaapikunj')){outs.kunj=kunj(scene,ctx);estate(scene,ctx);welcomeArch(scene,ctx,-18,'WELCOME TO KAAPIKUNJ','KAAPIKUNJ · CUP FIRST','#8b6a4a')}
   if(on('memepura')){memepura(scene,ctx);welcomeArch(scene,ctx,33,'MEMEPURA · VERY ONLINE','WELCOME TO MEMEPURA','#ff3b8d')}
+  if(on('basti')){basti(scene,ctx);welcomeArchZ(scene,ctx,32,'WELCOME TO POLITICAL BASTI','POLITICAL BASTI · VOTE WISELY','#8b1e2d')}
   if(on('vashupur')){outs.museum=museum(scene,ctx);G.noGrass.push([-16.5,16.5,-16.5,16.5],[-11.5,11.5,-31,-24.6],[-7.4,7.4,15.5,18.7])}
   return outs}
 

@@ -26,7 +26,7 @@ export const TOWNS={
     plots:[[42,53,15,24,'n'],[56,67,15,24,'n'],[70,81,15,24,'n'],[84,95,15,24,'n'],[18,30,52,64,'n'],[33,44,52,64,'n'],[18,30,70,82,'n'],[33,44,70,82,'n']],
     zones:[['Poster Street',12,99,-6,12],["Builders' Row",12,99,-28,-6],['Football Pitch',16,46,24,47],['Lagoon & Beach',44,99,40,92]],
     trees:40,flora:'palm',sea:true},
-  basti:{name:'Political Basti',tag:'Rallies, concerts and promises. Lots of promises.',color:'#8b1e2d',
+  basti:{ready:true,name:'Political Basti',tag:'Rallies, concerts and promises. Lots of promises.',color:'#8b1e2d',
     b:[-98,16,14,94],
     roads:[[-4,4,14,94,'z']],
     bus:{x:9.6,z:22,ry:-PI/2,bx:3.4,bz:24,bry:0},spawn:{x:6.8,z:20,yaw:0},scooter:[9,33,PI],
