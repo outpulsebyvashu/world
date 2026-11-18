@@ -5,7 +5,7 @@ export const HUD=`
 <div class="ow-hud">
   <div class="ow-top">
     <button type="button" class="ow-map" aria-label="Open the town map"><canvas width="176" height="176"></canvas></button>
-    <div class="ow-mid"><button type="button" class="ow-loc" aria-label="Mysuru · Raipur (double-tap for menu)">MYSURU · RAIPUR</button><p class="ow-zone" aria-live="polite"></p></div>
+    <div class="ow-mid"><button type="button" class="ow-loc" aria-label="Current town (double-tap for menu)">OUTPULSE SPACE</button><p class="ow-zone" aria-live="polite"></p></div>
     <div class="ow-right">
       <span class="ow-beans" role="status" aria-label="Coffee beans found">${bean}<b>0/8</b></span>
       <div class="ow-row"><button type="button" class="ow-time ow-ib"></button><button type="button" class="ow-mute ow-ib"></button></div>
@@ -40,10 +40,12 @@ export const HUD=`
 <div class="ow-ov ow-menu" hidden role="dialog" aria-modal="true" aria-label="Menu"><div class="ow-pan"><button type="button" class="x" data-close aria-label="Close menu">×</button><p class="k">Paused</p><h2>Vashu Town</h2>
   <p class="d">A tiny open world that is secretly a portfolio. Move with the joystick or WASD, drag to look, tap to walk, jump with Space. Find 8 coffee beans to unlock secrets.</p>
   <div class="ow-pa"><button type="button" class="ow-btn p" data-close>Resume</button><a class="ow-btn" href="https://vashudev.outpulse.company" target="_blank" rel="noopener">Portfolio ↗</a><button type="button" class="ow-btn" onclick="if(confirm('Reset beans, quests and secrets?')){['ow_beans','ow_unlocked','ow_quest','ow_eggs','ow_hint'].forEach(k=>localStorage.removeItem(k));location.reload()}">Reset progress</button></div></div></div>
-<div class="ow-ov ow-hint" hidden role="dialog" aria-modal="true" aria-label="Welcome"><div class="ow-pan"><p class="k">Welcome to</p><h2>Vashu Town</h2>
+<div class="ow-ov ow-hint" hidden role="dialog" aria-modal="true" aria-label="Welcome"><div class="ow-pan"><p class="k">Welcome to Outpulse Space</p><h2>Vashupur</h2>
   <ul class="ow-how"><li><b>Move</b> joystick (bottom-left) · WASD</li><li><b>Look</b> drag the screen · pinch to zoom</li><li><b>Walk to</b> tap the ground or anything</li><li><b>Jump</b> button · Space</li><li><b>Talk / enter</b> the yellow action button · E</li></ul>
-  <p class="d">Every building, billboard and character is part of my portfolio. Find all 8 coffee beans for secrets.</p>
-  <div class="ow-pa"><button type="button" class="ow-btn p" data-go>Start exploring</button><button type="button" class="ow-btn" data-cv>Just show me the CV</button></div></div></div>`;
+  <p class="d">Six towns, one bus. Every building, billboard and character is part of my portfolio. Blue-fenced plots? Something's cooking. Find all 8 coffee beans across the towns for secrets.</p>
+  <div class="ow-pa"><button type="button" class="ow-btn p" data-go>Start exploring</button><button type="button" class="ow-btn" data-cv>Just show me the CV</button></div></div></div>
+<div class="ow-ov ow-bus" hidden role="dialog" aria-modal="true" aria-label="Bus route"><div class="ow-pan"><button type="button" class="x" data-close aria-label="Close">×</button><p class="k">Vashu Transport · the only way between towns</p><h2>Where to?</h2><div class="ow-towns"></div></div></div>
+<div class="ow-ride" hidden aria-live="polite"><div><svg viewBox="0 0 64 40" aria-hidden="true"><rect x="2" y="4" width="60" height="28" rx="6" fill="#ffcc3a" stroke="#141414" stroke-width="3"/><rect x="8" y="9" width="12" height="9" rx="2" fill="#26323d"/><rect x="24" y="9" width="12" height="9" rx="2" fill="#26323d"/><rect x="40" y="9" width="16" height="9" rx="2" fill="#26323d"/><circle cx="16" cy="33" r="5" fill="#141414"/><circle cx="48" cy="33" r="5" fill="#141414"/></svg><p class="k">Next stop</p><b></b><em></em><i></i></div></div>`;
 
 export const CSS=`
 .ow{position:fixed;inset:0;overflow:hidden;background:#8fd0ff;touch-action:none;-webkit-user-select:none;user-select:none;font-family:"Inter Tight",system-ui,sans-serif;color:#141414;-webkit-tap-highlight-color:transparent}
@@ -122,4 +124,30 @@ export const CSS=`
 .ow-how b{display:inline-block;min-width:92px}
 @media (min-width:900px){.ow-map{width:120px;height:120px}.ow-quest{top:142px}}
 @media (prefers-reduced-motion:reduce){.ow-act{animation:none}.ow-zone.on{animation:none;opacity:1}.ow-toast,.ow-fade{transition:none}}
+
+.ow-towns{display:grid;gap:8px;margin-top:10px}
+.ow-town{display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 12px;border:2.5px solid #141414;border-radius:16px;background:#fff;text-align:left}
+.ow-town i{flex:none;width:18px;height:18px;border-radius:50%;border:2.5px solid #141414}
+.ow-town span{flex:1;display:grid}
+.ow-town b{font:800 16px "Bricolage Grotesque",sans-serif}
+.ow-town em{font:500 13px/1.35 "Inter Tight",sans-serif;font-style:normal;color:#555}
+.ow-town small{flex:none;font:800 12px "Inter Tight",sans-serif;text-transform:uppercase;letter-spacing:.06em;padding:6px 10px;border-radius:999px;background:#ffcc3a;border:2px solid #141414}
+.ow-town.here{background:#f4efe6}.ow-town.here small{background:#fff}
+.ow-town.soon{opacity:.55}.ow-town.soon small{background:#e6e6e6}
+.ow-town:not([disabled]):active{transform:scale(.98)}
+.ow-ride{position:absolute;inset:0;z-index:9;display:grid;place-items:center;background:#141414;color:#f4efe6;opacity:0;transition:opacity .25s}
+.ow-ride.go{opacity:1}
+.ow-ride[hidden]{display:none}
+.ow-ride>div{display:grid;justify-items:center;gap:6px;text-align:center;padding:24px}
+.ow-ride svg{width:96px;height:60px}
+.ow-ride.go svg{animation:owbus .5s ease-in-out infinite alternate}
+.ow-ride .k{margin:6px 0 0;font:800 12px "Inter Tight",sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#ffcc3a}
+.ow-ride b{font:400 44px/1 Anton,Impact,sans-serif;letter-spacing:.02em}
+.ow-ride em{font:500 15px "Inter Tight",sans-serif;font-style:normal;max-width:30ch;color:#cfcfcf}
+.ow-ride i{display:block;width:180px;height:6px;border-radius:9px;background:#333;overflow:hidden;margin-top:8px}
+.ow-ride i::after{content:"";display:block;height:100%;width:0;background:#ffcc3a}
+.ow-ride.go i::after{animation:owbar 1.5s ease-out forwards}
+@keyframes owbus{from{transform:translateY(0)}to{transform:translateY(-4px)}}
+@keyframes owbar{to{width:100%}}
+@media (prefers-reduced-motion: reduce){.ow-ride.go svg,.ow-ride.go i::after{animation:none}.ow-ride.go i::after{width:100%}}
 `;

@@ -52,12 +52,12 @@ function canTex(){return tex(512,256,(x,W,H)=>{x.fillStyle='#141414';x.fillRect(
 function menuTex(lines,bg='#1d1d1d',fg='#f4efe6',title){return tex(256,320,(x,W,H)=>{x.fillStyle=bg;x.fillRect(0,0,W,H);x.strokeStyle='#8a5a3b';x.lineWidth=12;x.strokeRect(0,0,W,H);x.fillStyle=fg;x.font='400 40px '+FONT_D;x.textAlign='center';x.fillText(title,W/2,58);x.font='600 22px '+FONT_T;x.textAlign='left';lines.forEach((l,i)=>x.fillText(l,24,110+i*38))})}
 
 /* =================== the town's architecture =================== */
-export function buildArch(scene,ctx){const {S,WIN,LMP,building,addPlane,bench,model,card}=ctx;
+export function buildArch(scene,ctx){const {S,WIN,LMP,building,addPlane,bench,model,card}=ctx;const on=ctx.on;
   const WARM=new Batch(),NEON=new Batch(),GL=new Batch();const outs={};G.blocked=G.blocked||[];const BL=(x0,x1,z0,z1)=>G.blocked.push([x0,x1,z0,z1]);
   const info=(x,z,y,r,label,c)=>G.triggers.push({x,z,y,r,label,act:()=>card(c)});
 
   /* ===== OUTPULSE LABS HQ — futuristic ===== */
-  outs.hq=building({name:'Outpulse Labs HQ',short:'HQ',x0:-12,x1:12,z0:-46,z1:-24,h:15,col:'#f2f4f7',trim:'#ffffff',door:{side:'s',at:0},room:'hq',walkRoof:true,win:false,awn:false,band:false,doorCol:'#1d2733'});
+  if(!G.LOT)outs.hq=building({name:'Outpulse Labs HQ',short:'HQ',x0:-12,x1:12,z0:-46,z1:-24,h:15,col:'#f2f4f7',trim:'#ffffff',door:{side:'s',at:0},room:'hq',walkRoof:true,win:false,awn:false,band:false,doorCol:'#1d2733'});
   if(!G.LOT){const b={x0:-12,x1:12,z0:-46,z1:-24};
    for(const [x,z] of[[-12,-24],[12,-24],[-12,-46],[12,-46]]){cyl(S,x,7.6,z,1.9,1.9,15.2,'#ffffff',20);for(let y=1.2;y<15;y+=3.6)cyl(NEON,x,y,z,1.94,1.94,.1,'#3bd1ff',20)}
    for(const side of['s','e','w']){const F=fac(b,side);const L=side==='s'?[-10,10]:[-44,-26];const mid=(L[0]+L[1])/2,len=L[1]-L[0];
@@ -76,8 +76,8 @@ export function buildArch(scene,ctx){const {S,WIN,LMP,building,addPlane,bench,mo
    addPlane(scene,18,3,signTex('OUTPULSE LABS','#141414','#3bd1ff',1024,170),[0,12.6,-23.86],0,null)}
 
   /* ===== TOKI — Japanese-minimal specialty coffee + studio above ===== */
-  outs.cafe=building({name:'TOKI',short:'TOKI',x0:-40,x1:-22,z0:-22,z1:-8,h:4.2,col:'#f3eee6',trim:'#8b6a4a',door:{side:'s',at:-31},room:'cafe',roof:'none',win:false,awn:false,band:false,doorCol:'#5a3f2a'});
-  if(!G.LOT){const b={x0:-40,x1:-22,z0:-22,z1:-8},F=fac(b,'s');
+  if(on('kaapikunj')){outs.cafe=building({real:true,name:'TOKI',short:'TOKI',x0:-40,x1:-22,z0:-22,z1:-8,h:4.2,col:'#f3eee6',trim:'#8b6a4a',door:{side:'s',at:-31},room:'cafe',roof:'none',win:false,awn:false,band:false,doorCol:'#5a3f2a'});
+  {const b={x0:-40,x1:-22,z0:-22,z1:-8},F=fac(b,'s');
    for(let u=-39.7;u<-22.2;u+=.32){if(Math.abs(u+31)<1.3)continue;if(u>-37.6&&u<-32.6)continue;if(u>-29.4&&u<-24.4)continue;F.box(S,u,2.1,.08,.14,4.2,.12,'#c89b6d')}
    for(const u0 of[-35.1,-26.9]){F.box(WIN,u0,1.9,.04,4.8,2.9,.08,'#ffffff');F.box(S,u0,.25,.12,5,.5,.25,'#8b6a4a');F.box(S,u0,3.4,.12,5,.14,.2,'#5a3f2a');F.box(S,u0,1.9,.12,.1,2.9,.12,'#5a3f2a')}
    blk(S,-40.4,-21.6,4.05,4.25,-22.4,-7.4,'#3b3f46',false);bx(S,-31,4.0,-7.45,18.8,.18,.12,'#5a3f2a');
@@ -102,10 +102,10 @@ export function buildArch(scene,ctx){const {S,WIN,LMP,building,addPlane,bench,mo
    col(-20.2,-20.05,0,5.4,-17.4,-7);
    G.triggers.push({x:-31,z:-10.3,y:4.2,r:1.6,label:'Enter my studio',act:()=>G.enter('home')});
    outs.home={x:-31,y:4.2,z:-10.6,fx:0,fz:1};G.buildings.push({name:"Vashu's studio (above TOKI)",short:'My studio',x0:-38,x1:-24,z0:-22,z1:-12,col:'#c89b6d',door:{x:-21,z:-6.4},room:'home',upper:true});
-   BL(-41,-19,-23,-5)}
+   BL(-41,-19,-23,-5)}}
 
   /* ===== GOTHIC — dark gothic boutique ===== */
-  outs.gothic=building({name:'Gothic Bakehouse',short:'Gothic',x0:22,x1:36,z0:-22,z1:-8,h:7,col:'#2e2a2d',trim:'#1d1a1c',door:{side:'s',at:29},room:'gothic',win:false,awn:false,doorCol:'#1d1a1c'});
+  if(on('memepura'))outs.gothic=building({name:'Gothic Bakehouse',short:'Gothic',x0:22,x1:36,z0:-22,z1:-8,h:7,col:'#2e2a2d',trim:'#1d1a1c',door:{side:'s',at:29},room:'gothic',win:false,awn:false,doorCol:'#1d1a1c'});
   if(!G.LOT){const b={x0:22,x1:36,z0:-22,z1:-8},F=fac(b,'s');
    for(const u of[24.9,33.1]){F.box(WARM,u,1.9,.04,2.6,2.6,.08,'#ffffff');F.dia(WARM,u,3.2,.04,1.84,.08,'#ffffff');F.box(S,u,1.9,.1,.08,2.6,.1,'#141414');F.box(S,u,1.9,.1,2.6,.08,.1,'#141414');F.box(S,u,.5,.25,3,.18,.5,'#141414');
      for(let i=0;i<5;i++)F.box(S,u-1+i*.5,.66,.3,.35,.16,.25,i%2?'#a0642e':'#3b2214');F.box(S,u-1.4,1.9,.12,.16,3.2,.16,'#1d1a1c');F.box(S,u+1.4,1.9,.12,.16,3.2,.16,'#1d1a1c')}
@@ -123,7 +123,7 @@ export function buildArch(scene,ctx){const {S,WIN,LMP,building,addPlane,bench,mo
    fac(b,'w').plane(scene,-15,2.6,.05,12,5.4,wallArt.coffee());BL(21,37,-23,-6)}
 
   /* ===== WAFF WAFF — playful waffle shop ===== */
-  outs.waff=building({name:'Waff Waff',x0:41,x1:53,z0:-20,z1:-8,h:6,col:'#ffd23f',trim:'#e94b3c',door:{side:'s',at:50},room:'waff',win:false,awn:false});
+  if(on('memepura'))outs.waff=building({name:'Waff Waff',x0:41,x1:53,z0:-20,z1:-8,h:6,col:'#ffd23f',trim:'#e94b3c',door:{side:'s',at:50},room:'waff',win:false,awn:false});
   if(!G.LOT){const b={x0:41,x1:53,z0:-20,z1:-8},F=fac(b,'s');
    for(let i=0;i<10;i++)for(let j=0;j<3;j++)F.box(S,41.7+i*1.17,3.3+j*.95,.06,.82,.72,.14,'#f0b429');
    F.box(S,44.2,1.5,.02,3.6,1.9,.1,'#5a2a12');F.box(S,44.2,.75,.45,3.8,.12,.9,'#ffffff');F.box(S,44.2,.38,.12,3.6,.76,.25,'#e94b3c');
@@ -138,7 +138,7 @@ export function buildArch(scene,ctx){const {S,WIN,LMP,building,addPlane,bench,mo
    fac(b,'e').plane(scene,-14,2.7,.05,11,5,wallArt.waffle());BL(40,54,-21,-6)}
 
   /* ===== OLD GREEN HOUSE CAFE — heritage ===== */
-  outs.ogh=building({name:'Old Green House Cafe',short:'Old Green House',x0:58,x1:74,z0:-22,z1:-8,h:5,col:'#2f6b45',trim:'#f4efe6',door:{side:'s',at:66},room:'ogh',roof:'none',win:false,awn:false,doorCol:'#6b3e22'});
+  if(on('memepura'))outs.ogh=building({name:'Old Green House Cafe',short:'Old Green House',x0:58,x1:74,z0:-22,z1:-8,h:5,col:'#2f6b45',trim:'#f4efe6',door:{side:'s',at:66},room:'ogh',roof:'none',win:false,awn:false,doorCol:'#6b3e22'});
   if(!G.LOT){const b={x0:58,x1:74,z0:-22,z1:-8},F=fac(b,'s');
    gable(S,66,-15,5,16,14,3.1,'#b5482e','x',.7,'#2f6b45');
    blk(S,57.6,74.4,0,.3,-8,-4.6,'#c9b79a',true);for(let u=58.4;u<74;u+=3.1){cyl(S,u,2.2,-5,.17,.2,3.8,'#6b3e22',10);cyl(S,u,.36,-5,.3,.3,.14,'#4a2a16',10);col(u-.2,u+.2,.3,4.1,-5.2,-4.8)}
@@ -155,7 +155,7 @@ export function buildArch(scene,ctx){const {S,WIN,LMP,building,addPlane,bench,mo
    BL(56,76,-23,-3.5)}
 
   /* ===== CITY CLINIC — clean modern ===== */
-  outs.clinic=building({name:'City Clinic',short:'Clinic',x0:79,x1:93,z0:-22,z1:-8,h:7,col:'#f7f9fb',trim:'#cfe6f5',door:{side:'s',at:86},room:'clinic',win:false,awn:false,doorCol:'#2b6cb0'});
+  if(on('memepura'))outs.clinic=building({name:'City Clinic',short:'Clinic',x0:79,x1:93,z0:-22,z1:-8,h:7,col:'#f7f9fb',trim:'#cfe6f5',door:{side:'s',at:86},room:'clinic',win:false,awn:false,doorCol:'#2b6cb0'});
   if(!G.LOT){const b={x0:79,x1:93,z0:-22,z1:-8},F=fac(b,'s');
    for(const y of[1.9,5.2])for(const u of[80.4,82.4,89.6,91.6])F.box(WIN,u,y,.04,1.6,1.7,.08,'#ffffff');
    F.box(S,86,3.6,.05,14,.35,.12,'#cfe6f5');F.box(S,86,6.8,.05,14,.4,.12,'#9cc6e8');
@@ -171,7 +171,7 @@ export function buildArch(scene,ctx){const {S,WIN,LMP,building,addPlane,bench,mo
    BL(78,99,-23,-3.5)}
 
   /* ===== AJJI — heritage courtyard house ===== */
-  outs.ajji=building({name:"Ajji's House",x0:-42,x1:-32,z0:10,z1:20,h:4,col:'#e8b04a',trim:'#ffffff',door:{side:'n',at:-37},room:'ajji',roof:'none',win:false,awn:false,doorCol:'#6b3e22'});
+  if(!G.LOT)outs.ajji=building({name:"Ajji's House",x0:-42,x1:-32,z0:10,z1:20,h:4,col:'#e8b04a',trim:'#ffffff',door:{side:'n',at:-37},room:'ajji',roof:'none',win:false,awn:false,doorCol:'#6b3e22'});
   if(!G.LOT){const b={x0:-42,x1:-32,z0:10,z1:20},F=fac(b,'n');
    gable(S,-37,15,4,10,10,2.6,'#b5482e','x',.6,'#e8b04a');
    blk(S,-42.3,-31.7,0,.3,7.6,10,'#d8c7a5',true);for(const u of[-41.6,-39.2,-34.8,-32.4]){cyl(S,u,2,8.1,.16,.18,3.4,'#6b3e22',10);col(u-.18,u+.18,.3,3.7,7.92,8.28)}leanTo(S,-42.5,-31.5,10,7.5,3.9,3.1,'#b5482e');
@@ -185,7 +185,7 @@ export function buildArch(scene,ctx){const {S,WIN,LMP,building,addPlane,bench,mo
    BL(-43,-31,7,21)}
 
   /* ===== MEERA — modern apartment with RGB window ===== */
-  outs.meera=building({name:"Meera's House",x0:-60,x1:-50,z0:10,z1:20,h:10,col:'#e9ecef',trim:'#2b2f36',door:{side:'n',at:-55},room:'meera',win:false,awn:false,doorCol:'#2b2f36'});
+  if(!G.LOT)outs.meera=building({name:"Meera's House",x0:-60,x1:-50,z0:10,z1:20,h:10,col:'#e9ecef',trim:'#2b2f36',door:{side:'n',at:-55},room:'meera',win:false,awn:false,doorCol:'#2b2f36'});
   if(!G.LOT){const b={x0:-60,x1:-50,z0:10,z1:20},F=fac(b,'n');
    for(const y of[1.8,5,8.2])for(const u of[-58.4,-51.6]){if(y===8.2&&u===-58.4)continue;F.box(WIN,u,y,.04,2,1.6,.08,'#ffffff');F.box(S,u,y,.08,2.2,1.8,.04,'#2b2f36')}
    const rgb=new THREE.Mesh(new THREE.BoxGeometry(2,1.6,.08),new THREE.MeshBasicMaterial({color:'#ff3b8d'}));const rp=F.pt(-58.4,8.2,.04);rgb.position.set(rp[0],rp[1],rp[2]);scene.add(rgb);ctx.W.rgb=rgb;F.box(S,-58.4,8.2,.08,2.2,1.8,.04,'#2b2f36');
@@ -199,7 +199,7 @@ export function buildArch(scene,ctx){const {S,WIN,LMP,building,addPlane,bench,mo
   /* ===== FUTURE VENTURES ===== */
   const venture=(o)=>{const out=building(Object.assign({win:false,awn:false},o));return out};
   // Handi Biryani House
-  venture({name:'Handi Biryani House',x0:-60,x1:-46,z0:-22,z1:-8,h:5.5,col:'#c1693c',trim:'#7a2e1b',door:{side:'s',at:-53},doorCol:'#4a1e10'});
+  if(on('kaapikunj'))venture({name:'Handi Biryani House',x0:-60,x1:-46,z0:-22,z1:-8,h:5.5,col:'#c1693c',trim:'#7a2e1b',door:{side:'s',at:-53},doorCol:'#4a1e10'});
   if(!G.LOT){const b={x0:-60,x1:-46,z0:-22,z1:-8},F=fac(b,'s');F.box(S,-53,1.4,.08,2.2,2.8,.14,'#7a2e1b');F.arch(S,-53,2.8,.08,1.1,.14,'#7a2e1b');
    for(const u of[-57.5,-48.5]){F.box(WARM,u,2,.04,1.6,1.5,.08,'#ffffff');F.arch(WARM,u,2.75,.04,.8,.08,'#ffffff');F.box(S,u,1.2,.12,1.9,.1,.25,'#7a2e1b')}
    addPlane(scene,8,1.1,signTex('HANDI BIRYANI HOUSE','#1f5a36','#ffcc3a',1024,140),[-53,4.6,-7.86],0,null);
@@ -210,14 +210,14 @@ export function buildArch(scene,ctx){const {S,WIN,LMP,building,addPlane,bench,mo
    info(-53,-5.8,0,1.6,'Handi Biryani House (coming soon)',{n:'Handi Biryani House',tag:'Future venture',st:'Planned',d:'A Champaran-style handi biryani outlet, slow-cooked in sealed clay pots. Planned for Baloda Bazar.',href:'',color:'#c1693c'});
    BL(-61,-45,-23,-5.5)}
   // FLTTR
-  venture({name:'FLTTR',x0:-70,x1:-62,z0:-22,z1:-10,h:5,col:'#f4efe6',trim:'#141414',door:{side:'s',at:-66},doorCol:'#141414'});
+  if(on('kaapikunj'))venture({name:'FLTTR',x0:-70,x1:-62,z0:-22,z1:-10,h:5,col:'#f4efe6',trim:'#141414',door:{side:'s',at:-66},doorCol:'#141414'});
   if(!G.LOT){const b={x0:-70,x1:-62,z0:-22,z1:-10},F=fac(b,'s');F.box(WIN,-68.4,2,.04,2.4,2.6,.08,'#ffffff');F.box(S,-66,4.4,.06,8,.6,.12,'#141414');
    const can=new THREE.Mesh(new THREE.CylinderGeometry(1.6,1.6,4.6,24),[new THREE.MeshLambertMaterial({map:canTex()}),new THREE.MeshLambertMaterial({color:'#c9ccd1'}),new THREE.MeshLambertMaterial({color:'#c9ccd1'})]);can.position.set(-66,7.3,-16);can.castShadow=true;scene.add(can);cyl(S,-66,9.68,-16,1.45,1.45,.16,'#9aa3ad',20);
    for(const x of[-64.2,-63.2]){blk(S,x-.45,x+.45,0,2.2,-9.9,-9.2,'#ff6a3d');bx(WARM,x,1.45,-9.18,.7,1,.04,'#ffffff');bx(S,x,.5,-9.16,.6,.2,.04,'#141414')}
    addPlane(scene,3,.6,signTex('FLTTR','#141414','#f4efe6',512,100),[-66,4.4,-9.86],0,null);
    info(-66,-8.2,0,1.6,'FLTTR (coming soon)',{n:'FLTTR',tag:'Future venture',st:'Planned',d:'A premium canned coffee brand, positioned to take on the big chains with better beans and cleaner design.',href:'',color:'#141414'});BL(-71,-61,-23,-8)}
   // The Tiramisu Theory
-  venture({name:'The Tiramisu Theory',x0:-26,x1:-16,z0:10,z1:20,h:5,col:'#f6c1cf',trim:'#5a3825',door:{side:'n',at:-21},doorCol:'#5a3825'});
+  if(on('kaapikunj'))venture({name:'The Tiramisu Theory',x0:-26,x1:-16,z0:10,z1:20,h:5,col:'#f6c1cf',trim:'#5a3825',door:{side:'n',at:-21},doorCol:'#5a3825'});
   if(!G.LOT){const b={x0:-26,x1:-16,z0:10,z1:20},F=fac(b,'n');for(const u of[-24,-18])F.box(WARM,u,1.9,.04,2,1.8,.08,'#ffffff');
    for(let i=0;i<9;i++){F.box(S,-25.4+i*1.1,3.05,.6,1.1,.5,1.2,i%2?'#ffffff':'#f19cb3');F.arch(S,-25.4+i*1.1,2.8,1.2,.55,.1,i%2?'#ffffff':'#f19cb3')}
    const tm=prop(S,-21,5,15);[['#3b2214',.3],['#f6efe1',.35],['#c9a26b',.4],['#f6efe1',.35],['#c9a26b',.4]].reduce((y,[c,h])=>{tm.box(0,y-h/2,0,3.4,h,2.2,c);return y-h},2.4);tm.box(0,2.45,0,3.4,.1,2.2,'#5a3825');
@@ -225,15 +225,15 @@ export function buildArch(scene,ctx){const {S,WIN,LMP,building,addPlane,bench,mo
    const ct=prop(S,-24.4,0,7.9);ct.box(0,.95,0,1.8,.9,.9,'#f6c1cf');ct.box(0,1.45,0,1.7,.1,.8,'#5a3825');ct.wheel(-.7,.3,.5,.3,.12,'#5a3825');ct.wheel(.7,.3,.5,.3,.12,'#5a3825');ct.box(0,2.4,0,2,.1,1.2,'#ffffff');ct.box(-.85,1.9,0,.06,1,.06,'#5a3825');ct.box(.85,1.9,0,.06,1,.06,'#5a3825');for(let i=0;i<4;i++)ct.box(-.6+i*.4,1.6,0,.3,.2,.3,i%2?'#c9a26b':'#3b2214');col(-25.4,-23.4,0,1.5,7.3,8.5);
    info(-21,8,0,1.6,'The Tiramisu Theory (coming soon)',{n:'The Tiramisu Theory',tag:'Future venture',st:'Planned',d:'A dessert cart and parlour built around one obsession: properly made tiramisu.',href:'',color:'#f6c1cf'});BL(-27,-15,6.5,21)}
   /* ===== STREET FOOD STALLS ===== */
-  {const c=prop(S,-15.5,0,-20.2,PI/2);c.box(0,.5,0,2.2,1,1.2,'#8a5a3b');c.box(0,1.05,0,2.3,.1,1.3,'#c9ccd1');c.cyl(-.6,1.35,0,.28,.32,.5,'#c9ccd1',12);c.cyl(-.6,1.65,0,.12,.12,.15,'#9aa3ad',8);for(let i=0;i<5;i++)c.cyl(.2+i*.18,1.2,.3,.06,.05,.18,'#ffffff',8);
+  if(on('kaapikunj')){const c=prop(S,-15.5,0,-20.2,PI/2);c.box(0,.5,0,2.2,1,1.2,'#8a5a3b');c.box(0,1.05,0,2.3,.1,1.3,'#c9ccd1');c.cyl(-.6,1.35,0,.28,.32,.5,'#c9ccd1',12);c.cyl(-.6,1.65,0,.12,.12,.15,'#9aa3ad',8);for(let i=0;i<5;i++)c.cyl(.2+i*.18,1.2,.3,.06,.05,.18,'#ffffff',8);
    c.box(0,2.5,0,2.8,.08,1.8,'#2f5bff');for(const [a,b2] of[[-1.2,-.75],[1.2,-.75],[-1.2,.75],[1.2,.75]])c.box(a,1.7,b2,.06,1.6,.06,'#555');col(-16.2,-14.8,0,1.2,-21.3,-19.1);
    addPlane(scene,2,.45,signTex('TAPRI CHAI · ₹10','#ffcc3a','#141414',512,110),[-14.82,1.9,-20.2],PI/2,null);
    const bn2=prop(S,-13.6,0,-22.6,0);bn2.box(0,.45,0,1.8,.1,.45,'#8a5a3b');bn2.box(-.7,.22,0,.1,.44,.4,'#555');bn2.box(.7,.22,0,.1,.44,.4,'#555');col(-14.5,-12.7,0,.5,-22.85,-22.35);G.seats.push({x:-13.6,z:-22.6,y:.5,yaw:0,label:'Sit for chai'});
    G.triggers.push({x:-14,z:-20.2,r:1.6,label:'Order a cutting chai',act:()=>{G.host.toast('CUTTING CHAI','Half glass, full happiness. ₹10.');G.player.emote='sip';G.player.emoteT=2.6}});BL(-17,-12,-24,-18)}
-  {const c=prop(S,38.6,0,-6.9,0);c.box(0,.9,0,1.8,.8,.9,'#e94b3c');c.wheel(-.6,.3,.48,.3,.1);c.wheel(.6,.3,.48,.3,.1);bx(GL,38.6,1.7,-6.9,1.4,.7,.7,'#ffffff');c.box(0,2.1,0,1.5,.06,.8,'#ffcc3a');for(let i=0;i<6;i++)c.sph(-.5+i*.2,1.45,0,.08,'#d9963b');c.cyl(.55,1.5,.2,.15,.15,.25,'#c9ccd1',10);
+  if(on('memepura')){const c=prop(S,38.6,0,-6.9,0);c.box(0,.9,0,1.8,.8,.9,'#e94b3c');c.wheel(-.6,.3,.48,.3,.1);c.wheel(.6,.3,.48,.3,.1);bx(GL,38.6,1.7,-6.9,1.4,.7,.7,'#ffffff');c.box(0,2.1,0,1.5,.06,.8,'#ffcc3a');for(let i=0;i<6;i++)c.sph(-.5+i*.2,1.45,0,.08,'#d9963b');c.cyl(.55,1.5,.2,.15,.15,.25,'#c9ccd1',10);
    addPlane(scene,1.6,.4,signTex('PANI PURI','#ffcc3a','#e94b3c',512,120),[38.6,2.5,-6.44],0,null);bx(S,38.6,2.3,-6.9,.06,.4,.06,'#555');col(37.7,39.5,0,1.8,-7.35,-6.45);
    G.triggers.push({x:38.6,z:-5.6,r:1.5,label:'Eat pani puri',act:()=>G.host.toast('PANI PURI','6 for ₹30. Spicy water hits different.')})}
-  {const c=prop(S,47,0,45.2,0);c.box(0,.7,0,2,.18,1.1,'#8a5a3b');c.wheel(-.75,.35,.6,.35,.1,'#4a2a16');c.wheel(.75,.35,.6,.35,.1,'#4a2a16');const r=rng(5);for(let i=0;i<14;i++)c.sph(-.7+r()*1.4,.95+r()*.35,-.35+r()*.7,.2,'#4f8f3a',1,1.1,1);
+  if(on('memepura')){const c=prop(S,47,0,45.2,0);c.box(0,.7,0,2,.18,1.1,'#8a5a3b');c.wheel(-.75,.35,.6,.35,.1,'#4a2a16');c.wheel(.75,.35,.6,.35,.1,'#4a2a16');const r=rng(5);for(let i=0;i<14;i++)c.sph(-.7+r()*1.4,.95+r()*.35,-.35+r()*.7,.2,'#4f8f3a',1,1.1,1);
    addPlane(scene,1.8,.4,signTex('TENDER COCONUT','#4f8f3a','#ffffff',512,110),[47,1.75,45.8],0,null);bx(S,47,1.4,45.6,.05,.7,.05,'#555');col(45.9,48.1,0,1.4,44.6,45.8);
    G.triggers.push({x:47,z:46.6,r:1.5,label:'Drink a tender coconut',act:()=>{G.host.toast('TENDER COCONUT','Fresh. Cold. Straw included.');G.player.emote='sip';G.player.emoteT=2.6}})}
 
@@ -241,15 +241,15 @@ export function buildArch(scene,ctx){const {S,WIN,LMP,building,addPlane,bench,mo
   const auto=(x,z,ry)=>{const p=prop(S,x,0,z,ry);p.box(0,.75,-.3,1.4,.9,1.5,'#2e8b57');p.box(0,.75,.85,.9,.9,.8,'#2e8b57');p.box(0,1.95,-.05,1.55,.1,2.4,'#ffd23f');p.box(0,1.45,.05,1.5,1,2.1,'#ffd23f');
     p.box(0,1.45,.0,1.3,.8,1.8,'#26323d');p.box(0,1.3,1.22,.85,.5,.05,'#9cc6dd');p.wheel(0,.3,1.1,.3,.2);p.wheel(-.62,.3,-.7,.3,.2);p.wheel(.62,.3,-.7,.3,.2);p.box(0,.6,-.95,1.3,.3,.3,'#1d1d1d');
     const r=Math.abs(Math.sin(ry))>.5;col(x-(r?1.3:.8),x+(r?1.3:.8),0,2,z-(r?.8:1.3),z+(r?.8:1.3))};
-  auto(-47,2.6,PI/2);auto(-43.6,2.6,PI/2);auto(26,-2.8,-PI/2);
+  if(on('kaapikunj')){auto(-47,2.6,PI/2);auto(-43.6,2.6,PI/2)}if(on('memepura'))auto(26,-2.8,-PI/2);
   const scoot=(x,z,ry,c)=>{const p=prop(S,x,0,z,ry);scooterGeo(p,c);col(x-.6,x+.6,0,1.1,z-.6,z+.6)};
-  scoot(-36.4,-6.6,.2,'#ffffff');scoot(-35.1,-6.6,.2,'#e94b3c');scoot(70,-6.7,-.3,'#3d7be8');
-  {const p=prop(S,61.5,0,-3.3,PI/2);p.box(0,.62,0,.3,.36,1.6,'#2b2b2b');p.box(0,.9,-.2,.32,.12,.7,'#141414');p.box(0,1.05,.65,.6,.06,.06,'#555');p.wheel(0,.32,.7,.32,.14);p.wheel(0,.32,-.7,.32,.14);p.box(0,1.45,-.6,.8,.7,.7,'#ff6a3d');col(60.6,62.4,0,1.8,-3.7,-2.9);
+  if(on('kaapikunj')){scoot(-36.4,-6.6,.2,'#ffffff');scoot(-35.1,-6.6,.2,'#e94b3c')}if(on('memepura'))scoot(70,-6.7,-.3,'#3d7be8');
+  if(on('memepura')){const p=prop(S,61.5,0,-3.3,PI/2);p.box(0,.62,0,.3,.36,1.6,'#2b2b2b');p.box(0,.9,-.2,.32,.12,.7,'#141414');p.box(0,1.05,.65,.6,.06,.06,'#555');p.wheel(0,.32,.7,.32,.14);p.wheel(0,.32,-.7,.32,.14);p.box(0,1.45,-.6,.8,.7,.7,'#ff6a3d');col(60.6,62.4,0,1.8,-3.7,-2.9);
    addPlane(scene,.66,.3,signTex('DELIVERY','#ff6a3d','#141414',256,110),[60.85,1.45,-3.3],-PI/2,null)}
 
   /* ===== FAIRY LIGHTS across the café strip ===== */
   const FC=['#ff3b8d','#ffcc3a','#3bd1ff','#c9f26b','#ffffff'];
-  for(let x=-68;x<-20;x+=8)stringLights(NEON,[x,5.6,-5.6],[x+4,5.6,5.6],16,1,FC);
+  if(on('kaapikunj'))for(let x=-68;x<-20;x+=8)stringLights(NEON,[x,5.6,-5.6],[x+4,5.6,5.6],16,1,FC);
   for(const x of[-68,-20])for(const z of[-5.6,5.6]){}
 
   /* ===== finalize ===== */

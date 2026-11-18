@@ -9,25 +9,24 @@ float fbm2(vec2 p){return .55*vnoise(p)+.3*vnoise(p*2.07+3.1)+.15*vnoise(p*4.13+
 export const MASK={x0:-100,z0:-56,w:200,h:150};
 
 /* ---------- top-down mask: where grass may grow (white) ---------- */
-export function makeMask(roads){const S=4,c=document.createElement('canvas');c.width=MASK.w*S;c.height=MASK.h*S;const x=c.getContext('2d');
+export function makeMask(roads,b){if(b){MASK.x0=b[0]-20;MASK.z0=b[2]-20;MASK.w=b[1]-b[0]+40;MASK.h=b[3]-b[2]+40}const S=3,c=document.createElement('canvas');c.width=MASK.w*S;c.height=MASK.h*S;const x=c.getContext('2d');
   x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);
   const R=(x0,x1,z0,z1,col='#000')=>{x.fillStyle=col;x.fillRect((x0-MASK.x0)*S,(z0-MASK.z0)*S,(x1-x0)*S,(z1-z0)*S)};
   for(const r of roads)R(r[0],r[1],r[2],r[3]);
   for(const b of G.buildings)R(b.x0-1.6,b.x1+1.6,b.z0-1.6,b.z1+1.6);
-  x.fillStyle='#000';x.beginPath();x.arc((64-MASK.x0)*S,(64-MASK.z0)*S,19.2*S,0,7);x.fill();
-  R(20,44,26,44,'#5a5a5a');
+  if(G.TOWN==='memepura'){x.fillStyle='#000';x.beginPath();x.arc((64-MASK.x0)*S,(64-MASK.z0)*S,19.2*S,0,7);x.fill();R(20,44,26,44,'#5a5a5a')}
   for(const r of(G.noGrass||[]))R(r[0],r[1],r[2],r[3]);
   const blur=document.createElement('canvas');blur.width=c.width;blur.height=c.height;const bx=blur.getContext('2d');bx.filter='blur(3px)';bx.drawImage(c,0,0);
   const t=new THREE.CanvasTexture(blur);t.flipY=false;t.colorSpace=THREE.NoColorSpace;t.minFilter=THREE.LinearFilter;t.magFilter=THREE.LinearFilter;t.generateMipmaps=false;return t}
 
 /* ---------- realistic ground ---------- */
-export function groundMaterial(){const t=tex(512,512,(x,W,H)=>{const r=rng(11);x.fillStyle='#4d6f34';x.fillRect(0,0,W,H);
-    for(let i=0;i<9000;i++){const px=r()*W,py=r()*H,s=1+r()*2.5;const k=r();x.fillStyle=k<.45?'rgba(40,66,28,.55)':k<.8?'rgba(108,140,62,.45)':'rgba(120,98,60,.35)';x.fillRect(px,py,s,s*(1+r()*3))}
-    for(let i=0;i<1400;i++){const px=r()*W,py=r()*H;x.strokeStyle=r()<.5?'rgba(150,180,90,.35)':'rgba(30,50,22,.4)';x.lineWidth=1;x.beginPath();x.moveTo(px,py);x.lineTo(px+(r()-.5)*3,py-3-r()*6);x.stroke()}});
+export function groundMaterial(snow){const t=tex(512,512,(x,W,H)=>{const r=rng(11);x.fillStyle=snow?'#e9eff3':'#4d6f34';x.fillRect(0,0,W,H);
+    for(let i=0;i<9000;i++){const px=r()*W,py=r()*H,s=1+r()*2.5;const k=r();x.fillStyle=snow?(k<.5?'rgba(200,214,226,.5)':'rgba(255,255,255,.7)'):k<.45?'rgba(40,66,28,.55)':k<.8?'rgba(108,140,62,.45)':'rgba(120,98,60,.35)';x.fillRect(px,py,s,s*(1+r()*3))}
+    if(!snow)for(let i=0;i<1400;i++){const px=r()*W,py=r()*H;x.strokeStyle=r()<.5?'rgba(150,180,90,.35)':'rgba(30,50,22,.4)';x.lineWidth=1;x.beginPath();x.moveTo(px,py);x.lineTo(px+(r()-.5)*3,py-3-r()*6);x.stroke()}});
   t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(140,140);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;
   const m=new THREE.MeshLambertMaterial({map:t});
   m.onBeforeCompile=s=>{s.vertexShader=s.vertexShader.replace('#include <common>','#include <common>\nvarying vec2 vGW;').replace('#include <begin_vertex>','#include <begin_vertex>\nvGW=(modelMatrix*vec4(position,1.)).xz;');
-    s.fragmentShader=s.fragmentShader.replace('#include <common>','#include <common>\nvarying vec2 vGW;'+NOISE).replace('#include <map_fragment>','#include <map_fragment>\n{float n=fbm2(vGW*.035);float d=fbm2(vGW*.11+9.);diffuseColor.rgb*=.78+.42*n;diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(1.15,1.02,.72),smoothstep(.6,.85,d)*.6);}')};
+    s.fragmentShader=s.fragmentShader.replace('#include <common>','#include <common>\nvarying vec2 vGW;'+NOISE).replace('#include <map_fragment>','#include <map_fragment>\n{float n=fbm2(vGW*.035);float d=fbm2(vGW*.11+9.);diffuseColor.rgb*=.78+.42*n;diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(1.15,1.02,.72),smoothstep(.6,.85,d)*'+(snow?'.0':'.6')+');}')};
   return m}
 
 /* ---------- swaying grass that follows the player ---------- */

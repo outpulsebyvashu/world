@@ -2,7 +2,10 @@ import {THREE,G,Batch,bx,cyl,col,blk,tex,wrap,lum,plane,signTex,FONT_T,FONT_D,rn
 import {PROJECTS,NUMS,ROLES,SKILLS,STORY,WA,MEMERS,FREELOADERS} from './data.js';
 import {buildArch} from './arch.js';
 import {buildDistricts,pine,palm} from './districts.js';
-import {makeLot} from './lots.js';
+import {makeLot,COOKING} from './lots.js';
+import {TOWNS} from './towns.js';
+import {buildLandmarks,extraRooms} from './landmarks.js';
+import {buildDowntown} from './downtown.js';
 export const W={};
 const PJ=n=>PROJECTS.find(p=>p.n===n)||{n,tag:'',st:'',d:'',href:'',color:'#f4efe6'};
 
@@ -20,27 +23,38 @@ export const projPoster=p=>posterTex({bg:p.color,kicker:p.tag+' · '+p.st,title:
 function addPlane(scene,w,h,map,pos,ry,tap,o={}){const m=plane(w,h,map,o);m.position.set(pos[0],pos[1],pos[2]);m.rotation.y=ry;m.receiveShadow=!!o.shadow;scene.add(m);if(tap){m.userData.tap=tap;m.userData.reach=o.reach||6;G.pick.push(m)}return m}
 
 export function buildWorld(scene){
-  G.LOT=true; // every building plot is an empty construction lot for now
+  G.LOT=true; // every unbuilt plot is an empty construction lot
+  const TN=G.TOWN||'vashupur',TD=TOWNS[TN],on=(...a)=>a.includes(TN);G.on=on;G.blocked=G.blocked||[];const RD=TD.roads;
   const S=new Batch(),WIN=new Batch(),LMP=new Batch(),RW=new Batch();
   const sideRot={s:0,n:Math.PI,e:Math.PI/2,w:-Math.PI/2};
   /* ground */
   const gnd=new THREE.Mesh(new THREE.PlaneGeometry(900,900),new THREE.MeshLambertMaterial({color:'#79c267'}));gnd.rotation.x=-Math.PI/2;gnd.receiveShadow=true;scene.add(gnd);W.ground=gnd;
-  const road=(x0,x1,z0,z1,along)=>{blk(S,x0,x1,0,.04,z0,z1,'#545861',false);
-    if(along==='x'){for(let x=x0+1.5;x<x1-1;x+=3.2)bx(S,x,.045,(z0+z1)/2,1.6,.01,.18,'#f4efe6');blk(S,x0,x1,0,.07,z0-2,z0,'#cfc7b6',false);blk(S,x0,x1,0,.07,z1,z1+2,'#cfc7b6',false)}
-    else{for(let z=z0+1.5;z<z1-1;z+=3.2)bx(S,(x0+x1)/2,.045,z,.18,.01,1.6,'#f4efe6');blk(S,x0-2,x0,0,.07,z0,z1,'#cfc7b6',false);blk(S,x1,x1+2,0,.07,z0,z1,'#cfc7b6',false)}};
-  road(16,99,-4,4,'x');road(-72,-16,-4,4,'x');road(-4,4,-24,-16,'z');road(-4,4,16,92,'z');
+  const minus=(a0,a1,cuts)=>{let sg=[[a0,a1]];for(const [c0,c1] of cuts){const n=[];for(const [s0,s1] of sg){if(c1<=s0||c0>=s1){n.push([s0,s1]);continue}if(c0>s0)n.push([s0,c0]);if(c1<s1)n.push([c1,s1])}sg=n}return sg.filter(s=>s[1]-s[0]>.3)};
+  const road=r=>{const [x0,x1,z0,z1,along]=r;blk(S,x0,x1,0,.04,z0,z1,'#545861',false);
+    if(along==='x'){const cr=RD.filter(q=>q[4]==='z'&&q[2]<z1+2&&q[3]>z0-2);
+      for(const [a,b] of minus(x0,x1,cr.map(q=>[q[0],q[1]])))for(let x=a+1.5;x<b-1;x+=3.2)bx(S,x,.045,(z0+z1)/2,1.6,.01,.18,'#f4efe6');
+      for(const [a,b] of minus(x0,x1,cr.filter(q=>q[2]<z0-1).map(q=>[q[0],q[1]])))blk(S,a,b,0,.07,z0-2,z0,'#cfc7b6',false);
+      for(const [a,b] of minus(x0,x1,cr.filter(q=>q[3]>z1+1).map(q=>[q[0],q[1]])))blk(S,a,b,0,.07,z1,z1+2,'#cfc7b6',false)}
+    else{const cr=RD.filter(q=>q[4]==='x'&&q[0]<x1+2&&q[1]>x0-2);
+      for(const [a,b] of minus(z0,z1,cr.map(q=>[q[2],q[3]])))for(let z=a+1.5;z<b-1;z+=3.2)bx(S,(x0+x1)/2,.045,z,.18,.01,1.6,'#f4efe6');
+      for(const [a,b] of minus(z0,z1,cr.map(q=>[q[2]-2,q[3]+2]))){blk(S,x0-2,x0,0,.07,a,b,'#cfc7b6',false);blk(S,x1,x1+2,0,.07,a,b,'#cfc7b6',false)}}};
+  RD.forEach(road);
+
+
+
   /* plaza */
-  for(let i=0;i<8;i++)for(let j=0;j<8;j++)blk(S,-16+i*4,-12+i*4,0,.06,-16+j*4,-12+j*4,(i+j)%2?'#e9dfca':'#ddd0b4',false);
+  if(on('vashupur'))for(let i=0;i<8;i++)for(let j=0;j<8;j++)blk(S,-16+i*4,-12+i*4,0,.06,-16+j*4,-12+j*4,(i+j)%2?'#e9dfca':'#ddd0b4',false);
   /* lamps */
   const lampPos=[];const lamp=(x,z)=>{blk(S,x-.1,x+.1,0,4.4,z-.1,z+.1,'#2c2f36',true);bx(S,x,4.45,z,.5,.12,.5,'#2c2f36');bx(LMP,x,4.3,z,.36,.2,.36,'#ffffff');lampPos.push([x,z])};
-  for(let x=20;x<98;x+=13){lamp(x,-5.4);lamp(x+6,5.4)}for(let x=-68;x<-17;x+=13){lamp(x,-5.4);lamp(x+6,5.4)}for(let z=22;z<90;z+=13){lamp(5.4,z);lamp(-5.4,z+6)}
-  for(const [x,z] of [[-15,-15],[15,-15],[-15,15],[15,15]])lamp(x,z);
+  const onRoad=(x,z)=>RD.some(q=>x>q[0]-.7&&x<q[1]+.7&&z>q[2]-.7&&z<q[3]+.7);
+  for(const q of RD){const [x0,x1,z0,z1,ax]=q;let k=0;if(ax==='x'){for(let x=x0+6;x<x1-3;x+=13){const z=(k++%2)?z1+1.4:z0-1.4;if(!onRoad(x,z))lamp(x,z)}}else{for(let z=z0+6;z<z1-3;z+=13){const x=(k++%2)?x1+1.4:x0-1.4;if(!onRoad(x,z))lamp(x,z)}}}
+  if(on('vashupur'))for(const [x,z] of [[-15,-15],[15,-15],[-15,15],[15,15]])lamp(x,z);
   const poolTex=tex(64,64,(x)=>{const g=x.createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,64,64)});
   const pools=new THREE.InstancedMesh(new THREE.PlaneGeometry(8,8).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({map:poolTex,color:'#ffc870',transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}),lampPos.length);
   const mm=new THREE.Matrix4();lampPos.forEach(([x,z],i)=>{mm.makeTranslation(x,.09,z);pools.setMatrixAt(i,mm)});pools.renderOrder=2;scene.add(pools);W.pools=pools;
 
   /* ---------- buildings ---------- */
-  const building=o=>{if(G.LOT)return makeLot(scene,{S,addPlane},o);const {x0,x1,z0,z1,h}=o;blk(S,x0,x1,0,h,z0,z1,o.col);if(o.band!==false)blk(S,x0-.15,x1+.15,h-.5,h,z0-.15,z1+.15,o.trim||'#f4efe6',false);
+  const building=o=>{if(G.LOT&&!o.real)return makeLot(scene,{S,addPlane},Object.assign({snow:TD.snow},o));const {x0,x1,z0,z1,h}=o;blk(S,x0,x1,0,h,z0,z1,o.col);if(o.band!==false)blk(S,x0-.15,x1+.15,h-.5,h,z0-.15,z1+.15,o.trim||'#f4efe6',false);
     if(o.roof==='none'){}else if(o.roof==='step'){const rc=o.roofCol||'#c0392b';for(let i=0;i<3;i++){const k=i*1.3-.5;blk(S,x0+k,x1-k,h+i*.65,h+(i+1)*.65,z0+k,z1-k,i%2?rc:shade(rc),false)}}
     else{blk(S,x0,x1,h,h+.7,z0-.15,z0+.25,o.trim||'#f4efe6',!!o.walkRoof);blk(S,x0,x1,h,h+.7,z1-.25,z1+.15,o.trim||'#f4efe6',!!o.walkRoof);blk(S,x0-.15,x0+.25,h,h+.7,z0,z1,o.trim||'#f4efe6',!!o.walkRoof);blk(S,x1-.25,x1+.15,h,h+.7,z0,z1,o.trim||'#f4efe6',!!o.walkRoof);if(!o.walkRoof)bx(S,(x0+x1)/2+1,h+.6,(z0+z1)/2,2,1.2,1.6,'#9aa3ad')}
     const d=o.door,dr=sideRot[d.side];const nx=d.side==='e'?1:d.side==='w'?-1:0,nz=d.side==='s'?1:d.side==='n'?-1:0;
@@ -69,15 +83,19 @@ export function buildWorld(scene){
   G.seats=[];
   const bench=(x,z,ry)=>{const b=new Batch();bx(b,0,.5,0,2.2,.12,.6,'#8a5a3b');bx(b,0,.85,-.28,2.2,.5,.08,'#8a5a3b');bx(b,-.9,.25,0,.12,.5,.5,'#2c2f36');bx(b,.9,.25,0,.12,.5,.5,'#2c2f36');const m=b.mesh(CHM);m.castShadow=true;m.position.set(x,0,z);m.rotation.y=ry;scene.add(m);
     const c=Math.abs(Math.sin(ry))>.5;col(x-(c?.35:1.1),x+(c?.35:1.1),0,.55,z-(c?1.1:.35),z+(c?1.1:.35));G.seats.push({x:x+Math.sin(ry)*.05,z:z+Math.cos(ry)*.05,y:.55,yaw:ry,label:'Sit on bench'})};
-  const ctx={S,WIN,LMP,building,addPlane:(sc,w,h_,map,pos,ry,tap,o)=>addPlane(sc,w,h_,map,pos,ry,tap,o),bench,model,card:p=>G.card(p),W};
-  const outs=buildArch(scene,ctx);Object.assign(outs,buildDistricts(scene,ctx));
+  const ctx={TN,TD,on,RD,S,WIN,LMP,building,addPlane:(sc,w,h_,map,pos,ry,tap,o)=>addPlane(sc,w,h_,map,pos,ry,tap,o),bench,model,card:p=>G.card(p),W};
+  const outs=buildArch(scene,ctx);Object.assign(outs,buildDistricts(scene,ctx));Object.assign(outs,buildLandmarks(scene,ctx));
+  if(on('delulugarh'))Object.assign(outs,buildDowntown(scene,ctx));
+  TD.plots.forEach(q=>building({name:'lot',x0:q[0],x1:q[1],z0:q[2],z1:q[3],door:{side:q[4],at:(q[4]==='e'||q[4]==='w')?(q[2]+q[3])/2:(q[0]+q[1])/2}}));
   W.outs=outs;
 
   /* ---------- HQ roof + ladder + scooter ---------- */
+  if(!G.LOT){
   const lad=new Batch();for(const z of[-36.4,-35.6])bx(lad,12.2,7.6,z,.12,15.2,.12,'#ffcc3a');for(let y=.6;y<15;y+=.6)bx(lad,12.2,y,-36,.1,.08,.9,'#ffcc3a');
   W.ladder=lad.mesh(CHM);W.ladder.visible=false;scene.add(W.ladder);
   const roofB=new Batch();for(let i=0;i<10;i++)bx(roofB,-9+i*2,15.9,-27,.18,.18,.18,'#ffffff');
   W.roofLights=roofB.mesh(new THREE.MeshBasicMaterial({vertexColors:true}));scene.add(W.roofLights);if(G.LOT)W.roofLights.visible=false;
+  }
   if(!G.LOT){
   for(let i=0;i<10;i++){bx(S,-9+i*2,16.6,-26.6,.04,1.6,.04,'#333')}
   blk(S,-8,-6,15,15.7,-34,-32,'#ff8fc1');blk(S,-4,-2,15,15.7,-34,-32,'#3d7be8');blk(S,2,4,15,15.7,-34,-32,'#c9f26b');blk(S,-2,2,15,15.6,-40,-38,'#6b4a35');
@@ -89,9 +107,10 @@ export function buildWorld(scene){
   const sc2=new Batch();bx(sc2,0,.35,0,.5,.12,1.6,'#d7263d');bx(sc2,0,.9,.72,.1,1.1,.1,'#1d1d1d');bx(sc2,0,1.42,.72,.9,.08,.08,'#1d1d1d');bx(sc2,0,1.42,.72,.92,.12,.12,'#d7263d');
   for(const z of[.72,-.72]){const g=new THREE.CylinderGeometry(.25,.25,.16,14);g.rotateZ(Math.PI/2);g.translate(0,.25,z);sc2.add(g,'#1d1d1d')}
   bx(sc2,0,.42,-.82,.3,.08,.1,'#ff3b3b');
-  const scooter=new THREE.Group();const scMesh=sc2.mesh(CHM);scMesh.castShadow=true;scooter.add(scMesh);scooter.position.set(8.5,0,-20.5);scooter.rotation.y=Math.PI/2;scene.add(scooter);W.scooter=scooter;
+  const scooter=new THREE.Group();const scMesh=sc2.mesh(CHM);scMesh.castShadow=true;scooter.add(scMesh);scooter.position.set(TD.scooter[0],0,TD.scooter[1]);scooter.rotation.y=TD.scooter[2];scene.add(scooter);W.scooter=scooter;
 
   /* ---------- plaza: cup fountain, monoliths, arch, booths ---------- */
+  if(on('vashupur')){
   cyl(S,0,.7,0,1.75,1.5,1.4,'#ffffff',20);cyl(S,0,1.39,0,1.55,1.55,.04,'#6b3e22',20);bx(S,2,.8,0,.5,.9,.25,'#ffffff');col(-1.6,1.6,0,1.4,-1.6,1.6);
   cyl(S,0,.03,0,3.2,3.2,.06,'#b9e3f5',24);
   W.steam=[];for(let i=0;i<5;i++){const m=new THREE.Mesh(new THREE.BoxGeometry(.4,.4,.4),new THREE.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:.5,depthWrite:false}));m.userData.o=i/5;scene.add(m);W.steam.push(m)}
@@ -109,23 +128,26 @@ export function buildWorld(scene){
   const disco=new THREE.Group();const dball=new THREE.Mesh(new THREE.IcosahedronGeometry(1,1),new THREE.MeshLambertMaterial({color:'#e8e8f0',flatShading:true,emissive:'#333'}));dball.position.y=9;disco.add(dball);
   const beamG=new THREE.ConeGeometry(2.4,9,16,1,true);beamG.translate(0,-4.5,0);const beams=[];['#ff3b8d','#3bd1ff','#c9f26b','#ffcc3a','#a463ff','#ff6a3d'].forEach((c,i)=>{const m=new THREE.Mesh(beamG,new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.18,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}));m.position.y=9;m.rotation.z=.5;m.userData.a=i/6*Math.PI*2;disco.add(m);beams.push(m)});
   const pole=new THREE.Mesh(new THREE.BoxGeometry(.2,2.6,.2),new THREE.MeshLambertMaterial({color:'#333'}));pole.position.y=10.3;disco.add(pole);disco.visible=false;scene.add(disco);W.disco={g:disco,ball:dball,beams};
+  }
 
   /* ---------- poster street ---------- */
-  PROJECTS.forEach((p,i)=>{const x=24+i*5.2;blk(S,x-2.25,x+2.25,1,6.5,9.2,9.5,'#141414');blk(S,x-.15,x+.15,0,1,9.25,9.45,'#141414');
-    addPlane(scene,4.2,5.25,projPoster(p),[x,3.75,9.17],Math.PI,()=>G.card(p),{reach:7})});
-  // bus stop
-  blk(S,16.5,19.5,0,.5,7.2,7.8,'#2f5bff');blk(S,16.4,16.6,0,2.6,7.8,8.2,'#2c2f36');blk(S,19.4,19.6,0,2.6,7.8,8.2,'#2c2f36');blk(S,16.2,19.8,2.6,2.75,6.6,8.4,'#2f5bff',true);
-  addPlane(scene,2.8,.5,signTex('BUS: WHENEVER YOU HIRE ME','#ffcc3a','#141414',512,90),[18,2.2,8.21],Math.PI,null);
+  if(on('memepura'))PROJECTS.forEach((p,i)=>{const x=24+i*5.2;const nn=String(i+1).padStart(2,'0');blk(S,x-2.25,x+2.25,1,6.5,9.2,9.5,'#141414');blk(S,x-.15,x+.15,0,1,9.25,9.45,'#141414');
+    const c=Object.assign({},COOKING,{n:'Project №'+nn,tag:p.tag,st:p.st,d:'A '+p.tag.toLowerCase()+' project, currently '+p.st.toLowerCase()+'. The name stays under wraps until it ships.'});
+    addPlane(scene,4.2,5.25,posterTex({bg:p.color,kicker:'№ '+nn+' · '+p.tag,title:'Something\'s cooking',body:p.st+'. Name under wraps.',foot:'TAP TO PEEK'}),[x,3.75,9.17],Math.PI,()=>G.card(c),{reach:7})});
+
+
+
 
   /* ---------- water tower cup + construction lot ---------- */
-  for(const [x,z] of[[-26,-38],[-22,-38],[-26,-34],[-22,-34]])blk(S,x-.25,x+.25,0,7,z-.25,z+.25,'#6b6f78');
-  cyl(S,-24,8.5,-36,2.6,2.2,3,'#ffffff',18);cyl(S,-24,8.5,-36,2.62,2.62,.6,'#ff6a3d',18);cyl(S,-24,10.01,-36,2.45,2.45,.04,'#6b3e22',18);
-  blk(S,40,92,0,1.4,-46,-45.7,'#ffcc3a',true);for(let x=40;x<92;x+=4)bx(S,x,1.5,-45.85,.3,.3,.3,'#141414');
-  blk(S,66,67,0,16,-38,-37,'#ffcc3a');blk(S,56,80,15,16,-38,-37,'#ffcc3a',false);blk(S,64,68,0,2.5,-41,-38.5,'#ffcc3a');
-  addPlane(scene,6,1.5,signTex('UNDER CONSTRUCTION · OUTPULSE PROJECTS','#ffcc3a','#141414',1024,256),[60,3,-45.55],0,null);
-  blk(S,58,62,0,1.2,-36,-32,'#9aa3ad');blk(S,70,73,0,2,-34,-30,'#e94b3c');
+  if(on('vashupur')){for(const [x,z] of[[-26,-38],[-22,-38],[-26,-34],[-22,-34]])blk(S,x-.25,x+.25,0,7,z-.25,z+.25,'#6b6f78');
+  cyl(S,-24,8.5,-36,2.6,2.2,3,'#ffffff',18);cyl(S,-24,8.5,-36,2.62,2.62,.6,'#ff6a3d',18);cyl(S,-24,10.01,-36,2.45,2.45,.04,'#6b3e22',18);}
+
+
+
+
 
   /* ---------- park, lake, pitch, stall ---------- */
+  if(on('memepura')){
   cyl(S,64,.03,64,19,19,.06,'#ecdcaa',40);
   const water=new THREE.Mesh(new THREE.CircleGeometry(13,40),new THREE.MeshLambertMaterial({color:'#3fa7e0',transparent:true,opacity:.92}));water.rotation.x=-Math.PI/2;water.position.set(64,.08,64);scene.add(water);W.water=water;W.lake={x:64,z:64,r:13};
   blk(S,63,65,.25,.35,46,58,'#8a5a3b');for(const z of[50,54,57.5])for(const x of[63.1,64.9])blk(S,x-.12,x+.12,-.2,.35,z-.12,z+.12,'#5e3b24',false);
@@ -134,16 +156,18 @@ export function buildWorld(scene){
   for(const gx of[20,44]){blk(S,gx-.12,gx+.12,0,2.2,33.1,33.3,'#ffffff');blk(S,gx-.12,gx+.12,0,2.2,36.7,36.9,'#ffffff');blk(S,gx-.12,gx+.12,2.1,2.3,33.1,36.9,'#ffffff',false)}
   W.pitch={x0:20,x1:44,z0:26,z1:44,gz0:33.4,gz1:36.6};
   const ball=new THREE.Mesh(new THREE.IcosahedronGeometry(.42,1),new THREE.MeshLambertMaterial({color:'#ffffff',flatShading:true}));ball.castShadow=true;ball.position.set(32,.42,35);scene.add(ball);W.ball={m:ball,v:new THREE.Vector3()};
-  // stall
-  blk(S,49,55,0,1,25,26.2,'#8a5a3b');for(const x of[49.2,54.8])blk(S,x-.1,x+.1,0,3,25,25.2,'#5e3b24');bx(S,52,3.05,25.3,6.4,.2,2,'#ff6a3d');
-  for(let i=0;i<4;i++){bx(S,50+i*1.3,1.3,25.6,.9,.6,.7,'#c9a26b');bx(S,50+i*1.3,1.62,25.6,.8,.06,.6,'#4a2c1a')}
-  addPlane(scene,4,.8,signTex('COORG BEANS · DIRECT FROM FARM','#141414','#ffcc3a',512,100),[52,3.4,26.35],0,null);
+  }
+  if(on('kaapikunj')){// Coorg beans stall, facing the café strip
+  blk(S,-73,-67,0,1,8.6,9.8,'#8a5a3b');for(const x of[-72.8,-67.2])blk(S,x-.1,x+.1,0,3,9.6,9.8,'#5e3b24');bx(S,-70,3.05,9.3,6.4,.2,2,'#ff6a3d');
+  for(let i=0;i<4;i++){bx(S,-71.95+i*1.3,1.3,9.2,.9,.6,.7,'#c9a26b');bx(S,-71.95+i*1.3,1.62,9.2,.8,.06,.6,'#4a2c1a')}
+  addPlane(scene,4,.8,signTex('COORG BEANS · DIRECT FROM FARM','#141414','#ffcc3a',512,100),[-70,3.4,8.15],Math.PI,null);}
   // low wall (bean spot)
-  blk(S,96,97,0,1.2,20,88,'#c9c2b4');
+  if(on('memepura'))blk(S,96,97,0,1.2,20,88,'#c9c2b4');
   // benches
-bench(-12.5,0,Math.PI/2);bench(52,46,0);bench(78,56,-Math.PI/2);bench(64,80,Math.PI);bench(10,28,-Math.PI/2);
+  if(on('vashupur'))bench(-12.5,0,Math.PI/2);if(on('memepura')){bench(52,46,0);bench(78,56,-Math.PI/2);bench(64,80,Math.PI)}if(on('basti'))bench(10,28,-Math.PI/2);
 
   /* ---------- event ground ---------- */
+  if(on('basti')){
   const fence=(x0,x1,z0,z1)=>blk(S,x0,x1,0,.9,z0,z1,'#ffffff');fence(-46,-45.8,26,68);fence(-46,-10,67.8,68);fence(-10.2,-10,44,68);fence(-46,-10,26,26.2);
   blk(S,-40,-16,0,1.2,58,64,'#2b2b2b');blk(S,-31,-25,0,.6,57,58,'#2b2b2b');blk(S,-40,-16,1.2,8.5,64,64.6,'#141414');
   for(const x of[-41.2,-14.8]){blk(S,x-1,x+1,0,4,59,61,'#1d1d1d');bx(S,x,1.2,61.02,1,1,.05,'#444');bx(S,x,2.8,61.02,1,1,.05,'#444')}
@@ -154,18 +178,29 @@ bench(-12.5,0,Math.PI/2);bench(52,46,0);bench(78,56,-Math.PI/2);bench(64,80,Math
   const podium=new Batch();bx(podium,0,.6,0,1.2,1.2,.8,'#ffffff');bx(podium,0,.75,.41,1,.4,.02,'#ff6a3d');W.podium=podium.mesh(CHM);W.podium.position.set(-28,1.2,58.8);scene.add(W.podium);
   G.chairs=[];for(let r=0;r<4;r++)for(let c=0;c<6;c++){const x=-36+c*3.2,z=40+r*3;const b=new Batch();bx(b,0,.48,0,.6,.08,.6,'#e94b3c');bx(b,0,.8,-.27,.6,.6,.06,'#e94b3c');for(const a of[-.25,.25])for(const bb of[-.25,.25])bx(b,a,.22,bb,.06,.44,.06,'#2c2f36');const m=b.mesh(CHM);m.position.set(x,0,z);scene.add(m);G.chairs.push({x,z,taken:false});G.seats.push({x,z:z+.05,y:.52,yaw:0,label:'Sit and watch',event:true})}
   W.event={x:-28,z:50};
+  }
 
   /* ---------- trees, flowers, hills, bounds ---------- */
-  const R=rng(42);const blocked=[[-17,17,-17,17],[-96,99,-7,7],[-7,7,-26,92],[-13,13,-47,-23],[-41,-21,-23,-7],[21,94,-23,-7],[-43,-15,9,21],[-61,-49,9,21],[-91,-73,-9,9],[-61,-45,-23,-7],[-71,-61,-23,-9],[-47,-9,25,69],[18,46,24,46],[48,56,23,28],[49,79,49,79],[15,98,8,11],[38,94,-47,-28],[-28,-20,-40,-32],[11,15,10,14]];
-  const free=(x,z)=>!blocked.concat(G.blocked||[]).some(b=>x>b[0]-1.5&&x<b[1]+1.5&&z>b[2]-1.5&&z<b[3]+1.5);
+  const R=rng(42+TN.length*7);const [bx0,bx1,bz0,bz1]=TD.b;
+  const blocked=RD.map(q=>[q[0]-2.5,q[1]+2.5,q[2]-2.5,q[3]+2.5]);
+  if(on('vashupur'))blocked.push([-17,17,-17,17],[-13,13,-47,-23],[-8,11,14,30],[11,15,10,14]);
+  if(on('memepura'))blocked.push([18,46,24,46],[49,79,49,79],[15,98,8,11],[95,99,18,90],[14,22,6,10]);
+  if(on('basti'))blocked.push([-47,-9,25,69],[2,12,18,32]);
+  if(on('kaapikunj'))blocked.push([-76,-62,6,25],[-16,-9,6,10]);
+  if(on('barfii'))blocked.push([-95,-81,10,24],[-36,-26,6,10]);
+  const free=(x,z)=>!blocked.concat(G.blocked).some(b=>x>b[0]-1.5&&x<b[1]+1.5&&z>b[2]-1.5&&z<b[3]+1.5);
   const tree=(x,z,s=1)=>{const lc=['#3d6b2c','#4a7a33','#355f28','#557f38','#46702f'];s*=1.25;const tg=new THREE.CylinderGeometry(.13*s,.24*s,2.4*s,7);tg.translate(x,1.2*s,z);S.add(tg,'#5b4330');col(x-.2*s,x+.2*s,0,2.4*s,z-.2*s,z+.2*s);
     const n=3+Math.floor(R()*3);for(let i=0;i<n;i++){const r=(.9+R()*.7)*s;const g=new THREE.IcosahedronGeometry(r,1);const pa=g.attributes.position;for(let k=0;k<pa.count;k++){const f=.82+R()*.3;pa.setXYZ(k,pa.getX(k)*f,pa.getY(k)*f*.85,pa.getZ(k)*f)}g.computeVertexNormals();
       g.translate(x+(R()-.5)*1.6*s,(2.6+R()*1.4)*s,z+(R()-.5)*1.6*s);S.add(g,lc[Math.floor(R()*lc.length)])}(G.camCols=G.camCols||[]).push({x0:x-1.7*s,x1:x+1.7*s,y0:1.7*s,y1:5*s,z0:z-1.7*s,z1:z+1.7*s})};
-  let n=0;for(let i=0;i<900&&n<170;i++){const x=-94+R()*190,z=-50+R()*138;if(free(x,z)&&(Math.abs(x)>20||Math.abs(z)>20)){if(x<-18)pine(S,x,z,.9+R()*.5,R()<.5);else if(x>18&&z>8&&R()<.55)palm(S,x,z,5+R()*2.5,.3,i);else tree(x,z,.8+R()*.5);n++}}
-  for(let a=0;a<Math.PI*2;a+=.07){for(const rr of[0,1]){const x=Math.cos(a),z=Math.sin(a);const px=x*(112+rr*10)+3,pz=z*(85+rr*10)+20;if(px<-60)pine(S,px,pz,1.4+R()*.6,true);else if(px>60&&pz>0&&R()<.5)palm(S,px,pz,6+R()*3,.4,Math.floor(a*100));else tree(px,pz,1.2+R())}}
-  for(let i=0;i<60;i++){const x=-94+R()*190,z=-50+R()*138;if(free(x,z))bx(S,x,.15,z,.35,.3,.35,['#ff6b9d','#ffcc3a','#ffffff','#a463ff'][i%4])}
-  for(let a=0;a<Math.PI*2;a+=.22){const ca=Math.cos(a);if(ca<-.45){const r=190+R()*50,hh=70+R()*60,rad=35+R()*25;const g=new THREE.ConeGeometry(rad,hh,7);g.rotateY(R()*3);g.translate(ca*r,hh/2-6,Math.sin(a)*r+20);S.add(g,R()<.5?'#5d6b62':'#6b776e');const g2=new THREE.ConeGeometry(rad*.36,hh*.36,7);g2.translate(ca*r,hh-6-hh*.18+.5,Math.sin(a)*r+20);S.add(g2,'#f5f7fa');continue}const r=240+R()*60,hh=25+R()*45,rad=50+R()*40;const g=new THREE.SphereGeometry(rad,14,8,0,Math.PI*2,0,Math.PI/2);g.scale(1.6,hh/rad,1);g.rotateY(a);g.translate(Math.cos(a)*r,-2,Math.sin(a)*r+20);S.add(g,R()<.5?'#4f7a3e':'#5a8445')}
-  col(-97,-96,0,6,-52,92,{cam:false});col(98.5,99.5,0,6,-52,92,{cam:false});col(-97,100,0,6,-53,-52,{cam:false});col(-97,100,0,6,91,92,{cam:false});
+  const plant=(x,z,s)=>{const f=TD.flora;if(f==='pine'||(f==='mix'&&x<-60))pine(S,x,z,s*.8+.3,!!TD.snow||R()<.25);else if(f==='palm'&&R()<.6)palm(S,x,z,5+R()*2.5,.3,Math.floor(Math.abs(x*z)));else tree(x,z,s)};
+  let n=0;for(let i=0;i<900&&n<TD.trees;i++){const x=bx0+3+R()*(bx1-bx0-6),z=bz0+3+R()*(bz1-bz0-6);if(free(x,z)){plant(x,z,.8+R()*.5);n++}}
+  const cxT=(bx0+bx1)/2,czT=(bz0+bz1)/2,hx=(bx1-bx0)/2,hz=(bz1-bz0)/2;const rect=a=>1/Math.max(Math.abs(Math.cos(a))/hx,Math.abs(Math.sin(a))/hz);
+  if(!TD.city)for(let a=0;a<Math.PI*2;a+=.07){for(const rr of[0,1]){const k=rect(a)+5+rr*9;const px=cxT+Math.cos(a)*k,pz=czT+Math.sin(a)*k;if(TD.sea&&px>bx1-3)continue;plant(px,pz,1.2+R())}}
+  if(!TD.snow&&!TD.city)for(let i=0;i<50;i++){const x=bx0+3+R()*(bx1-bx0-6),z=bz0+3+R()*(bz1-bz0-6);if(free(x,z))bx(S,x,.15,z,.35,.3,.35,['#ff6b9d','#ffcc3a','#ffffff','#a463ff'][i%4])}
+  for(let a=0;a<Math.PI*2;a+=.2){const ca=Math.cos(a),sa=Math.sin(a);if(TD.sea&&ca>.35)continue;const base=rect(a);
+    if(TD.snow||(TD.flora==='mix'&&ca<-.6&&on('kaapikunj'))){const r=base+75+R()*60,hh=70+R()*70,rad=35+R()*25;const g=new THREE.ConeGeometry(rad,hh,7);g.rotateY(R()*3);g.translate(cxT+ca*r,hh/2-6,czT+sa*r);S.add(g,R()<.5?'#5d6b62':'#6b776e');const g2=new THREE.ConeGeometry(rad*.36,hh*.36,7);g2.translate(cxT+ca*r,hh-6-hh*.18+.5,czT+sa*r);S.add(g2,'#f5f7fa');continue}
+    const r=base+(on('kaapikunj')?70:120)+R()*60,hh=25+R()*45,rad=50+R()*40;const g=new THREE.SphereGeometry(rad,14,8,0,Math.PI*2,0,Math.PI/2);g.scale(1.6,hh/rad,1);g.rotateY(-a+Math.PI/2);g.translate(cxT+ca*r,-2,czT+sa*r);S.add(g,on('kaapikunj')?(R()<.5?'#3f6e34':'#4b7d3c'):(R()<.5?'#4f7a3e':'#5a8445'))}
+  col(bx0-1,bx0,0,6,bz0-1,bz1+1,{cam:false});col(bx1,bx1+1,0,6,bz0-1,bz1+1,{cam:false});col(bx0-1,bx1+1,0,6,bz0-1,bz0,{cam:false});col(bx0-1,bx1+1,0,6,bz1,bz1+1,{cam:false});
 
   /* ---------- clouds + stars ---------- */
   const cl=new Batch();for(let i=0;i<14;i++){const x=-150+R()*300,z=-120+R()*260,y=48+R()*14;for(let j=0;j<4;j++)bx(cl,x+j*4-6+R()*2,y+R()*2,z+R()*4,5+R()*4,2.5,5+R()*3,'#ffffff')}
@@ -188,18 +223,24 @@ bench(-12.5,0,Math.PI/2);bench(52,46,0);bench(78,56,-Math.PI/2);bench(64,80,Math
 /* =================== interiors =================== */
 function buildRooms(scene,S,RW,WIN,outs){
   let RX=600;
-  const room=(id,o,fill)=>{const cx=RX;RX+=80;const w=o.w,d=o.d,h=o.h||5.5,x0=cx-w/2,x1=cx+w/2,z0=-d/2,z1=d/2;
-    bx(RW,cx,h/2-.3,0,w,h+.6,d,o.wall);blk(S,x0,x1,-.3,0,z0,z1,o.floor,false);
-    blk(S,x0,x1,0,.25,z0,z0+.06,o.trim||'#ffffff',false);blk(S,x0,x0+.06,0,.25,z0,z1,o.trim||'#ffffff',false);blk(S,x1-.06,x1,0,.25,z0,z1,o.trim||'#ffffff',false);
-    col(x0-1,x0,0,h,z0-1,z1+1,{cam:false});col(x1,x1+1,0,h,z0-1,z1+1,{cam:false});col(x0-1,x1+1,0,h,z0-1,z0,{cam:false});col(x0-1,x1+1,0,h,z1,z1+1,{cam:false});
-    bx(S,cx,.02,z1-.8,1.8,.02,1,'#7a4a2a');
-    const r={id,name:o.name,cx,x0,x1,z0,z1,h,spawn:{x:cx,z:z1-2.8},out:outs[id],light:o.light||'#fff4e0'};G.rooms[id]=r;
-    G.triggers.push({x:cx,z:z1-1,r:1.4,label:'Exit to town',act:()=>G.exit(id)});
-    fill({cx,x0,x1,z0,z1,h,S,RW,WIN,
-      back:(u,y,w_,h_,map,tap,o2)=>addPlane(scene,w_,h_,map,[cx+u,y,z0+.03],0,tap,o2),
-      left:(u,y,w_,h_,map,tap,o2)=>addPlane(scene,w_,h_,map,[x0+.03,y,u],Math.PI/2,tap,o2),
-      right:(u,y,w_,h_,map,tap,o2)=>addPlane(scene,w_,h_,map,[x1-.03,y,u],-Math.PI/2,tap,o2),
-      npc:(cfg)=>npc(scene,Object.assign({room:id},cfg))});
+  const LIVE={vashupur:['museum','police','fire'],kaapikunj:['cafe','home','kunj'],delulugarh:['nth','nthlab']};
+  const LMAT=new THREE.MeshLambertMaterial({vertexColors:true}),BMAT=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.BackSide});
+  /* rooms are registered now but only built the first time someone walks in */
+  const room=(id,o,fill)=>{if(G.LOT&&!(LIVE[G.TOWN]||[]).includes(id))return null;const cx=RX;RX+=80;const w=o.w,d=o.d,h=o.h||5.5,x0=cx-w/2,x1=cx+w/2,z0=-d/2,z1=d/2;
+    const r={id,name:o.name,cx,x0,x1,z0,z1,h,spawn:{x:cx,z:z1-2.8},out:o.out||outs[id],light:o.light||'#fff4e0'};G.rooms[id]=r;
+    if(o.exit!==false)G.triggers.push({x:cx,z:z1-1,r:1.4,label:'Exit to town',act:()=>G.exit(id)});
+    r.build=()=>{const s0=S,r0=RW,w0=WIN;S=new Batch();RW=new Batch();WIN=new Batch();
+      bx(RW,cx,h/2-.3,0,w,h+.6,d,o.wall);blk(S,x0,x1,-.3,0,z0,z1,o.floor,false);
+      blk(S,x0,x1,0,.25,z0,z0+.06,o.trim||'#ffffff',false);blk(S,x0,x0+.06,0,.25,z0,z1,o.trim||'#ffffff',false);blk(S,x1-.06,x1,0,.25,z0,z1,o.trim||'#ffffff',false);
+      col(x0-1,x0,0,h,z0-1,z1+1,{cam:false});col(x1,x1+1,0,h,z0-1,z1+1,{cam:false});col(x0-1,x1+1,0,h,z0-1,z0,{cam:false});col(x0-1,x1+1,0,h,z1,z1+1,{cam:false});
+      bx(S,cx,.02,z1-.8,1.8,.02,1,'#7a4a2a');
+      fill({cx,x0,x1,z0,z1,h,S,RW,WIN,
+        back:(u,y,w_,h_,map,tap,o2)=>addPlane(scene,w_,h_,map,[cx+u,y,z0+.03],0,tap,o2),
+        left:(u,y,w_,h_,map,tap,o2)=>addPlane(scene,w_,h_,map,[x0+.03,y,u],Math.PI/2,tap,o2),
+        right:(u,y,w_,h_,map,tap,o2)=>addPlane(scene,w_,h_,map,[x1-.03,y,u],-Math.PI/2,tap,o2),
+        npc:(cfg)=>npc(scene,Object.assign({room:id},cfg))});
+      const m=S.mesh(LMAT);m.castShadow=true;m.receiveShadow=true;scene.add(m);scene.add(WIN.mesh(W.winMat));const rw=RW.mesh(BMAT);rw.receiveShadow=true;scene.add(rw);
+      S=s0;RW=r0;WIN=w0};
     return r};
   const proj=n=>{const p=PJ(n);return()=>G.card(p)};
 
@@ -217,8 +258,10 @@ function buildRooms(scene,S,RW,WIN,outs){
     blk(R.S,cx-6,cx+6,0,1.1,z0+1.4,z0+2.6,'#c89b6d');bx(R.S,cx,1.13,z0+2,12.2,.06,1.4,'#f7f2ea');for(let u=-5.8;u<6;u+=.3)bx(R.S,cx+u,.55,z0+2.62,.12,1.1,.05,'#b8895c');
     blk(R.S,cx-1.2,cx+1.2,1.16,2,z0+1.6,z0+2.4,'#c9ccd1',false);for(const dx of[-.6,.6])bx(R.S,cx+dx,1.55,z0+2.45,.24,.16,.2,'#2c2f36');bx(R.S,cx+2,1.6,z0+2,.5,.9,.5,'#1d1d1d');
     for(let i=0;i<10;i++)bx(R.S,cx-5+i*1.1,3.1,z0+.35,.25,.7,.25,['#3fa7e0','#c9f26b','#ff6a3d','#ffcc3a','#a463ff'][i%5]);bx(R.S,cx,2.72,z0+.4,12,.08,.6,'#6b4a35');
-    R.back(-4.5,3.6,4,2.6,posterTex({w:512,h:332,bg:'#d7263d',kicker:'Menu',title:'Recipe Book',big:70,foot:'TAP TO OPEN'}),proj('Recipe Book'),{reach:8});
-    R.back(4.5,3.6,4,2.6,posterTex({w:512,h:332,bg:'#fff06b',kicker:'Craft',title:'Bar Craft',big:70,foot:'TAP TO VIEW'}),proj('Bar Craft'),{reach:8});
+    const menu={n:'TOKI menu',tag:'Specialty coffee',st:'All day',d:'Espresso ₹120 · Cortado ₹150 · Cappuccino ₹170 · Pour-over (single origin) ₹220 · Cold brew ₹190 · Filter kaapi ₹60. Ask for the bean of the week.',href:'',color:'#1f3a5f'};
+    R.back(-4.5,3.6,4,2.6,posterTex({w:512,h:332,bg:'#1f3a5f',kicker:'TOKI',title:'Menu',big:84,body:'Espresso · Cortado · Pour-over · Filter kaapi',bs:22,foot:'TAP TO READ'}),()=>G.card(menu),{reach:8});
+    const guide={n:'Brew guide',tag:'House recipe',st:'Pour-over',d:'15 g coffee, 250 g water at 93°C. Bloom 40 g for 30 s, then pour in slow circles to 250 g by 2:00. Drawdown by 3:00. Taste. Adjust grind. Repeat. Cup first, then the numbers.',href:'',color:'#f3eee6'};
+    R.back(4.5,3.6,4,2.6,posterTex({w:512,h:332,bg:'#f3eee6',kicker:'House recipe',title:'Brew guide',big:70,body:'15 g · 250 g · 93°C · 3:00',bs:24,foot:'TAP TO READ'}),()=>G.card(guide),{reach:8});
     ROLES.forEach((r,i)=>{const side=i<3?'left':'right';const u=-3.5+(i%3)*3.5;R[side](u,2.8,2.6,3.25,posterTex({bg:['#ff6a3d','#2f5bff','#c9f26b','#ffc9e0','#f4efe6','#ffcc3a'][i],kicker:r[0],title:r[1],body:r[2],big:58,bs:24}),()=>G.card({n:r[1],tag:r[0],st:r[2],d:'Part of the journey: '+r[1]+' at '+r[2]+'.',href:'',color:'#f4efe6'}),{reach:6})});
     G.triggers.push({x:cx,z:z0+3.4,r:1.5,label:'Brew a coffee',act:()=>G.brew()});
     const tables=[[-4.5,-.5],[4.5,-.5],[0,.8]];const lk=[{shirt:'#2f5bff',hair:'long',face:'smile'},{shirt:'#c9f26b',hair:'cap',hat:'#141414',face:'grin'},{shirt:'#ff8fc1',hair:'bun',face:'o'}];
@@ -280,6 +323,7 @@ function buildRooms(scene,S,RW,WIN,outs){
     for(const u of[-6.5,6.5]){blk(R.S,cx+u-.3,cx+u+.3,0,1.6,z0+.4,z0+1,'#ffffff');bx(R.S,cx+u,1.2,z0+1.01,.3,.3,.02,'#2ee66b')}
     R.npc({name:'EV Advisor Rohan',x:cx+3,z:2.2,yaw:Math.PI,look:{shirt:'#d7263d',pants:'#141414',hair:'short',face:'grin',logo:'#ffffff'},emote:'talk',lines:['Range anxiety? Never heard of her.','600W belt drive. Silent. Smooth. Zero petrol bills.','Test ride? Find all 8 beans and the one parked outside HQ is yours.'],barks:['Zero emissions!','Test ride?']})});
 
+  extraRooms(room,{scene,addPlane,posterTex,npc,W,outs});
 }
 function model(b,n,c){
   if(n==='OS-NEKO'){bx(b,0,.45,0,.8,.55,.9,'#16224a');bx(b,0,.85,.1,.6,.35,.5,'#f4efe6');for(const s of[-1,1]){bx(b,s*.18,1.1,.1,.12,.18,.08,'#16224a');for(const z of[-.3,.3]){const g=new THREE.CylinderGeometry(.14,.14,.1,10);g.rotateZ(Math.PI/2);g.translate(s*.42,.16,z);b.add(g,'#1d1d1d')}}bx(b,-.12,.88,.36,.08,.08,.02,'#3bd1ff');bx(b,.12,.88,.36,.08,.08,.02,'#3bd1ff')}
@@ -292,22 +336,28 @@ function model(b,n,c){
 export function npc(scene,cfg){const c=makeChar(Object.assign({seed:Math.floor(Math.random()*1e4)},cfg.look||{}));c.position.set(cfg.x,cfg.y||0,cfg.z);c.rotation.y=cfg.yaw||0;scene.add(c);
   const n=Object.assign({c,kind:'static',speed:0,pi:0,pause:0,emote:cfg.emote||null},cfg);if(cfg.sit){c.position.y+=.18}
   c.traverse(o=>{if(o.isMesh)o.userData.npc=n});c.userData.tap=()=>G.talk(n);c.userData.reach=4;G.pick.push(c);G.npcs.push(n);return n}
-export function spawnTown(scene){
+export function spawnTown(scene){const T=G.TOWN||'vashupur',on=(...a)=>a.includes(T);
   (G.extraNPCs||[]).forEach(c=>npc(scene,c));
-  const loops={plaza:[[-17,-17],[17,-17],[17,17],[-17,17]],east:[[18,6],[96,6],[96,-6],[18,-6]],west:[[-18,6],[-70,6],[-70,-6],[-18,-6]],south:[[6,18],[6,86],[-6,86],[-6,18]],park:[[48,48],[80,48],[82,80],[48,82]]};
-  const L=Object.keys(loops);
-  MEMERS.forEach((m,i)=>{const base={name:m.name,look:m.look,lines:m.lines,barks:m.barks,emote:m.emote||null};
-    if(m.lie)return npc(scene,Object.assign(base,{x:30,z:58,yaw:0,lie:true}));
+  const LOOPS={vashupur:[[[-17,-17],[17,-17],[17,17],[-17,17]],[[18,6],[52,6],[52,-6],[18,-6]],[[-18,6],[-52,6],[-52,-6],[-18,-6]]],
+    memepura:[[[18,6],[96,6],[96,-6],[18,-6]],[[48,48],[80,48],[82,80],[48,82]],[[20,6],[60,6],[60,25],[20,25]]],
+    kaapikunj:[[[-18,6],[-72,6],[-72,-6],[-18,-6]]],basti:[[[6,18],[6,90],[-6,90],[-6,18]]],barfii:[[[-34,6],[-70,6],[-70,-6],[-34,-6]]],
+    delulugarh:[[[-39,17],[39,17],[39,-15],[-39,-15]],[[-50,28],[50,28],[50,15],[-50,15]]]};
+  const HOME={'Aura Farmer Arjun':'vashupur','Six-Seven Kid':'memepura','Skill-Issue Sid':'memepura','Delulu Founder':'delulugarh','Touch-Grass Tanmay':'memepura','Corporate Uncle':'delulugarh','Main-Character Mira':'memepura','Rizz Uncle':'kaapikunj'};
+  const lp=LOOPS[T]||[];let li=0;
+  MEMERS.forEach((m,i)=>{if(HOME[m.name]!==T)return;const base={name:m.name,look:m.look,lines:m.lines,barks:m.barks,emote:m.emote||null};
+    if(m.lie)return npc(scene,Object.assign(base,{x:32,z:48.5,yaw:0,lie:true}));
     if(m.name.startsWith('Aura'))return npc(scene,Object.assign(base,{x:-12.5,z:3,yaw:Math.PI/2,emote:'pose'}));
-    const lp=loops[L[i%L.length]];npc(scene,Object.assign(base,{x:lp[0][0],z:lp[0][1],kind:'wander',path:lp,pi:(i*2)%4,speed:2.2+((i*37)%10)/10}))});
-  FREELOADERS.forEach((m,i)=>npc(scene,{name:m.name+' (freeloader client)',look:m.look,lines:m.lines,barks:m.barks,x:i?40:8,z:i?2:-10,kind:'chase',home:[i?40:8,i?2:-10],emote:'beg',free:true}));
-  npc(scene,{id:'guide',name:'Mini-Vashu (guide)',look:{shirt:'#141414',pants:'#8a7f5a',cargo:'#7a6f4c',hair:'curly',glasses:true,hat:null,sash:'#ff6a3d',face:'grin',seed:3},x:3.5,z:20,yaw:Math.PI,kind:'guide',lines:[],barks:['Tap me for a tour!','Lost? I\'m the guide.']});
-  npc(scene,{id:'farmer',name:'Kaveri (coffee farmer)',look:{shirt:'#5cc46b',pants:'#6b5a3a',hair:'long',hat:'#c9a26b',face:'smile'},x:52,z:27.6,yaw:Math.PI,lines:[],barks:['My beans!','Have you seen my beans?']});
-  // event cast
-  W.politician=npc(scene,{name:'Shri Vaada Kumar',look:{shirt:'#ffffff',pants:'#ffffff',hair:'bald',mustache:true,face:'grin',long:true,vest:'#ff6a3d'},x:-28,y:1.2,z:59.8,yaw:Math.PI,emote:'talk',lines:['Brother! Sister! Vote Kettle!','I promise… everything. Details later.'],barks:['Vote Kettle!']});
-  W.band=[['guitar','#c9f26b','play'],['bass','#3bd1ff','play'],['drums','#ff3b8d','drum'],['keys','#ffcc3a','play']].map(([r,cl,e],i)=>npc(scene,{name:'The Crema Boys ('+r+')',look:{shirt:cl,pants:'#141414',hair:['curly2','long','cap','short'][i],hat:'#141414',shades:i%2===0,face:'grin'},x:-34+i*4,y:1.2,z:60,yaw:Math.PI,emote:e,lines:['We only know one song. It\'s about coffee.','Next song: "Extraction Ballad (Part 2)".'],barks:['Rock on!']}));
-  W.crowd=[];for(let i=0;i<10;i++)W.crowd.push(npc(scene,{name:'Townsfolk',look:{shirt:['#e94b3c','#3d7be8','#ffcc3a','#5cc46b','#ff8fc1','#8a63d2'][i%6],pants:['#141414','#3a4a6b','#6b5a3a'][i%3],hair:['short','long','bun','cap','curly2'][i%5],hat:['#141414','#e94b3c'][i%2],face:['smile','grin','o'][i%3]},x:0,z:0,kind:'crowd',ci:i,lines:['Here for the vibes.','Did he just promise swimming pools?','Best show in town. Only show in town.'],barks:['Woo!','Clap clap.']}));
-  W.dog=animal(scene,'dog');W.cat=animal(scene,'cat');
+    const path=lp[li++%lp.length];npc(scene,Object.assign(base,{x:path[0][0],z:path[0][1],kind:'wander',path,pi:(i*2)%path.length,speed:2.2+((i*37)%10)/10}))});
+  if(on('vashupur')){FREELOADERS.forEach((m,i)=>npc(scene,{name:m.name+' (freeloader client)',look:m.look,lines:m.lines,barks:m.barks,x:i?40:8,z:i?2:-10,kind:'chase',home:[i?40:8,i?2:-10],emote:'beg',free:true}));
+    npc(scene,{id:'guide',name:'Mini-Vashu (guide)',look:{shirt:'#141414',pants:'#8a7f5a',cargo:'#7a6f4c',hair:'curly',glasses:true,hat:null,sash:'#ff6a3d',face:'grin',seed:3},x:3.5,z:20,yaw:Math.PI,kind:'guide',lines:[],barks:['Tap me for a tour!','Lost? I\'m the guide.']})}
+  if(on('kaapikunj')){npc(scene,{id:'farmer',name:'Kaveri (coffee farmer)',look:{shirt:'#5cc46b',pants:'#6b5a3a',hair:'long',hat:'#c9a26b',face:'smile'},x:-70,z:7.3,yaw:Math.PI,lines:[],barks:['My beans!','Have you seen my beans?']});
+    npc(scene,{id:'doctor',name:'Dr. Rao',look:{shirt:'#cfe3f7',pants:'#2b2b2b',hair:'grey',coat:'#ffffff',glasses:true,face:'flat'},x:-27,z:6.8,yaw:0,lines:[],barks:['Coffee, anyone?','Doctor\'s orders: caffeine.']})}
+  if(on('basti')){
+    W.politician=npc(scene,{name:'Shri Vaada Kumar',look:{shirt:'#ffffff',pants:'#ffffff',hair:'bald',mustache:true,face:'grin',long:true,vest:'#ff6a3d'},x:-28,y:1.2,z:59.8,yaw:Math.PI,emote:'talk',lines:['Brother! Sister! Vote Kettle!','I promise… everything. Details later.'],barks:['Vote Kettle!']});
+    W.band=[['guitar','#c9f26b','play'],['bass','#3bd1ff','play'],['drums','#ff3b8d','drum'],['keys','#ffcc3a','play']].map(([r,cl,e],i)=>npc(scene,{name:'The Crema Boys ('+r+')',look:{shirt:cl,pants:'#141414',hair:['curly2','long','cap','short'][i],hat:'#141414',shades:i%2===0,face:'grin'},x:-34+i*4,y:1.2,z:60,yaw:Math.PI,emote:e,lines:['We only know one song. It\'s about coffee.','Next song: "Extraction Ballad (Part 2)".'],barks:['Rock on!']}));
+    W.crowd=[];for(let i=0;i<10;i++)W.crowd.push(npc(scene,{name:'Townsfolk',look:{shirt:['#e94b3c','#3d7be8','#ffcc3a','#5cc46b','#ff8fc1','#8a63d2'][i%6],pants:['#141414','#3a4a6b','#6b5a3a'][i%3],hair:['short','long','bun','cap','curly2'][i%5],hat:['#141414','#e94b3c'][i%2],face:['smile','grin','o'][i%3]},x:0,z:0,kind:'crowd',ci:i,lines:['Here for the vibes.','Did he just promise swimming pools?','Best show in town. Only show in town.'],barks:['Woo!','Clap clap.']}))}
+  if(on('memepura'))W.dog=animal(scene,'dog');
+  if(on('kaapikunj')&&G.rooms.home)W.cat=animal(scene,'cat');
 }
 function animal(scene,type){const b=new Batch();const c=type==='dog'?'#c48a4a':'#2b2b2b';
   if(type==='dog'){bx(b,0,.55,0,.5,.45,1,c);bx(b,0,.85,.6,.42,.4,.45,c);bx(b,0,.75,.88,.2,.18,.15,'#1d1d1d');bx(b,-.16,1.1,.55,.1,.18,.1,'#7a4a2a');bx(b,.16,1.1,.55,.1,.18,.1,'#7a4a2a');for(const s of[-1,1])for(const z of[-.35,.35])bx(b,s*.17,.18,z,.14,.36,.14,c);bx(b,0,.75,-.55,.1,.1,.35,c,0,-.6)}

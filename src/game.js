@@ -3,20 +3,21 @@ import {buildWorld,spawnTown,W} from './world.js';
 import {PROJECTS,WA,STORY,NUMS,ROLES,SKILLS,RALLY} from './data.js';
 import {CSS,HUD} from './hud.js';
 import {snd} from './sound.js';
-import {makeMask,groundMaterial,makeGrass,makeSky} from './nature.js';
+import {makeMask,groundMaterial,makeGrass,makeSky,MASK} from './nature.js';
+import {TOWNS,ORDER,BEANS} from './towns.js';
 
 const OW=window.OW={};
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
-let root,renderer,scene,camera,sunL,hemi,amb,running=false,last=0,grass,sky;
+let root,renderer,scene,camera,sunL,hemi,amb,running=false,last=0,grass,sky,townRoot=null,curTown=LS.get('ow_town','vashupur'),visited=new Set(LS.get('ow_visited',[]));
 const $=s=>root.querySelector(s);
 const P={pos:new THREE.Vector3(0,0,24),vel:new THREE.Vector3(),yaw:Math.PI,grounded:true,world:'out',state:'walk',emote:null,emoteT:0,cup:false,seat:null,ride:false,climb:null};
 const cam={yaw:0,pitch:.36,dist:8.5,tdist:8.5,lastDrag:0};
 const inp={jx:0,jy:0,keys:{},target:null,pend:null,jump:false};
 let player,cupMesh,marker,timeMode=LS.get('ow_time','auto'),zoneName='',beansGot=new Set(LS.get('ow_beans',[])),unlocked=LS.get('ow_unlocked',false),party=false;
 let quest=LS.get('ow_quest',{doctor:0}),dlgState=null,tour=null,evPhase=-1,rallyI=0,rallyT=0,heard=0,concertT=0;
-G.player=P;G.snd=snd;OW._={P,G,cam,W,get party(){return party},get camera(){return camera},get scene(){return scene},THREE};
-export const EGGS=['ow_beans','ow_roof','ow_call','ow_laptop','ow_mirror','ow_lake','ow_goal','ow_freeloader','ow_rally','ow_concert','ow_doctor','ow_party','ow_scooter','ow_dog','ow_tour','ow_fire','ow_bonfire'];
+G.player=P;G.snd=snd;OW._={P,G,cam,W,get party(){return party},get camera(){return camera},get scene(){return scene},get grass(){return grass},get town(){return curTown},load:id=>loadTown(id),view(x,y,z,tx,ty,tz){running=false;camera.position.set(x,y,z);camera.lookAt(tx,ty,tz);setTime();renderer.render(scene,camera)},THREE};
+export const EGGS=['ow_beans','ow_roof','ow_call','ow_laptop','ow_mirror','ow_lake','ow_goal','ow_freeloader','ow_rally','ow_concert','ow_doctor','ow_party','ow_scooter','ow_dog','ow_tour','ow_fire','ow_bonfire','ow_statue','ow_firepole','ow_bus','ow_alltowns','ow_terminal','ow_snowman','ow_skydeck'];
 
 /* ================= host (standalone or inside portfolio) ================= */
 function standaloneHost(){const found=new Set(LS.get('ow_eggs',[]));return{RM,
@@ -40,19 +41,15 @@ OW.init=async(host,el,progress=()=>{})=>{
   hemi=new THREE.HemisphereLight('#cfe9ff','#6a8f4e',1.1);scene.add(hemi);amb=new THREE.AmbientLight('#ffffff',.25);scene.add(amb);
   sunL=new THREE.DirectionalLight('#fff3dc',2.2);sunL.castShadow=true;const sm=innerWidth>900?2048:1024;sunL.shadow.mapSize.set(sm,sm);const sc=sunL.shadow.camera;sc.left=-32;sc.right=32;sc.top=32;sc.bottom=-32;sc.near=1;sc.far=220;sunL.shadow.bias=-.0004;sunL.shadow.normalBias=.03;scene.add(sunL,sunL.target);
   G.enter=enterRoom;G.exit=exitRoom;G.card=card;G.talk=talk;G.say=(n,t)=>dlg(n,[t]);G.cv=openCV;G.brew=brew;
-  buildWorld(scene);progress(.6);await new Promise(r=>setTimeout(r,0));
-  if(G.LOT)(G.extraNPCs=G.extraNPCs||[]).push({id:'doctor',name:'Dr. Rao',look:{shirt:'#cfe3f7',pants:'#2b2b2b',hair:'grey',coat:'#ffffff',glasses:true,face:'flat'},x:90.5,z:-5.2,yaw:0,lines:[],barks:['My clinic is coming soon.','Coffee, anyone?']});
-  spawnTown(scene);progress(.75);
-  W.ground.material=groundMaterial();W.clouds.visible=false;W.sun.visible=false;
-  G.noGrass=[[-46,-10,55,68],[38,94,-47,-27],[16,20,6.4,8.6],[21.5,95,8.9,9.9],[-13.7,-11.5,11.5,13.7],[45.5,48.5,44.3,46]];
-  grass=makeGrass(scene,makeMask([[16,99,-6.3,6.3],[-72,-16,-6.3,6.3],[-6.3,6.3,-24,-16],[-6.3,6.3,16,92],[-16.5,16.5,-16.5,16.5]]));sky=makeSky(scene);progress(.85);
+  G.tp=tpTo;G.bus=openBus;
+  sky=makeSky(scene);grass=makeGrass(scene,makeMask([]));progress(.5);
   player=makeChar({skin:'#c48a60',shirt:'#141414',pants:'#8a7f5a',cargo:'#6f6646',shoes:'#f5f5f5',hair:'curly',glasses:true,face:'smile',seed:3,logo:'#ff6a3d'});scene.add(player);
   const cb=new Batch();cyl(cb,0,0,0,.11,.09,.22,'#ffffff',10);cyl(cb,0,.11,0,.1,.1,.01,'#8a5a3b',10);cupMesh=cb.mesh(CHM);cupMesh.position.set(0,-.72,.12);cupMesh.visible=false;player.userData.armR.add(cupMesh);
   marker=new THREE.Mesh(new THREE.RingGeometry(.35,.5,24).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:.9,depthWrite:false}));marker.visible=false;scene.add(marker);
-  makeBeans();
-  if(unlocked)applyUnlock(false);
+  if(!TOWNS[curTown]||!TOWNS[curTown].ready)curTown='vashupur';
+  loadTown(curTown);progress(.85);await new Promise(r=>setTimeout(r,0));
   bindInput();resize();addEventListener('resize',resize);
-  mapBG();setTime();
+  setTime();
   progress(1);
   if(!LS.get('ow_hint',false))$('.ow-hint').hidden=false;
   updQuest();
@@ -67,7 +64,7 @@ let dayK=1;
 function hourNow(){if(timeMode==='day')return 12.5;if(timeMode==='sunset')return 17.55;if(timeMode==='night')return 22.5;const d=new Date();return d.getHours()+d.getMinutes()/60}
 function setTime(){const h=hourNow(),a=(h-6)/12*Math.PI,alt=Math.sin(a);
   dayK=clamp((alt+.08)/.38,0,1);const dusk=clamp(1-Math.abs(alt-.04)/.28,0,1);
-  if(sky)sky.visible=P.world==='out';if(grass)grass.mesh.visible=P.world==='out';
+  if(sky)sky.visible=P.world==='out';if(grass)grass.mesh.visible=P.world==='out'&&!TOWNS[curTown].snow;
   if(P.world!=='out'){const r=G.rooms[P.world];scene.background=tc.set('#141414').clone();scene.fog.color.set('#141414');scene.fog.near=34;scene.fog.far=60;hemi.color.set(r.light);hemi.groundColor.set('#8a7a6a');hemi.intensity=1.25;amb.intensity=.35;sunL.intensity=1.1;sunL.color.set('#fff4e0');sunDir.set(.3,1,.5).normalize();W.winMat.color.set('#bfe0ff');setNight(0);return}
   tc.copy(NIGHT).lerp(DAY,dayK).lerp(DUSK,dusk*.55);scene.background=sky?null:tc.clone();scene.fog.color.copy(tc);scene.fog.near=90;scene.fog.far=dayK>.3?520:260;
   const twi=alt<0?clamp((alt+.24)/.24,0,1):1;
@@ -77,17 +74,15 @@ function setTime(){const h=hourNow(),a=(h-6)/12*Math.PI,alt=Math.sin(a);
   hemi.color.copy(C('#5b6fb0')).lerp(C('#d6ecff'),dayK);hemi.groundColor.copy(C('#26304a')).lerp(C('#6a8f4e'),dayK);hemi.intensity=.75+.45*dayK;amb.intensity=.18+.12*dayK;
   W.winMat.color.copy(C('#ffd27a')).lerp(C('#9fc4e6'),dayK);setNight(1-dayK);W.stars.material.opacity=clamp((-alt-.04)/.16,0,1);
   W.sun.visible=false;W.moon.visible=dayK<.5}
-function setNight(k){if(W.neonMat)W.neonMat.color.copy(C('#a8a8a8')).lerp(C('#ffffff'),k);W.lampMat.color.copy(C('#cfcfcf')).lerp(C('#fff1b8'),k);W.pools.material.opacity=k*.6;W.stars.material.opacity=k;W.clouds.material.opacity=.35+.6*(1-k);W.roofLights.material.color.set(k>.4?'#fff1b8':'#dddddd')}
+function setNight(k){if(W.neonMat)W.neonMat.color.copy(C('#a8a8a8')).lerp(C('#ffffff'),k);W.lampMat.color.copy(C('#cfcfcf')).lerp(C('#fff1b8'),k);W.pools.material.opacity=k*.6;W.stars.material.opacity=k;W.clouds.material.opacity=.35+.6*(1-k);if(W.roofLights)W.roofLights.material.color.set(k>.4?'#fff1b8':'#dddddd')}
 
 /* ================= beans ================= */
-const BEANS0=[[-31,.9,-24.5],[0,1.95,0],[64,.9,57.4],['home',-5.6,1.3,-4.4],['hq',9,.6,-7.6],[-28,1.7,61.5],[86,.9,-24],[96.5,1.75,40]];
-const BEANS_LOT=[[-31,.9,-24.5],[0,1.95,0],[64,.9,57.4],[-26,2.1,-18],[8,2.1,-42],[-28,1.7,61.5],[86,.9,-24],[96.5,1.75,40]];
 function makeBeans(){const geo=new THREE.SphereGeometry(.3,12,10);geo.scale(1,1.3,.8);const mat=new THREE.MeshLambertMaterial({color:'#6b3e22',emissive:'#3a1a08'});const gm=new THREE.MeshBasicMaterial({color:'#2a160a'});
-  (G.LOT?BEANS_LOT:BEANS0).forEach((b,i)=>{let [x,y,z]=b;if(typeof b[0]==='string'){const r=G.rooms[b[0]];x=r.cx+b[1];y=b[2];z=b[3]}const g=new THREE.Group();const m=new THREE.Mesh(geo,mat);g.add(m);const s=new THREE.Mesh(new THREE.BoxGeometry(.04,.62,.05),gm);s.position.z=.24;g.add(s);
-    const glow=new THREE.Mesh(new THREE.RingGeometry(.45,.6,20),new THREE.MeshBasicMaterial({color:'#ffcc3a',transparent:true,opacity:.6,side:THREE.DoubleSide,depthWrite:false}));g.add(glow);g.position.set(x,y,z);scene.add(g);G.beans.push({g,id:i,y});if(beansGot.has(i))g.visible=false})}
+  BEANS.forEach((bn,i)=>{if(bn.t!==curTown)return;const b=bn.p;let [x,y,z]=b;if(typeof b[0]==='string'){const r=G.rooms[b[0]];if(!r)return;x=r.cx+b[1];y=b[2];z=b[3]}const g=new THREE.Group();const m=new THREE.Mesh(geo,mat);g.add(m);const s=new THREE.Mesh(new THREE.BoxGeometry(.04,.62,.05),gm);s.position.z=.24;g.add(s);
+    const glow=new THREE.Mesh(new THREE.RingGeometry(.45,.6,20),new THREE.MeshBasicMaterial({color:'#ffcc3a',transparent:true,opacity:.6,side:THREE.DoubleSide,depthWrite:false}));g.add(glow);g.position.set(x,y,z);townRoot.add(g);G.beans.push({g,id:i,y});if(beansGot.has(i))g.visible=false})}
 function pickBean(b){beansGot.add(b.id);LS.set('ow_beans',[...beansGot]);b.g.visible=false;snd.chime();$('.ow-beans b').textContent=beansGot.size+'/8';
   if(beansGot.size>=8&&!unlocked){unlocked=true;LS.set('ow_unlocked',true);applyUnlock(true)}else toast('COFFEE BEAN '+beansGot.size+'/8',['Kaveri will be pleased.','Smells like Coorg.','Keep looking. Try jumping on things.','Halfway roast.','Medium roast achieved.','Almost a full dose.','One more. Look high and low.'][beansGot.size-1]||'');updQuest()}
-function applyUnlock(fresh){W.ladder.visible=!G.LOT;W.dj.visible=true;if(fresh){G.host.egg('ow_beans',G.LOT?'All 8 beans found! Unlocked: the Arc-Street scooter and party mode at the DJ booth.':'All 8 beans found! Unlocked: HQ rooftop ladder, Arc-Street scooter, and party mode at the DJ booth.');snd.fanfare()}}
+function applyUnlock(fresh){if(W.ladder)W.ladder.visible=!G.LOT;if(W.dj)W.dj.visible=true;if(fresh){G.host.egg('ow_beans',G.LOT?'All 8 beans found! Unlocked: the Arc-Street scooter in every town and party mode at the Vashupur DJ booth.':'All 8 beans found! Unlocked: HQ rooftop ladder, Arc-Street scooter, and party mode at the DJ booth.');snd.fanfare()}}
 
 /* ================= input ================= */
 function bindInput(){const cv=renderer.domElement,joy=$('.ow-joy'),knob=$('.ow-knob');
@@ -145,9 +140,36 @@ function collide(p,r,h){for(const c of G.colliders){if(!inBox(c,p.x,p.z,r))conti
 function groundAt(x,z,y){let g=0;for(const c of G.colliders){if(c.y1>g&&c.y1<=y+.42&&x>c.x0-.15&&x<c.x1+.15&&z>c.z0-.15&&z<c.z1+.15)g=c.y1}return g}
 const rayBox=(o,d,c)=>{let t0=0,t1=1;for(const [a,b0,b1] of[['x',c.x0,c.x1],['y',c.y0,c.y1],['z',c.z0,c.z1]]){const od=o[a],dd=d[a];if(Math.abs(dd)<1e-9){if(od<b0||od>b1)return 1;continue}let ta=(b0-od)/dd,tb=(b1-od)/dd;if(ta>tb)[ta,tb]=[tb,ta];t0=Math.max(t0,ta);t1=Math.min(t1,tb);if(t0>t1)return 1}return t0};
 
-/* ================= rooms ================= */
+/* ================= towns & the bus ================= */
+function disposeTree(o){o.traverse(n=>{if(n.geometry)n.geometry.dispose();const ms=n.material?(Array.isArray(n.material)?n.material:[n.material]):[];for(const m of ms){if(m===CHM)continue;if(m.map&&!(m.map.userData&&m.map.userData.keep))m.map.dispose();m.dispose()}})}
+function placeAtSpawn(){const s=TOWNS[curTown].spawn;if(P.ride)dismount();P.state='walk';P.seat=null;P.climb=null;P.pos.set(s.x,0,s.z);P.vel.set(0,0,0);P.world='out';P.yaw=s.yaw;cam.yaw=s.yaw+Math.PI;cam.pitch=.36;inp.target=null;if(marker)marker.visible=false}
+function loadTown(id){if(!TOWNS[id])id='vashupur';
+  if(townRoot){scene.remove(townRoot);disposeTree(townRoot)}
+  Object.assign(G,{colliders:[],triggers:[],pick:[],npcs:[],zones:[],buildings:[],rooms:{},beans:[],seats:[],chairs:[],blocked:[],camCols:[],cranes:[],extraNPCs:[],noGrass:[]});
+  for(const k of Object.keys(W))delete W[k];
+  curTown=id;G.TOWN=id;LS.set('ow_town',id);const T=TOWNS[id];party=false;evPhase=-1;tour=null;closeDlg&&$('.ow-dlg')&&closeDlg();
+  townRoot=new THREE.Group();scene.add(townRoot);
+  buildWorld(townRoot);spawnTown(townRoot);
+  W.ground.material=groundMaterial(!!T.snow);W.clouds.visible=false;W.sun.visible=false;
+  if(T.snow){const n=1600,v=new Float32Array(n*3);for(let i=0;i<n;i++){v[i*3]=(Math.random()-.5)*70;v[i*3+1]=Math.random()*26;v[i*3+2]=(Math.random()-.5)*70}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(v,3));W.snow=new THREE.Points(g,new THREE.PointsMaterial({color:'#ffffff',size:.12,transparent:true,opacity:.85,depthWrite:false}));townRoot.add(W.snow)}
+  const old=grass.U.uMask.value;grass.U.uMask.value=makeMask(T.roads.map(r=>r[4]==='x'?[r[0],r[1],r[2]-2.3,r[3]+2.3]:[r[0]-2.3,r[1]+2.3,r[2],r[3]]),T.b);if(old&&old!==grass.U.uMask.value)old.dispose();
+  grass.U.uMaskMin.value.set(MASK.x0,MASK.z0);grass.U.uMaskSize.value.set(MASK.w,MASK.h);
+  makeBeans();if(unlocked)applyUnlock(false);
+  MX0=T.b[0];MZ0=T.b[2];MW=T.b[1]-T.b[0];MH=T.b[3]-T.b[2];mapBG();
+  placeAtSpawn();if(running||renderer){setTime();snapCam()}zone(T.name,true);const lb=$('.ow-loc');if(lb){lb.textContent=T.name.toUpperCase();lb.setAttribute('aria-label',T.name+' (double-tap for menu)')}updQuestSafe();
+  if(!visited.has(id)){visited.add(id);LS.set('ow_visited',[...visited]);if(visited.size>=6)G.host.egg('ow_alltowns','You visited all six towns. Frequent rider.')}}
+function updQuestSafe(){try{updQuest()}catch(e){}}
+function beanHint(){const left=ORDER.filter(t=>BEANS.some((b,i)=>b.t===t&&!beansGot.has(i))).map(t=>TOWNS[t].name);return left.length?' Still missing some in: '+left.join(', ')+'.':''}
+function openBus(){const o=$('.ow-bus');const l=o.querySelector('.ow-towns');l.innerHTML='';
+  ORDER.forEach(id=>{const t=TOWNS[id];const b=document.createElement('button');b.type='button';b.className='ow-town'+(id===curTown?' here':'')+(t.ready?'':' soon');b.disabled=id===curTown||!t.ready;
+    b.innerHTML='<i style="background:'+t.color+'"></i><span><b></b><em></em></span><small></small>';b.querySelector('b').textContent=t.name;b.querySelector('em').textContent=t.tag;b.querySelector('small').textContent=id===curTown?'You are here':t.ready?'Ride':'Coming soon';
+    if(!b.disabled)b.onclick=()=>{o.hidden=true;ride(id)};l.appendChild(b)});o.hidden=false;const f=l.querySelector('button:not([disabled])');if(f)f.focus()}
+function ride(id){const r=$('.ow-ride'),T=TOWNS[id];r.querySelector('b').textContent=T.name;r.querySelector('em').textContent=T.tag;r.hidden=false;r.classList.remove('go');void r.offsetWidth;r.classList.add('go');snd.door();
+  setTimeout(()=>{try{loadTown(id)}catch(e){console.error(e)}G.host.egg('ow_bus','You took the bus. Next stop: '+T.name+'.')},RM?50:700);setTimeout(()=>{r.hidden=true},RM?400:1900)}
+function tpTo(x,y,z,yaw,label){snd.door();fade(()=>{if(P.ride)dismount();P.world='out';P.pos.set(x,y,z);P.vel.set(0,0,0);P.yaw=yaw||0;cam.yaw=(yaw||0)+Math.PI;cam.pitch=.42;inp.target=null;marker.visible=false;setTime();zone(label||TOWNS[curTown].name,true);snapCam()})}
+
 function fade(fn){const f=$('.ow-fade');f.classList.add('on');setTimeout(()=>{fn();setTimeout(()=>f.classList.remove('on'),60)},RM?0:260)}
-function enterRoom(id){const r=G.rooms[id];if(!r)return;snd.door();fade(()=>{if(P.ride)dismount();P.pos.set(r.spawn.x,0,r.spawn.z);P.vel.set(0,0,0);P.world=id;cam.yaw=0;cam.pitch=.55;cam.tdist=Math.min(cam.tdist,7.5);P.yaw=Math.PI;inp.target=null;marker.visible=false;setTime();zone(r.name,true);snapCam()})}
+function enterRoom(id){const r=G.rooms[id];if(!r)return;snd.door();fade(()=>{if(r.build){r.build();r.build=null}if(P.ride)dismount();P.pos.set(r.spawn.x,0,r.spawn.z);P.vel.set(0,0,0);P.world=id;cam.yaw=0;cam.pitch=.55;cam.tdist=Math.min(cam.tdist,7.5);P.yaw=Math.PI;inp.target=null;marker.visible=false;setTime();zone(r.name,true);snapCam()})}
 function exitRoom(id){const r=G.rooms[id];snd.door();fade(()=>{const o=r.out;P.pos.set(o.x+o.fx*1.2,o.y||0,o.z+o.fz*1.2);P.vel.set(0,0,0);P.world='out';P.yaw=Math.atan2(o.fx,o.fz);cam.yaw=Math.atan2(o.fx,o.fz)+.7;cam.pitch=.42;inp.target=null;marker.visible=false;setTime();zone('',true);snapCam()})}
 
 /* ================= main loop ================= */
@@ -213,7 +235,7 @@ function camTick(dt,snap){cam.dist+=(cam.tdist-cam.dist)*Math.min(1,dt*6);
   W.sun.position.copy(camera.position).addScaledVector(sunDir,600);W.sun.lookAt(camera.position);
   W.moon.position.copy(camera.position).add(tmp.set(-sunDir.x,Math.abs(sunDir.y)+.25,-sunDir.z).normalize().multiplyScalar(560));W.moon.lookAt(camera.position);
   W.stars.position.copy(camera.position)}
-function respawn(){P.pos.set(0,0,24);P.vel.set(0,0,0);P.world='out';setTime();snapCam()}
+function respawn(){placeAtSpawn();setTime();snapCam()}
 
 /* ================= actions ================= */
 function pickAction(){let best=null,bd=1e9;const px=P.pos.x,pz=P.pos.z,py=P.pos.y;
@@ -225,7 +247,7 @@ function pickAction(){let best=null,bd=1e9;const px=P.pos.x,pz=P.pos.z,py=P.pos.
     for(const s of G.seats){if(s.event&&s.taken)continue;consider(s.x,s.z,0,1.15,s.label,()=>sit(s))}
     for(const n of G.npcs){if(!n.c.visible||n.hidden)continue;const p=n.c.position;consider(p.x,p.z,p.y,2.3,'Talk to '+n.name.replace(/ \(.*\)$/,''),()=>talk(n))}
     consider(W.scooter.position.x,W.scooter.position.z,0,2.2,unlocked?'Ride Arc-Street':'Arc-Street (locked)',()=>unlocked?mount():toast('LOCKED','Find all 8 coffee beans to unlock the Arc-Street scooter.'));
-    if(unlocked){if(!G.LOT){consider(12.9,-36,0,1.8,'Climb to the roof',()=>climb(true));consider(10.6,-36,15,1.8,'Climb down',()=>climb(false))}consider(-9.6,-6,0,2.2,party?'Stop the party':'Start the party',toggleParty)}}
+    if(unlocked){if(!G.LOT){consider(12.9,-36,0,1.8,'Climb to the roof',()=>climb(true));consider(10.6,-36,15,1.8,'Climb down',()=>climb(false))}if(W.dj)consider(-9.6,-6,0,2.2,party?'Stop the party':'Start the party',toggleParty)}}
   curAct=best;const b=$('.ow-act');if(best){b.hidden=false;if(b.textContent!==best.label)b.textContent=best.label}else b.hidden=true}
 function sit(s){P.state='sit';P.seat=s;P.pos.set(s.x,s.y-.52,s.z);P.vel.set(0,0,0);P.yaw=s.yaw;inp.target=null;marker.visible=false;if(s.event)s.taken=true}
 function stand(){const s=P.seat;P.state='walk';if(s){P.pos.x+=Math.sin(s.yaw)*.9;P.pos.z+=Math.cos(s.yaw)*.9;P.pos.y=0;s.taken=false}P.seat=null}
@@ -234,8 +256,8 @@ function dismount(){P.ride=false;W.scooter.rotation.z=0;P.pos.x+=Math.cos(P.yaw)
 function climb(up){P.climb={up,t:0};P.vel.set(0,0,0);P.yaw=up?-Math.PI/2:Math.PI/2}
 function climbStep(dt){const c=P.climb;c.t+=dt/2.2;const k=Math.min(1,c.t);if(c.up){P.pos.set(12.75-(k>.92?(k-.92)/.08*2:0),k*15,-36)}else{P.pos.set(12.75,(1-k)*15,-36)}
   if(k>=1){P.climb=null;if(c.up){P.pos.set(10.6,15,-36);G.host.egg('ow_roof','Rooftop reached. Respect.')}else P.pos.set(13.2,0,-36);P.grounded=true}}
-function brew(){P.cup=true;cupMesh.visible=true;emote('sip');snd.brew();if(quest.doctor===1){toast('COFFEE READY','Now take it to Dr. Rao at City Clinic.')}else toast('FRESHLY PULLED','A cappuccino. Cup first, then the numbers.')}
-function toggleParty(){party=!party;W.disco.g.visible=party;if(party)G.host.egg('ow_party','Party mode! The whole town is dancing.');snd.mode()}
+function brew(){P.cup=true;cupMesh.visible=true;emote('sip');snd.brew();if(quest.doctor===1){toast('COFFEE READY','Now take it to Dr. Rao. He\'s on the café strip.')}else toast('FRESHLY PULLED','A cappuccino. Cup first, then the numbers.')}
+function toggleParty(){if(!W.disco)return;party=!party;W.disco.g.visible=party;if(party)G.host.egg('ow_party','Party mode! The whole town is dancing.');snd.mode()}
 
 /* ================= dialog ================= */
 let typer;function dlg(name,pages,choices,npcRef){const d=$('.ow-dlg');d.hidden=false;dlgState={name,pages,i:0,choices,npc:npcRef};$('.ow-dn').textContent=name;showPage()}
@@ -249,18 +271,18 @@ function showPage(){const s=dlgState;if(!s)return;const t=s.pages[s.i];const el=
 function closeDlg(){$('.ow-dlg').hidden=true;clearInterval(typer);dlgState=null}
 function talk(n){if(n.c&&n.c.rotation&&n.kind!=='dog'&&n.kind!=='cat'&&!n.lie&&!n.sit){n.c.rotation.y=Math.atan2(P.pos.x-n.c.position.x,P.pos.z-n.c.position.z);n.faceT=4}
   if(n.id==='guide')return guideTalk(n);
-  if(n.id==='farmer')return dlg('Kaveri (coffee farmer)',beansGot.size>=8?['You found all 8 of my beans! Best roast of the year.','The scooter, the rooftop and the DJ booth are open for you. Enjoy!']:['Ayyo! My Coorg beans rolled all over town.','There are 8. Some are high up, some are inside buildings. One is even near the water.','You have '+beansGot.size+' so far. Find them all and I\'ll unlock something special.']);
+  if(n.id==='farmer')return dlg('Kaveri (coffee farmer)',beansGot.size>=8?['You found all 8 of my beans! Best roast of the year.','The scooter and the DJ booth in Vashupur are open for you. Enjoy!']:['Ayyo! My Coorg beans rolled all over the six towns.','There are 8. Some are high up, some are inside buildings. Take the bus and look everywhere.','You have '+beansGot.size+' so far.'+beanHint()+' Find them all and I\'ll unlock something special.']);
   if(n.id==='doctor'){if(quest.doctor===0){quest.doctor=1;LS.set('ow_quest',quest);updQuest();return dlg('Dr. Rao',['I haven\'t had a decent coffee in a week.','Doctor\'s orders: go to TOKI, brew me a coffee and bring it here.'])}
     if(quest.doctor===1&&P.cup){quest.doctor=2;LS.set('ow_quest',quest);P.cup=false;cupMesh.visible=false;updQuest();G.host.egg('ow_doctor','Coffee delivered. The doctor approves.');return dlg('Dr. Rao',['Ahh. Perfect extraction. Pulse is back to normal.','Prescription: hire this barista. Take twice daily.'])}
-    if(quest.doctor===1)return dlg('Dr. Rao',['Still waiting on that coffee. TOKI is on the west street, the Manali side.']);
-    return dlg('Dr. Rao',['Thanks again for the coffee. My website? Vashu is building it. Clean and calm, like a good waiting room.'])}
+    if(quest.doctor===1)return dlg('Dr. Rao',['Still waiting on that coffee. TOKI is right here on the café strip.']);
+    return dlg('Dr. Rao',['Thanks again for the coffee. My clinic? Something\'s cooking. Clean and calm, like a good waiting room.'])}
   if(n.free)return dlg(n.name,n.lines,[{t:'Rate card first. 50% advance.',f:()=>{n.repel=performance.now()+60000;n.flee=2.5;G.host.egg('ow_freeloader','You quoted a 50% advance. The freeloader vanished.');toast('BOUNDARIES','"50% advance" is the strongest spell in freelancing.')}},{t:'Sure, for exposure!',f:()=>toast('MISTAKE','They now also want an app. And a mascot. By Monday.')}],n);
   if(n.kind==='dog'){n.hearts=2;G.host.egg('ow_dog','You petted Biscuit. Good boy.');return dlg(n.name,['Woof! (Tail wagging at 200 bpm.)'])}
   if(n.kind==='cat')return dlg(n.name,['Mrrp. (The cat permits exactly one pat.)']);
   if(n===W.politician)return dlg(n.name,evPhase===0?['Brother! Sister! You came to my rally!','Vote Kettle! I promise… everything. Details after elections.']:['The rally is over. Come back later. Also, vote Kettle.']);
   dlg(n.name,n.lines||['…'],null,n)}
-function guideTalk(n){if(tour)return dlg(n.name,['We\'re on the tour! Follow me.'],[{t:'Keep going',f:null},{t:'End the tour',f:()=>{tour=null;n.c.position.set(3.5,0,20)}}]);
-  dlg('Mini-Vashu (guide)',['Hey! I\'m Mini-Vashu, the tiny tour guide of Vashu Town.','Everything here is my portfolio: projects, clients, CV, the lot. Want the tour?'],[{t:'Yes, show me around',f:()=>{tour={i:0,wait:0,said:-1};toast('TOUR STARTED','Follow Mini-Vashu. He waits for you.')}},{t:'I\'ll explore myself',f:null}])}
+function guideTalk(n){if(tour)return dlg(n.name,['We\'re on the tour! Follow me.'],[{t:'Keep going',f:null},{t:'End the tour',f:()=>{tour=null;n.c.position.set(3.5,0,18.8)}}]);
+  dlg('Mini-Vashu (guide)',['Hey! I\'m Mini-Vashu, the tiny tour guide of Vashupur.','There are six towns, and the bus is the only way between them. This one is the capital. Want the tour?'],[{t:'Yes, show me around',f:()=>{tour={i:0,wait:0,said:-1};toast('TOUR STARTED','Follow Mini-Vashu. He waits for you.')}},{t:'I\'ll explore myself',f:null}])}
 
 /* ================= info card & CV ================= */
 function card(p){const c=$('.ow-card');c.hidden=false;$('.ow-card .k').textContent=[p.tag,p.st].filter(Boolean).join(' · ');$('.ow-card h2').textContent=p.n;$('.ow-card p.d').textContent=p.d||'';
@@ -271,19 +293,21 @@ function openMenu(){$('.ow-menu').hidden=false}
 function closeAll(){root.querySelectorAll('.ow-ov').forEach(o=>o.hidden=true);closeDlg();$('.ow-emotes').hidden=true}
 
 /* ================= quests ================= */
-function updQuest(){const q=[];q.push((beansGot.size>=8?'✓ ':'')+'Find Kaveri\'s coffee beans ('+beansGot.size+'/8)');if(quest.doctor===1)q.push(P.cup?'Bring the coffee to Dr. Rao (City Clinic)':'Brew a coffee at TOKI for Dr. Rao');if(quest.doctor===2)q.push('✓ Doctor\'s orders');
+function updQuest(){const q=[];q.push((beansGot.size>=8?'✓ ':'')+'Find Kaveri\'s coffee beans ('+beansGot.size+'/8)');if(quest.doctor===1)q.push(P.cup?'Bring the coffee to Dr. Rao (Kaapikunj)':'Brew a coffee at TOKI for Dr. Rao (Kaapikunj)');if(quest.doctor===2)q.push('✓ Doctor\'s orders');
   $('.ow-quest').innerHTML=q.map(s=>'<span>'+s+'</span>').join('');$('.ow-beans b').textContent=beansGot.size+'/8'}
 
 /* ================= beans / ball / lake ================= */
 function beansTick(dt,T){for(const b of G.beans){if(!b.g.visible)continue;b.g.rotation.y+=dt*2;b.g.position.y=b.y+Math.sin(T*2+b.id)*.12;if(b.g.position.distanceTo(tmp.set(P.pos.x,P.pos.y+.9,P.pos.z))<1.25)pickBean(b)}}
-function ballTick(dt){const b=W.ball,m=b.m;if(P.world==='out'&&!P.ride){const dx=m.position.x-P.pos.x,dz=m.position.z-P.pos.z,d=Math.hypot(dx,dz);if(d<.95&&P.pos.y<1){const hs=Math.hypot(P.vel.x,P.vel.z);const k=3+hs*1.25;b.v.set(dx/d*k,hs>8?3.5:1.2,dz/d*k);snd.kick()}}
+function ballTick(dt){const b=W.ball;if(!b)return;const m=b.m;if(P.world==='out'&&!P.ride){const dx=m.position.x-P.pos.x,dz=m.position.z-P.pos.z,d=Math.hypot(dx,dz);if(d<.95&&P.pos.y<1){const hs=Math.hypot(P.vel.x,P.vel.z);const k=3+hs*1.25;b.v.set(dx/d*k,hs>8?3.5:1.2,dz/d*k);snd.kick()}}
   b.v.y-=20*dt;m.position.addScaledVector(b.v,dt);if(m.position.y<.42){m.position.y=.42;b.v.y=Math.abs(b.v.y)>1?-b.v.y*.45:0}
   const f=Math.exp(-1.3*dt);b.v.x*=f;b.v.z*=f;m.rotation.x+=b.v.z*dt*2.2;m.rotation.z-=b.v.x*dt*2.2;
   for(const c of G.colliders){if(c.y1<.3||c.y0>m.position.y+.4)continue;if(inBox(c,m.position.x,m.position.z,.42)){const cx=clamp(m.position.x,c.x0,c.x1),cz=clamp(m.position.z,c.z0,c.z1);const dx=m.position.x-cx,dz=m.position.z-cz;if(Math.abs(dx)>Math.abs(dz)){b.v.x*=-.6;m.position.x=cx+Math.sign(dx||1)*.43}else{b.v.z*=-.6;m.position.z=cz+Math.sign(dz||1)*.43}}}
   const pt=W.pitch;if(m.position.z>pt.gz0&&m.position.z<pt.gz1&&m.position.y<2.1&&((m.position.x<pt.x0+.3&&m.position.x>pt.x0-1.5)||(m.position.x>pt.x1-.3&&m.position.x<pt.x1+1.5))){G.host.egg('ow_goal','GOAL! The crowd (two pigeons) goes wild.');snd.fanfare();m.position.set(32,.42,35);b.v.set(0,0,0)}
   if(Math.abs(m.position.x)>99||m.position.z>91||m.position.z<-52){m.position.set(32,.42,35);b.v.set(0,0,0)}}
-function lakeCheck(){const L=W.lake;if(Math.hypot(P.pos.x-L.x,P.pos.z-L.z)<L.r-.6&&P.pos.y<.3&&!P.ride){snd.splash();G.host.egg('ow_lake','Splash! You can\'t swim in a portfolio.');fade(()=>{P.pos.set(64,0,45);P.vel.set(0,0,0);snapCam()})}}
-function ambientTick(dt,T){W.steam.forEach(s=>{const k=(T*.4+s.userData.o)%1;s.position.set(Math.sin(k*9+s.userData.o*7)*.4,1.5+k*3,Math.cos(k*7)*.3);s.material.opacity=.45*(1-k);s.scale.setScalar(.6+k)});
+function lakeCheck(){const L=W.lake;if(!L)return;if(Math.hypot(P.pos.x-L.x,P.pos.z-L.z)<L.r-.6&&P.pos.y<.3&&!P.ride){snd.splash();G.host.egg('ow_lake','Splash! You can\'t swim in a portfolio.');fade(()=>{P.pos.set(64,0,45);P.vel.set(0,0,0);snapCam()})}}
+function ambientTick(dt,T){if(G.cranes)for(const c of G.cranes){c.g.rotation.y+=c.sp*dt;c.red.material.color.set(Math.sin(T*3+c.a)>.6?'#ff2d2d':'#5a1010')}
+  if(W.snow){const a=W.snow.geometry.attributes.position,v=a.array;for(let i=0;i<v.length;i+=3){v[i+1]-=dt*(1.2+(i%7)*.12);v[i]+=Math.sin(T+i)*dt*.3;if(v[i+1]<0)v[i+1]+=26}a.needsUpdate=true;W.snow.position.set(P.pos.x,P.pos.y,P.pos.z)}
+  if(W.steam)W.steam.forEach(s=>{const k=(T*.4+s.userData.o)%1;s.position.set(Math.sin(k*9+s.userData.o*7)*.4,1.5+k*3,Math.cos(k*7)*.3);s.material.opacity=.45*(1-k);s.scale.setScalar(.6+k)});
   W.clouds.position.x=((T*.8)%400)-200;
   if(W.holo){W.holo[0].rotation.set(Math.PI/2+Math.sin(T*.6)*.3,T*.8,0);W.holo[1].rotation.set(Math.PI/2,0,T*1.2);W.holo[1].rotation.x=T*.9}
   if(W.rgb)W.rgb.material.color.setHSL((T*.08)%1,.9,.55);
@@ -313,8 +337,8 @@ function npcTick(dt,T){const px=P.pos.x,pz=P.pos.z,now=performance.now();
     if(n.lie){c.rotation.x=-Math.PI/2;p.y=.3}
     if(c.userData.legL)anim(c,dt,{speed:sp,sit:n.sit&&!sp,emote:sp?null:em})}}
 function turn(c,ty,dt){let d=ty-c.rotation.y;d=Math.atan2(Math.sin(d),Math.cos(d));c.rotation.y+=d*Math.min(1,dt*8)}
-const STOPS=[{p:[[0,8]],t:'Welcome to the Mumbai centre. Those four giant numbers? My actual results at work.'},{p:[[0,-21]],t:'North is Raipur, my hometown. Outpulse Labs HQ goes up right here. For now every plot in town is a construction lot.'},{p:[[-6,0],[-31,-4.5]],t:'Manali side: TOKI, my specialty coffee spot, is coming here. The site coffee cart already works.'},{p:[[-6,0],[16,0],[30,5.5]],t:'East is Goa. Poster Street: every billboard is a project. The Outpulse.EV showroom is right behind you.'},{p:[[64,-4.5]],t:'Client Row: a bakehouse, a waffle shop, a Kannada restaurant and a clinic. Walk in.'},{p:[[64,4],[44,5.5],[46,24],[48,44]],t:'The Goa beach. Kick the ball, chill in the hammock, grab a kokum soda at the shack.'},{p:[[46,24],[8,24],[-8,30],[-12,36]],t:'South is Mysuru. Palace Grounds: rallies and concerts all day. Grab a chair.'},{p:[[-8,24],[-8,6],[-21,-5.5]],t:'Last stop: my studio will sit above TOKI. Until then, the Quick CV button has everything. Tour done, thanks for walking with me!'}];
-function guideTick(n,dt){const c=n.c,p=c.position;if(!tour){const dx=3.5-p.x,dz=20-p.z,d=Math.hypot(dx,dz);if(d>.5){p.x+=dx/d*5*dt;p.z+=dz/d*5*dt;turn(c,Math.atan2(dx,dz),dt);return 5}turn(c,Math.atan2(P.pos.x-p.x,P.pos.z-p.z),dt);return 0}
+const STOPS=[{p:[[0,8]],t:'Welcome to Vashupur, the capital. Those four giant numbers? My actual results at work.'},{p:[[0,-21.5]],t:'The Vashu Museum. My whole journey under one dome: roles, skills, numbers and a slightly smug gold statue. Walk in, it\'s free.'},{p:[[6,-10],[16,-6],[25,-26.5]],t:'The Police Station. They arrested Scope Creep this morning. Go have a look.'},{p:[[16,-6],[-18,-6],[-33,-27]],t:'The Fire Station. Ring the bell outside. Inside, there\'s a fire pole. You know what to do.'},{p:[[-30,-6],[-38,-6]],t:'Every plot with a blue fence is a construction lot. Something\'s cooking on each one. No spoilers.'},{p:[[-18,-6],[-6,6],[-6,14],[6.5,20]],t:'Last stop: the bus. Five more towns are on the route. Tap the bus stop to ride. Tour done, thanks for walking with me!'}];
+function guideTick(n,dt){const c=n.c,p=c.position;if(!tour){const dx=3.5-p.x,dz=18.8-p.z,d=Math.hypot(dx,dz);if(d>.5){p.x+=dx/d*5*dt;p.z+=dz/d*5*dt;turn(c,Math.atan2(dx,dz),dt);return 5}turn(c,Math.atan2(P.pos.x-p.x,P.pos.z-p.z),dt);return 0}
   const st=STOPS[tour.i];const wp=st.p[tour.w||0];const dx=wp[0]-p.x,dz=wp[1]-p.z,d=Math.hypot(dx,dz);const pd=Math.hypot(P.pos.x-p.x,P.pos.z-p.z);
   if(P.world!=='out'){return 0}
   if(d>.5){if(pd>11){if(!tour.kept){tour.kept=1;bubble(n,'Keep up!')}turn(c,Math.atan2(P.pos.x-p.x,P.pos.z-p.z),dt);return 0}tour.kept=0;p.x+=dx/d*5.2*dt;p.z+=dz/d*5.2*dt;turn(c,Math.atan2(dx,dz),dt);return 5.2}
@@ -324,7 +348,7 @@ function guideTick(n,dt){const c=n.c,p=c.position;if(!tour){const dx=3.5-p.x,dz=
   return 0}
 
 /* ================= events: rally & concert ================= */
-function eventTick(dt,T){const ph=Math.floor(Date.now()/120000)%2;if(ph!==evPhase){evPhase=ph;setPhase()}
+function eventTick(dt,T){if(!W.event){snd.setScene({concert:0,rally:false,party:party&&P.world==='out'&&Math.hypot(P.pos.x,P.pos.z)<40,indoor:P.world!=='out'?P.world:null});return}const ph=Math.floor(Date.now()/120000)%2;if(ph!==evPhase){evPhase=ph;setPhase()}
   const E=W.event,d=Math.hypot(P.pos.x-E.x,P.pos.z-E.z);const near=P.world==='out'&&d<24;
   W.stageLights.forEach((m,i)=>{const k=evPhase===1?(Math.sin(T*(RM?.5:2)+i)*.5+.5):.15;m.material.color.setHSL((i/5+(evPhase===1?T*.05:0))%1,.9,.3+.4*k)});
   if(evPhase===0){rallyT-=dt;if(near&&rallyT<=0){rallyT=4.6;const line=RALLY[rallyI%RALLY.length];rallyI++;sub('Shri Vaada Kumar',line);snd.gibber(line.length);W.crowd.forEach(c=>{c.emote=Math.random()<.5?'clap':null});if(P.state==='sit'&&P.seat&&P.seat.event){heard++;if(heard>=5)G.host.egg('ow_rally','You sat through a whole rally. Patience: maxed.')}}if(!near)sub(null)}
@@ -342,27 +366,29 @@ const pv=new THREE.Vector3();function bubblesTick(){for(let i=bubs.length-1;i>=0
   if(b.t<=0||pv.z>1){b.el.remove();bubs.splice(i,1);continue}const r=root.getBoundingClientRect();b.el.style.transform=`translate(${(pv.x*.5+.5)*r.width}px,${(-pv.y*.5+.5)*r.height}px) translate(-50%,-100%)`}}
 
 /* ================= zones & maps ================= */
-const ZONES=[['Mumbai · Town Square',-17,17,-17,19],['Raipur · Outpulse HQ',-14,14,-50,-17],['Raipur · Marine Drive',-30,-10,-36,-24],['Raipur · Fire Station',-48,-29,-48,-25],['Raipur · Police Station',15,36,-48,-23],['Construction Site',38,95,-50,-27],['Goa · Outpulse.EV',16,40,10,24],['Goa · Poster Street',16,99,-6,12],['Goa · Client Row',20,95,-27,-6],['Goa · Beach & Lagoon',14,99,24,92],['Manali · TOKI',-42,-18,-24,-5],['Manali · Lookout',-96,-71,-10,10],['Manali · Café Strip',-72,-18,-24,22],['Mysuru · Palace Grounds',-47,-9,24,69],['Mysuru · School Road',-47,8,69,92],['Mysuru · South Road',-9,14,19,92]];
-function zoneCheck(){if(P.world!=='out')return;const z=ZONES.find(z=>P.pos.x>z[1]&&P.pos.x<z[2]&&P.pos.z>z[3]&&P.pos.z<z[4]);zone(z?z[0]:'')}
+function zoneCheck(){if(P.world!=='out')return;const T=TOWNS[curTown];const z=T.zones.find(z=>P.pos.x>z[1]&&P.pos.x<z[2]&&P.pos.z>z[3]&&P.pos.z<z[4]);zone(z?z[0]:'')}
 let zt;function zone(name,force){if(name===zoneName&&!force)return;zoneName=name;if(!name)return;const el=$('.ow-zone');el.textContent=name;el.classList.remove('on');void el.offsetWidth;el.classList.add('on')}
-const MX0=-100,MZ0=-56,MS=3;let bg;
-function mapBG(){bg=document.createElement('canvas');bg.width=200*MS;bg.height=150*MS;const x=bg.getContext('2d');const R=(x0,x1,z0,z1,c)=>{x.fillStyle=c;x.fillRect((x0-MX0)*MS,(z0-MZ0)*MS,(x1-x0)*MS,(z1-z0)*MS)};
-  R(-100,100,-56,94,'#79c267');R(-46,-10,26,68,'#8fd07a');R(20,44,26,44,'#6dbb5c');R(16,99,-6,6,'#545861');R(-72,-16,-6,6,'#545861');R(-6,6,-24,-16,'#545861');R(-6,6,16,92,'#545861');R(-16,16,-16,16,'#e9dfca');
-  x.fillStyle='#3fa7e0';x.beginPath();x.arc((64-MX0)*MS,(64-MZ0)*MS,13*MS,0,7);x.fill();R(22,94,9,9.6,'#141414');R(-40,-16,58,64,'#2b2b2b');
-  for(const b of G.buildings)R(b.x0,b.x1,b.z0,b.z1,b.col);x.strokeStyle='rgba(0,0,0,.35)';x.lineWidth=2;for(const b of G.buildings)x.strokeRect((b.x0-MX0)*MS,(b.z0-MZ0)*MS,(b.x1-b.x0)*MS,(b.z1-b.z0)*MS)}
+let MX0=-100,MZ0=-56,MW=200,MH=150;const MS=3;let bg;
+function mapBG(){const T=TOWNS[curTown];bg=document.createElement('canvas');bg.width=MW*MS;bg.height=MH*MS;const x=bg.getContext('2d');const R=(x0,x1,z0,z1,c)=>{x.fillStyle=c;x.fillRect((x0-MX0)*MS,(z0-MZ0)*MS,(x1-x0)*MS,(z1-z0)*MS)};
+  R(MX0,MX0+MW,MZ0,MZ0+MH,T.snow?'#e6edf2':'#79c267');for(const r of T.roads){if(r[4]==='x')R(r[0],r[1],r[2]-2,r[3]+2,'#cfc7b6');else R(r[0]-2,r[1]+2,r[2],r[3],'#cfc7b6')}for(const r of T.roads)R(r[0],r[1],r[2],r[3],'#545861');
+  if(curTown==='vashupur')R(-16,16,-16,16,'#e9dfca');
+  if(curTown==='memepura'){R(20,44,26,44,'#6dbb5c');x.fillStyle='#3fa7e0';x.beginPath();x.arc((64-MX0)*MS,(64-MZ0)*MS,13*MS,0,7);x.fill();R(22,94,9,9.6,'#141414')}
+  if(curTown==='basti'){R(-46,-10,26,68,'#8fd07a');R(-40,-16,58,64,'#2b2b2b')}
+  for(const b of G.buildings)R(b.x0,b.x1,b.z0,b.z1,b.col);x.strokeStyle='rgba(0,0,0,.35)';x.lineWidth=2;for(const b of G.buildings)x.strokeRect((b.x0-MX0)*MS,(b.z0-MZ0)*MS,(b.x1-b.x0)*MS,(b.z1-b.z0)*MS);
+  const bs=T.bus;x.fillStyle='#ffcc3a';x.fillRect((bs.x-MX0)*MS-9,(bs.z-MZ0)*MS-9,18,18);x.strokeStyle='#141414';x.lineWidth=3;x.strokeRect((bs.x-MX0)*MS-9,(bs.z-MZ0)*MS-9,18,18)}
 function drawMini(){const c=$('.ow-map canvas'),x=c.getContext('2d'),W_=c.width,S=2.6;x.clearRect(0,0,W_,W_);
   if(P.world!=='out'){x.fillStyle='#141414';x.fillRect(0,0,W_,W_);x.fillStyle='#f4efe6';x.font='700 22px "Inter Tight",sans-serif';x.textAlign='center';x.fillText('INSIDE',W_/2,W_/2-8);x.font='600 16px "Inter Tight",sans-serif';const n=G.rooms[P.world].name;x.fillText(n.length>18?n.slice(0,17)+'…':n,W_/2,W_/2+18);return}
   x.save();x.translate(W_/2,W_/2);x.scale(S/MS,S/MS);x.translate(-(P.pos.x-MX0)*MS,-(P.pos.z-MZ0)*MS);x.drawImage(bg,0,0);
   for(const b of G.beans)if(b.g.visible&&false){}
   x.restore();
   const dot=(wx,wz,col,r=5)=>{const sx=W_/2+(wx-P.pos.x)*S,sy=W_/2+(wz-P.pos.z)*S;if(sx<0||sy<0||sx>W_||sy>W_)return;x.fillStyle=col;x.beginPath();x.arc(sx,sy,r,0,7);x.fill();x.strokeStyle='#141414';x.lineWidth=2;x.stroke()};
-  const g=G.npcs.find(n=>n.id==='guide');if(g)dot(g.c.position.x,g.c.position.z,'#ff6a3d',5);dot(W.event.x,W.event.z+8,evPhase?'#c9f26b':'#ffcc3a',6);
+  const g=G.npcs.find(n=>n.id==='guide');if(g)dot(g.c.position.x,g.c.position.z,'#ff6a3d',5);if(W.event)dot(W.event.x,W.event.z+8,evPhase?'#c9f26b':'#ffcc3a',6);
   x.save();x.translate(W_/2,W_/2);x.rotate(-P.yaw+Math.PI);x.fillStyle='#ffffff';x.strokeStyle='#141414';x.lineWidth=2.5;x.beginPath();x.moveTo(0,-10);x.lineTo(7,8);x.lineTo(0,4);x.lineTo(-7,8);x.closePath();x.fill();x.stroke();x.restore()}
-function openMap(){const o=$('.ow-bigmap');o.hidden=false;const c=o.querySelector('canvas');const w=Math.min(innerWidth-24,820);c.width=w*2;c.height=w*2*.75;c.style.width=w+'px';c.style.height=w*.75+'px';const x=c.getContext('2d');x.drawImage(bg,0,0,c.width,c.height);const k=c.width/bg.width;
+function openMap(){const o=$('.ow-bigmap');o.hidden=false;const c=o.querySelector('canvas');const ar=MH/MW,w=Math.min(innerWidth-24,820,(innerHeight-130)/ar);c.width=w*2;c.height=w*2*ar;c.style.width=w+'px';c.style.height=w*ar+'px';o.querySelector('.k').textContent=TOWNS[curTown].name+' map · tap a building to walk there';const x=c.getContext('2d');x.drawImage(bg,0,0,c.width,c.height);const k=c.width/bg.width;
   x.font='800 '+Math.round(22*k/1.5)+'px "Bricolage Grotesque",sans-serif';x.textAlign='center';
   for(const b of G.buildings){if(!b.room)continue;const cx=((b.x0+b.x1)/2-MX0)*MS*k,cy=((b.z0+b.z1)/2-MZ0)*MS*k;x.lineWidth=6;x.strokeStyle='#141414';x.strokeText(b.short,cx,cy);x.fillStyle='#ffffff';x.fillText(b.short,cx,cy)}
   for(const [n,X,Z] of[['Event Ground',-28,48],['Lakeside Park',64,64],['Poster Street',58,3],['Town Square',0,-4]]){const cx=(X-MX0)*MS*k,cy=(Z-MZ0)*MS*k;x.lineWidth=6;x.strokeStyle='#141414';x.strokeText(n,cx,cy);x.fillStyle='#ffcc3a';x.fillText(n,cx,cy)}
   if(P.world==='out'){const cx=(P.pos.x-MX0)*MS*k,cy=(P.pos.z-MZ0)*MS*k;x.fillStyle='#ff3b3b';x.beginPath();x.arc(cx,cy,10,0,7);x.fill();x.lineWidth=4;x.strokeStyle='#fff';x.stroke()}}
-function bigMapTap(e){if(P.world!=='out')return;const c=e.currentTarget,r=c.getBoundingClientRect();const wx=(e.clientX-r.left)/r.width*200+MX0,wz=(e.clientY-r.top)/r.height*150+MZ0;
+function bigMapTap(e){if(P.world!=='out')return;const c=e.currentTarget,r=c.getBoundingClientRect();const wx=(e.clientX-r.left)/r.width*MW+MX0,wz=(e.clientY-r.top)/r.height*MH+MZ0;
   const b=G.buildings.find(b=>b.room&&wx>b.x0-2&&wx<b.x1+2&&wz>b.z0-2&&wz<b.z1+2);$('.ow-bigmap').hidden=true;
   if(b){setTarget(b.door.x,b.door.z,null);toast('WALKING TO',b.name)}else setTarget(wx,wz,null)}
