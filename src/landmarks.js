@@ -138,11 +138,40 @@ function basti(scene,ctx){const {S,LMP,addPlane}=ctx;const NEON=LMP;const path='
   v.box(0,2,0,.2,.5,.2,'#555');for(const s2 of[-1,1])v.cone(s2*.4,2.3,-.2+s2*.1,.35,.7,'#c9ccd1',10,0);v.box(0,1.3,-2.31,1.6,.6,.02,'#2ab3a6');col(-3.45,-1.35,0,2.6,55.6,60.4);
   G.triggers.push({x:-.6,z:58,r:1.8,label:'Listen to the loudspeaker',act:()=>G.say('Loudspeaker van','"Attention! Attention! Free chai at the rally. Chai is not a promise. The rally is a promise. Mostly."')})}
 
+/* ---------- Barfii Town: snowman, frozen pond, ice gola, barfi sweets ---------- */
+function barfii(scene,ctx){const {S,LMP,addPlane}=ctx;
+  // snowman
+  const sm=(r,y)=>{const g=new THREE.SphereGeometry(r,14,10);g.translate(-76.5,y,9.4);S.add(g,'#f7fafc')};sm(.85,.8);sm(.62,2);sm(.42,2.95);
+  const nose=new THREE.ConeGeometry(.08,.45,8);nose.rotateX(PI/2);nose.translate(-76.5,2.95,9.95);S.add(nose,'#ff8a3d');for(const s2 of[-.15,.15])bx(S,-76.5+s2,3.05,9.78,.07,.07,.04,'#141414');for(const y of[1.8,2.1,2.4])bx(S,-76.5,y,10.02,.08,.08,.04,'#141414');
+  cyl(S,-76.5,3.35,9.4,.48,.48,.06,'#141414',14);cyl(S,-76.5,3.62,9.4,.3,.3,.5,'#141414',14);bx(S,-76.5,2.55,9.4,.95,.14,.95,'#e53935');bx(S,-76.1,2.3,9.9,.22,.5,.1,'#e53935');
+  for(const s2 of[-1,1])bx(S,-76.5+s2*.85,2.2,9.4,.9,.06,.06,'#5a3f2a',0,0,s2*.5);col(-77.3,-75.7,0,3.4,8.6,10.2);
+  G.triggers.push({x:-76.5,z:11.2,r:1.6,label:'Say hi to the snowman',act:()=>{G.host.egg('ow_snowman','You said hi to the snowman. He said nothing. Classic.');G.say('Snowman','…')}});
+  // frozen pond
+  const ice=new THREE.Mesh(new THREE.CircleGeometry(6,40),new THREE.MeshLambertMaterial({color:'#cfe9f6',emissive:'#203040'}));ice.rotation.x=-PI/2;ice.position.set(-88,.05,17);ice.receiveShadow=true;scene.add(ice);
+  for(let a=0;a<PI*2;a+=.35){const g=new THREE.SphereGeometry(.7+((a*10)%3)*.15,8,6,0,PI*2,0,PI/2);g.scale(1,.5,1);g.translate(-88+Math.cos(a)*6.4,0,17+Math.sin(a)*6.4);S.add(g,'#f3f7fa')}
+  for(const [x,z,r] of[[-90,15,.9],[-86,19,1.2]]){const g=new THREE.RingGeometry(r,r+.05,24);g.rotateX(-PI/2);g.translate(x,.06,z);S.add(g,'#ffffff')}
+  G.triggers.push({x:-88,z:12.2,r:1.8,label:'Slide on the ice',act:()=>{G.player.emote='dance';G.player.emoteT=2.6;G.host.toast('WHEEE','You slid across the frozen pond. Mostly upright.')}});
+  // ice gola cart
+  const c=prop(S,-62,0,-7.2,0);c.box(0,.85,0,2.2,.9,1,'#3d7be8');c.wheel(-.8,.32,.55,.32,.12);c.wheel(.8,.32,.55,.32,.12);c.box(0,1.35,0,2.2,.08,1,'#f4efe6');c.box(-.55,1.65,0,.7,.5,.6,'#e8f4fb');
+  ['#e53935','#ffcc3a','#5cc46b','#8e24aa','#ff8a3d'].forEach((k,i)=>c.cyl(.25+i*.2,1.6,.2,.07,.07,.42,k,8));c.box(0,2.7,0,2.6,.08,1.5,'#ff6a3d');for(const s2 of[-1,1])c.box(s2*1.1,2,-.55,.06,1.4,.06,'#555');col(-63.1,-60.9,0,1.8,-7.7,-6.7);
+  addPlane(scene,2.2,.45,signTex('BARF KA GOLA · ₹20','#ff6a3d','#ffffff',512,104),[-62,2.25,-6.66],0,null);
+  G.triggers.push({x:-62,z:-5.6,r:1.5,label:'Get a barf ka gola',act:()=>{G.host.toast('BARF KA GOLA','Crushed ice, kala khatta syrup, brain freeze included.');G.player.emote='sip';G.player.emoteT=2.6}});
+  // barfi sweets stall
+  const b=prop(S,-48,0,-7.4,0);b.box(0,.55,0,3.2,1.1,1.1,'#f4efe6');b.box(0,1.12,0,3.3,.06,1.2,'#c9a227');b.box(0,1.45,.1,3,.6,.9,'#e8f4fb');for(let i=0;i<4;i++)for(let j=0;j<3;j++)b.box(-1.1+i*.72,1.2,-.25+j*.25,.6,.06,.2,i%2?'#e8e2d6':'#d9d4c4');
+  b.box(0,3,0,3.6,.12,1.8,'#8e24aa');for(const s2 of[-1,1])b.box(s2*1.6,2.1,-.7,.07,1.8,.07,'#555');col(-49.6,-46.4,0,1.8,-8,-6.8);
+  addPlane(scene,3.2,.5,signTex('BARFII SWEETS · KAJU BARFI','#8e24aa','#ffcc3a',768,120),[-48,2.55,-6.84],0,null);
+  G.triggers.push({x:-48,z:-5.7,r:1.6,label:'Buy kaju barfi',act:()=>G.host.toast('KAJU BARFI','Silver leaf, cashew, gone in one bite. ₹40.')});
+  G.blocked.push([-95,-80,9,25],[-78,-75,8,11]);
+  G.extraNPCs.push({name:'Pahadi Didi',look:{shirt:'#8e24aa',pants:'#5a3f2a',hair:'long',hat:'#e53935',face:'smile',long:true},x:-48,z:-8.5,yaw:0,lines:['Kaju barfi, fresh today. Silver leaf on top, love underneath.','Barfii Town gets its name from the snow. Or the barfi. Depends who you ask.','Ice gola in this weather? Only tourists. And Sonu.'],barks:['Barfi lo!','Fresh barfi!']},
+    {name:'Snowball Sonu',look:{shirt:'#3d7be8',pants:'#2b2b2b',hair:'cap',hat:'#e53935',face:'grin'},x:-40,z:6,kind:'wander',path:[[-36,6],[-70,6],[-70,-5.6],[-36,-5.6]],speed:3.2,lines:['Snowball fight? I have 40 ready. You have zero.','I built the snowman. He doesn\'t talk. Very mysterious.','Bean on the ice! I saw it. Didn\'t take it. I\'m honest.'],barks:['Incoming!','Snowball!']},
+    {name:'Yeti Uncle',look:{shirt:'#f3f3f3',pants:'#d9d4c4',hair:'grey',mustache:true,face:'calm',coat:'#e8e2d6'},x:-83,z:12.8,yaw:.4,lines:['I\'m not a yeti. I just haven\'t shaved since November.','The pond freezes every year. The bean on it? New this year.','Sit by the bonfire. No notifications up here.'],barks:['Brrr.','Chai?']})}
+
 export function buildLandmarks(scene,ctx){const {on}=ctx;const outs={};G.blocked=G.blocked||[];
   busStop(scene,ctx);
   if(on('kaapikunj')){outs.kunj=kunj(scene,ctx);estate(scene,ctx);welcomeArch(scene,ctx,-18,'WELCOME TO KAAPIKUNJ','KAAPIKUNJ · CUP FIRST','#8b6a4a')}
   if(on('memepura')){memepura(scene,ctx);welcomeArch(scene,ctx,33,'MEMEPURA · VERY ONLINE','WELCOME TO MEMEPURA','#ff3b8d')}
   if(on('basti')){basti(scene,ctx);welcomeArchZ(scene,ctx,32,'WELCOME TO POLITICAL BASTI','POLITICAL BASTI · VOTE WISELY','#8b1e2d')}
+  if(on('barfii')){barfii(scene,ctx);welcomeArch(scene,ctx,-44,'WELCOME TO BARFII TOWN','BARFII TOWN · SNOW & SWEETS','#3d6b8f')}
   if(on('vashupur')){outs.museum=museum(scene,ctx);G.noGrass.push([-16.5,16.5,-16.5,16.5],[-11.5,11.5,-31,-24.6],[-7.4,7.4,15.5,18.7])}
   return outs}
 

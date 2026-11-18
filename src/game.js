@@ -376,7 +376,7 @@ function mapBG(){const T=TOWNS[curTown];bg=document.createElement('canvas');bg.w
   if(curTown==='basti'){R(-46,-10,26,68,'#8fd07a');R(-40,-16,58,64,'#2b2b2b')}
   for(const b of G.buildings)R(b.x0,b.x1,b.z0,b.z1,b.col);x.strokeStyle='rgba(0,0,0,.35)';x.lineWidth=2;for(const b of G.buildings)x.strokeRect((b.x0-MX0)*MS,(b.z0-MZ0)*MS,(b.x1-b.x0)*MS,(b.z1-b.z0)*MS);
   const bs=T.bus;x.fillStyle='#ffcc3a';x.fillRect((bs.x-MX0)*MS-9,(bs.z-MZ0)*MS-9,18,18);x.strokeStyle='#141414';x.lineWidth=3;x.strokeRect((bs.x-MX0)*MS-9,(bs.z-MZ0)*MS-9,18,18)}
-function drawMini(){const c=$('.ow-map canvas'),x=c.getContext('2d'),W_=c.width,S=2.6;x.clearRect(0,0,W_,W_);
+function drawMini(){const c=$('.ow-map canvas'),x=c.getContext('2d'),W_=c.width,S=2.6;x.clearRect(0,0,W_,W_);x.fillStyle=TOWNS[curTown].snow?'#e6edf2':'#79c267';x.fillRect(0,0,W_,W_);
   if(P.world!=='out'){x.fillStyle='#141414';x.fillRect(0,0,W_,W_);x.fillStyle='#f4efe6';x.font='700 22px "Inter Tight",sans-serif';x.textAlign='center';x.fillText('INSIDE',W_/2,W_/2-8);x.font='600 16px "Inter Tight",sans-serif';const n=G.rooms[P.world].name;x.fillText(n.length>18?n.slice(0,17)+'…':n,W_/2,W_/2+18);return}
   x.save();x.translate(W_/2,W_/2);x.scale(S/MS,S/MS);x.translate(-(P.pos.x-MX0)*MS,-(P.pos.z-MZ0)*MS);x.drawImage(bg,0,0);
   for(const b of G.beans)if(b.g.visible&&false){}

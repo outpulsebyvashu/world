@@ -33,7 +33,7 @@ export const TOWNS={
     plots:[[-24,-12,74,88,'e'],...[[-94,-82],[-78,-66],[-62,-52]].flatMap(([a,b])=>[[22,34],[40,52],[58,70],[76,88]].map(([c,d])=>[a,b,c,d,'e']))],
     zones:[['Rally Ground',-47,-9,24,69],['School Road',-47,8,69,94],['The Lanes',-98,-48,14,94]],
     trees:50,flora:'mix',lanes:true},
-  barfii:{name:'Barfii Town',tag:'Snow, chalets, a frozen pond and warm barfi.',color:'#9cc6dd',
+  barfii:{ready:true,name:'Barfii Town',tag:'Snow, chalets, a frozen pond and warm barfi.',color:'#9cc6dd',
     b:[-100,-26,-52,26],
     roads:[[-72,-26,-4,4,'x']],
     bus:{x:-31,z:8,ry:PI,bx:-36,bz:2.4,bry:PI/2},spawn:{x:-33,z:5.4,yaw:-PI/2},scooter:[-40,6.2,0],
