@@ -3,11 +3,12 @@ import {buildWorld,spawnTown,W} from './world.js';
 import {PROJECTS,WA,STORY,NUMS,ROLES,SKILLS,RALLY} from './data.js';
 import {CSS,HUD} from './hud.js';
 import {snd} from './sound.js';
+import {makeMask,groundMaterial,makeGrass,makeSky} from './nature.js';
 
 const OW=window.OW={};
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
-let root,renderer,scene,camera,sunL,hemi,amb,running=false,last=0;
+let root,renderer,scene,camera,sunL,hemi,amb,running=false,last=0,grass,sky;
 const $=s=>root.querySelector(s);
 const P={pos:new THREE.Vector3(0,0,24),vel:new THREE.Vector3(),yaw:Math.PI,grounded:true,world:'out',state:'walk',emote:null,emoteT:0,cup:false,seat:null,ride:false,climb:null};
 const cam={yaw:0,pitch:.36,dist:8.5,tdist:8.5,lastDrag:0};
@@ -32,16 +33,19 @@ OW.init=async(host,el,progress=()=>{})=>{
   try{await Promise.race([Promise.all(['800 64px "Bricolage Grotesque"','400 64px Anton','600 20px "Inter Tight"'].map(f=>document.fonts.load(f))),new Promise(r=>setTimeout(r,2500))])}catch(e){}
   progress(.25);
   renderer=new THREE.WebGLRenderer({antialias:devicePixelRatio<2,powerPreference:'high-performance'});
-  renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;
+  renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.9;
   root.prepend(renderer.domElement);renderer.domElement.className='ow-cv3';renderer.domElement.setAttribute('aria-hidden','true');
   scene=new THREE.Scene();scene.fog=new THREE.Fog('#8fd0ff',70,260);
-  camera=new THREE.PerspectiveCamera(58,1,.1,900);
+  camera=new THREE.PerspectiveCamera(58,1,.1,1700);
   hemi=new THREE.HemisphereLight('#cfe9ff','#6a8f4e',1.1);scene.add(hemi);amb=new THREE.AmbientLight('#ffffff',.25);scene.add(amb);
   sunL=new THREE.DirectionalLight('#fff3dc',2.2);sunL.castShadow=true;const sm=innerWidth>900?2048:1024;sunL.shadow.mapSize.set(sm,sm);const sc=sunL.shadow.camera;sc.left=-32;sc.right=32;sc.top=32;sc.bottom=-32;sc.near=1;sc.far=220;sunL.shadow.bias=-.0004;sunL.shadow.normalBias=.03;scene.add(sunL,sunL.target);
   G.enter=enterRoom;G.exit=exitRoom;G.card=card;G.talk=talk;G.say=(n,t)=>dlg(n,[t]);G.cv=openCV;G.brew=brew;
   buildWorld(scene);progress(.6);await new Promise(r=>setTimeout(r,0));
   if(G.LOT)(G.extraNPCs=G.extraNPCs||[]).push({id:'doctor',name:'Dr. Rao',look:{shirt:'#cfe3f7',pants:'#2b2b2b',hair:'grey',coat:'#ffffff',glasses:true,face:'flat'},x:90.5,z:-5.2,yaw:0,lines:[],barks:['My clinic is coming soon.','Coffee, anyone?']});
-  spawnTown(scene);progress(.8);
+  spawnTown(scene);progress(.75);
+  W.ground.material=groundMaterial();W.clouds.visible=false;W.sun.visible=false;
+  G.noGrass=[[-46,-10,55,68],[38,94,-47,-27],[16,20,6.4,8.6],[21.5,95,8.9,9.9],[-13.7,-11.5,11.5,13.7],[45.5,48.5,44.3,46]];
+  grass=makeGrass(scene,makeMask([[16,99,-6.3,6.3],[-72,-16,-6.3,6.3],[-6.3,6.3,-24,-16],[-6.3,6.3,16,92],[-16.5,16.5,-16.5,16.5]]));sky=makeSky(scene);progress(.85);
   player=makeChar({skin:'#c48a60',shirt:'#141414',pants:'#8a7f5a',cargo:'#6f6646',shoes:'#f5f5f5',hair:'curly',glasses:true,face:'smile',seed:3,logo:'#ff6a3d'});scene.add(player);
   const cb=new Batch();cyl(cb,0,0,0,.11,.09,.22,'#ffffff',10);cyl(cb,0,.11,0,.1,.1,.01,'#8a5a3b',10);cupMesh=cb.mesh(CHM);cupMesh.position.set(0,-.72,.12);cupMesh.visible=false;player.userData.armR.add(cupMesh);
   marker=new THREE.Mesh(new THREE.RingGeometry(.35,.5,24).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:.9,depthWrite:false}));marker.visible=false;scene.add(marker);
@@ -58,18 +62,21 @@ OW.stop=()=>{running=false;snd.music(null)};
 function resize(){const w=root.clientWidth||innerWidth,h=root.clientHeight||innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
 
 /* ================= day / night ================= */
-const C=c=>new THREE.Color(c);const NIGHT=C('#0b1230'),DAY=C('#8fd0ff'),DUSK=C('#ff9b6a'),tc=new THREE.Color(),sunDir=new THREE.Vector3();
+const C=c=>new THREE.Color(c);const NIGHT=C('#0a0f1e'),DAY=C('#c4d6e6'),DUSK=C('#e9a57c'),tc=new THREE.Color(),sunDir=new THREE.Vector3();
 let dayK=1;
-function hourNow(){if(timeMode==='day')return 12.5;if(timeMode==='sunset')return 18.1;if(timeMode==='night')return 22.5;const d=new Date();return d.getHours()+d.getMinutes()/60}
+function hourNow(){if(timeMode==='day')return 12.5;if(timeMode==='sunset')return 17.55;if(timeMode==='night')return 22.5;const d=new Date();return d.getHours()+d.getMinutes()/60}
 function setTime(){const h=hourNow(),a=(h-6)/12*Math.PI,alt=Math.sin(a);
   dayK=clamp((alt+.08)/.38,0,1);const dusk=clamp(1-Math.abs(alt-.04)/.28,0,1);
+  if(sky)sky.visible=P.world==='out';if(grass)grass.mesh.visible=P.world==='out';
   if(P.world!=='out'){const r=G.rooms[P.world];scene.background=tc.set('#141414').clone();scene.fog.color.set('#141414');scene.fog.near=34;scene.fog.far=60;hemi.color.set(r.light);hemi.groundColor.set('#8a7a6a');hemi.intensity=1.25;amb.intensity=.35;sunL.intensity=1.1;sunL.color.set('#fff4e0');sunDir.set(.3,1,.5).normalize();W.winMat.color.set('#bfe0ff');setNight(0);return}
-  tc.copy(NIGHT).lerp(DAY,dayK).lerp(DUSK,dusk*.55);scene.background=tc.clone();scene.fog.color.copy(tc);scene.fog.near=70;scene.fog.far=dayK>.3?260:200;
-  if(alt>-.05){sunDir.set(Math.cos(a)*.8,Math.max(alt,.18),-.45).normalize();sunL.color.copy(C('#ffd2a1')).lerp(C('#fff6e6'),dayK);sunL.intensity=.6+2.0*dayK}
+  tc.copy(NIGHT).lerp(DAY,dayK).lerp(DUSK,dusk*.55);scene.background=sky?null:tc.clone();scene.fog.color.copy(tc);scene.fog.near=90;scene.fog.far=dayK>.3?520:260;
+  const twi=alt<0?clamp((alt+.24)/.24,0,1):1;
+  if(sky){const sAlt=alt>-.24?Math.max(alt,.012):alt;const sd=new THREE.Vector3(Math.cos(a)*.85,sAlt,-.45).normalize();sky.material.uniforms.sunPosition.value.copy(sd);renderer.toneMappingExposure=(.5+.42*dayK)*(.25+.75*twi)}
+  if(alt>-.05){sunDir.set(Math.cos(a)*.8,Math.max(alt,.18),-.45).normalize();sunL.color.copy(C('#ffc58a')).lerp(C('#fff4e2'),dayK);sunL.intensity=.8+2.6*dayK}
   else{sunDir.set(-Math.cos(a)*.6,.7,.4).normalize();sunL.color.set('#9fb6ff');sunL.intensity=.55}
   hemi.color.copy(C('#5b6fb0')).lerp(C('#d6ecff'),dayK);hemi.groundColor.copy(C('#26304a')).lerp(C('#6a8f4e'),dayK);hemi.intensity=.75+.45*dayK;amb.intensity=.18+.12*dayK;
-  W.winMat.color.copy(C('#ffd27a')).lerp(C('#9fc4e6'),dayK);setNight(1-dayK);
-  W.sun.visible=alt>-.02;W.moon.visible=dayK<.5}
+  W.winMat.color.copy(C('#ffd27a')).lerp(C('#9fc4e6'),dayK);setNight(1-dayK);W.stars.material.opacity=clamp((-alt-.04)/.16,0,1);
+  W.sun.visible=false;W.moon.visible=dayK<.5}
 function setNight(k){if(W.neonMat)W.neonMat.color.copy(C('#a8a8a8')).lerp(C('#ffffff'),k);W.lampMat.color.copy(C('#cfcfcf')).lerp(C('#fff1b8'),k);W.pools.material.opacity=k*.6;W.stars.material.opacity=k;W.clouds.material.opacity=.35+.6*(1-k);W.roofLights.material.color.set(k>.4?'#fff1b8':'#dddddd')}
 
 /* ================= beans ================= */
@@ -183,6 +190,7 @@ function update(dt,T){
   if(P.ride)snd.motor(hs/16);else snd.motor(0);
   if(marker.visible){marker.rotation.y+=dt*2;marker.material.opacity=.5+.4*Math.sin(T*6)}
   /* --- world systems --- */
+  if(grass&&P.world==='out')grass.update(dt,T,P.pos.x,P.pos.z);if(sky){sky.position.copy(camera.position);if(sky.material.uniforms.time)sky.material.uniforms.time.value=T}
   beansTick(dt,T);npcTick(dt,T);eventTick(dt,T);ballTick(dt);ambientTick(dt,T);
   if(P.world==='out')lakeCheck();
   /* --- action button --- */
@@ -198,7 +206,7 @@ function camTick(dt,snap){cam.dist+=(cam.tdist-cam.dist)*Math.min(1,dt*6);
   if(P.state==='sit'&&P.seat){let d=(P.seat.yaw+Math.PI)-cam.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));if(performance.now()-cam.lastDrag>1500)cam.yaw+=d*Math.min(1,dt*2)}
   if(P.ride&&performance.now()-cam.lastDrag>1200){let d=(P.yaw+Math.PI)-cam.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));cam.yaw+=d*Math.min(1,dt*2.5)}
   const cp=Math.cos(cam.pitch);fw.set(Math.sin(cam.yaw)*cp*cam.dist,Math.sin(cam.pitch)*cam.dist,Math.cos(cam.yaw)*cp*cam.dist);
-  let tm=1;if(P.world==='out'){for(const c of G.colliders){if(c.cam===false||c.y1<1)continue;const t=rayBox(tgt,fw,c);if(t<tm)tm=t}}
+  let tm=1;if(P.world==='out'){for(const c of G.colliders){if(c.cam===false||c.y1<1)continue;const t=rayBox(tgt,fw,c);if(t<tm)tm=t}let tt2=1;if(G.camCols)for(const c of G.camCols){if(Math.abs(c.x0-P.pos.x)>40||Math.abs(c.z0-P.pos.z)>40)continue;const t=rayBox(tgt,fw,c);if(t<tt2)tt2=t}tm=Math.min(tm,Math.max(tt2,2.6/cam.dist))}
   const want=tgt.clone().addScaledVector(fw,Math.max(.12,tm-.04));want.y=Math.max(want.y,P.pos.y+.4);
   if(snap)camera.position.copy(want);else camera.position.lerp(want,Math.min(1,dt*14));camera.lookAt(tgt);
   sunL.position.copy(P.pos).addScaledVector(sunDir,90);sunL.target.position.copy(P.pos);
