@@ -8,7 +8,7 @@ export function rng(seed){let s=seed>>>0;return()=>{s+=0x6D2B79F5;let t=s;t=Math
 const tmpC=new THREE.Color();
 export class Batch{constructor(){this.g=[]}
   add(geo,col){const n=geo.attributes.position.count,a=new Float32Array(n*3);tmpC.set(col);for(let i=0;i<n;i++){a[i*3]=tmpC.r;a[i*3+1]=tmpC.g;a[i*3+2]=tmpC.b}geo.setAttribute('color',new THREE.BufferAttribute(a,3));if(!geo.index){geo=geo}this.g.push(geo);return geo}
-  mesh(mat){if(!this.g.length)return null;const gs=this.g.map(g=>g.index?g.toNonIndexed():g);const m=new THREE.Mesh(mergeGeometries(gs),mat);this.g=[];return m}}
+  mesh(mat){if(!this.g.length)return new THREE.Object3D();const gs=this.g.map(g=>g.index?g.toNonIndexed():g);const m=new THREE.Mesh(mergeGeometries(gs),mat);this.g=[];return m}}
 export function bx(b,x,y,z,w,h,d,col,ry=0,rx=0,rz=0){const g=new THREE.BoxGeometry(w,h,d);if(rx)g.rotateX(rx);if(rz)g.rotateZ(rz);if(ry)g.rotateY(ry);g.translate(x,y,z);b.add(g,col);return g}
 export function cyl(b,x,y,z,r1,r2,h,col,seg=12){const g=new THREE.CylinderGeometry(r1,r2,h,seg);g.translate(x,y,z);b.add(g,col);return g}
 export function col(x0,x1,y0,y1,z0,z1,o){const c={x0:Math.min(x0,x1),x1:Math.max(x0,x1),y0,y1,z0:Math.min(z0,z1),z1:Math.max(z0,z1)};if(o)Object.assign(c,o);G.colliders.push(c);return c}

@@ -46,15 +46,15 @@ export function buildDistricts(scene,ctx){const {S,WIN,LMP,building,addPlane,ben
   {const p=prop(S,14.2,0,-20.6);p.box(0,.2,0,2.6,.4,2.6,'#e6e1d6');p.box(0,.55,0,2,.3,2,'#e6e1d6');p.box(0,5.7,0,1,10,1,'#f4efe6');p.box(0,1.6,0,1.3,1.8,1.3,'#f4efe6');
    p.box(0,9.2,0,1.08,.5,1.08,'#ff9933');p.box(0,8.7,0,1.08,.5,1.08,'#ffffff');p.box(0,8.2,0,1.08,.5,1.08,'#138808');p.box(0,10.9,0,1.4,.3,1.4,'#e6e1d6');p.cone(0,11.6,0,.7,1.2,'#e6e1d6',4);
    col(12.9,15.5,0,11,-21.9,-19.3);addPlane(scene,1.25,.5,signTex('JAI STAMBH CHOWK','#141414','#ffcc3a',512,128),[14.2,1.7,-19.94],0,null)}
-  {const k=prop(S,-19,0,-28.6);k.box(0,1.5,0,4,3,3,'#e94b3c');k.box(0,3.1,0,4.6,.25,3.6,'#ffffff');k.box(0,1.1,1.6,3.6,.12,.6,'#ffffff');k.box(0,1.9,1.52,3,1.3,.06,'#3a1a10');
+  {if(G.LOT)building({name:'Spreewalk',x0:-22,x1:-16,z0:-30.5,z1:-26.5,h:3,door:{side:'s',at:-19}});else{const k=prop(S,-19,0,-28.6);k.box(0,1.5,0,4,3,3,'#e94b3c');k.box(0,3.1,0,4.6,.25,3.6,'#ffffff');k.box(0,1.1,1.6,3.6,.12,.6,'#ffffff');k.box(0,1.9,1.52,3,1.3,.06,'#3a1a10');
    k.cyl(0,4.1,0,1.3,1.3,.4,'#d9963b',18);k.cyl(0,3.8,0,1.35,1.35,.2,'#6b3e22',18);k.cyl(0,3.62,0,1.45,1.45,.12,'#ffcc3a',18);k.cyl(0,3.5,0,1.4,1.4,.12,'#4caf50',18);k.cyl(0,3.32,0,1.3,1.3,.24,'#d9963b',18);
    col(-21,-17,0,3.3,-30.1,-27.1);for(const x of[-20.2,-17.8])cyl(S,x,.38,-26.2,.24,.2,.06,'#e94b3c',12);addPlane(scene,3.6,.6,signTex('SPREEWALK · COMING SOON','#ffffff','#e94b3c',512,90),[-19,2.75,-27.04],0,null);
-   info(-19,-25.8,0,1.6,'Spreewalk (coming soon)',{n:'Spreewalk',tag:'Future venture',st:'Planned',d:'A burger kiosk planned for Marine Drive, Raipur. Smash patties, quick lines, lakefront vibes.',href:'',color:'#e94b3c'});
+   info(-19,-25.8,0,1.6,'Spreewalk (coming soon)',{n:'Spreewalk',tag:'Future venture',st:'Planned',d:'A burger kiosk planned for Marine Drive, Raipur. Smash patties, quick lines, lakefront vibes.',href:'',color:'#e94b3c'});}
    blk(S,-28,-11,0,.06,-34.6,-31.4,'#3fa7e0',false);rails(S,-28,-11,-31.3,-31.3,0,1,'#9aa3ad',.8);col(-28,-11,0,1.1,-31.5,-31.2);for(let x=-27;x<-11;x+=4)lantern(S,WARM,x,1.4,-31.3);
    addPlane(scene,3.4,.6,signTex('MARINE DRIVE · RAIPUR','#1f7a4c','#ffffff',512,90),[-13.4,1.6,-31.1],0,null);BL(-29,-10,-35,-26)}
   // police station
   outs.police=building({name:'Police Station',x0:16,x1:34,z0:-46,z1:-31,h:7,col:'#f4f1ea',trim:'#1d3f8f',door:{side:'s',at:25},room:'police',win:false,awn:false,doorCol:'#1d3f8f'});
-  {const b={x0:16,x1:34,z0:-46,z1:-31},F=fac(b,'s');F.box(S,25,3.6,.05,18,.35,.12,'#1d3f8f');F.box(S,25,3.95,.05,18,.2,.12,'#c62828');
+  if(!G.LOT){const b={x0:16,x1:34,z0:-46,z1:-31},F=fac(b,'s');F.box(S,25,3.6,.05,18,.35,.12,'#1d3f8f');F.box(S,25,3.95,.05,18,.2,.12,'#c62828');
    for(const y of[1.9,5.3])for(const u of[18.4,21,29,31.6])F.box(WIN,u,y,.04,1.6,1.6,.08,'#ffffff');
    addPlane(scene,8,1.2,signTex('VASHU TOWN POLICE STATION','#1d3f8f','#ffffff',1024,150),[25,6.1,-30.86],0,null);
    blk(S,23,27,0,.25,-31,-28.6,'#d6d2c8',true);
@@ -63,7 +63,8 @@ export function buildDistricts(scene,ctx){const {S,WIN,LMP,building,addPlane,ben
    W.policeLights=[new THREE.Mesh(new THREE.BoxGeometry(.3,.16,.3),new THREE.MeshBasicMaterial({color:'#ff2d2d'})),new THREE.Mesh(new THREE.BoxGeometry(.3,.16,.3),new THREE.MeshBasicMaterial({color:'#2d6bff'}))];W.policeLights[0].position.set(30,2.25,-28.3);W.policeLights[1].position.set(30,2.25,-28.9);scene.add(...W.policeLights);
    for(const x of[20,22.2])blk(S,x-.9,x+.9,0,1,-29.2,-28.9,'#ffcc3a');BL(15,35,-47,-27)}
   // fire station
-  {building({name:'Fire Station',x0:-46,x1:-30,z0:-46,z1:-30,h:8,col:'#c62828',trim:'#ffffff',door:{side:'s',at:-33},win:false,awn:false,doorCol:'#ffffff'});
+  building({name:'Fire Station',x0:-46,x1:-30,z0:-46,z1:-30,h:8,col:'#c62828',trim:'#ffffff',door:{side:'s',at:-33},win:false,awn:false,doorCol:'#ffffff'});
+  if(!G.LOT){if(0)building({name:'Fire Station',x0:-46,x1:-30,z0:-46,z1:-30,h:8,col:'#c62828',trim:'#ffffff',door:{side:'s',at:-33},win:false,awn:false,doorCol:'#ffffff'});
    const b={x0:-46,x1:-30,z0:-46,z1:-30},F=fac(b,'s');
    for(const u of[-42.5,-37.5]){F.box(S,u,2.3,.02,4.2,4.6,.1,'#2b2b2b');F.box(S,u,4.75,.12,4.6,.3,.25,'#ffffff');F.box(S,u,2.3,.12,.25,4.6,.2,'#ffffff')}
    const tr=prop(S,-42.5,0,-32.8,0);tr.box(0,1.3,-.4,2.3,1.9,5.4,'#e53935');tr.box(0,1.5,2.6,2.3,2.2,1.6,'#e53935');tr.box(0,1.8,3.42,2,.9,.04,'#26323d');tr.box(0,2.4,-.6,1.9,.12,5,'#c9ccd1');
@@ -116,16 +117,16 @@ export function buildDistricts(scene,ctx){const {S,WIN,LMP,building,addPlane,ben
      for(const z of[(z0+z1)/2-2.2,(z0+z1)/2+2.2]){F.box(WIN,z,5.8,.03,.9,1.6,.06,'#ffffff');F.arch(WIN,z,6.6,.03,.45,.06,'#ffffff')}
      const c1=(z0+z1)/2;bx(S,fx-.35,12.9,c1,.15,1.6,.15,'#fafafa');bx(S,fx-.35,13.3,c1,.15,.15,.9,'#fafafa');
      G.buildings.push({name:'Goan chapel',short:'Chapel',x0:x0-1,x1,z0,z1,col:'#fafafa',door:{x:fx-2,z:c1}})};
-   ch(86,96,64,76);
+   if(!G.LOT)ch(86,96,64,76);else building({name:'Goan Chapel',short:'Chapel',x0:85,x1:96,z0:64,z1:76,h:7,door:{side:'w',at:70}});
    const ss=new THREE.Mesh(new THREE.TorusGeometry(13.25,.12,4,48),new THREE.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:.7}));ss.rotation.x=-PI/2;ss.position.set(64,.1,64);scene.add(ss);
    roadSign(18.5,-12.8,0,'GOA · EAST');BL(80,97,48,80);BL(45,49,56,65)}
 
   /* ================= MANALI — west ================= */
   {blk(S,-92,-72,0,.05,-9,9,'#8fd07a',false);for(const [x,z,w,d] of[[-88,-6,3,2],[-77,6,2.4,1.6],[-90,5,1.8,1.4],[-74,-7,1.6,1.2]])bx(S,x,.08,z,w,.06,d,'#f5f7fa');
-   const hx0=-91,hx1=-83,hz0=-8,hz1=-2;for(let y=0;y<4.2;y+=.6)blk(S,hx0,hx1,y,y+.6,hz0,hz1,(y/.6)%2?'#5a3f2a':'#8a8f96',y===0);col(hx0,hx1,0,4.2,hz0,hz1);
+   if(G.LOT)building({name:'Manali Lookout',x0:-91,x1:-83,z0:-8,z1:-2,h:4,door:{side:'s',at:-87}});else{const hx0=-91,hx1=-83,hz0=-8,hz1=-2;for(let y=0;y<4.2;y+=.6)blk(S,hx0,hx1,y,y+.6,hz0,hz1,(y/.6)%2?'#5a3f2a':'#8a8f96',y===0);col(hx0,hx1,0,4.2,hz0,hz1);
    gable(S,(hx0+hx1)/2,(hz0+hz1)/2,4.2,hx1-hx0,hz1-hz0,2,'#5d6470','x',.7,'#5a3f2a');bx(S,-87,2.2,-1.9,1.2,2,.12,'#3a2a1a');bx(WARM,-89.4,2.4,-1.95,.9,.8,.06,'#ffffff');bx(WARM,-84.6,2.4,-1.95,.9,.8,.06,'#ffffff');
    bx(S,-87,3.1,-1.4,7,.12,1.1,'#5a3f2a');for(let x=-90.4;x<=-83.6;x+=.45)bx(S,x,3.5,-.9,.05,.7,.05,'#5a3f2a');bx(S,-87,3.85,-.9,7,.07,.07,'#5a3f2a');
-   addPlane(scene,3.4,.6,signTex('MANALI LOOKOUT','#5a3f2a','#f5f7fa',512,90),[-87,4.6,-1.4],0,null);
+   addPlane(scene,3.4,.6,signTex('MANALI LOOKOUT','#5a3f2a','#f5f7fa',512,90),[-87,4.6,-1.4],0,null);}
    const fireX=-80,fireZ=2;for(let k=0;k<8;k++){const a=k/8*PI*2;bx(S,fireX+Math.cos(a)*.9,.15,fireZ+Math.sin(a)*.9,.4,.3,.4,'#8a8f96',a)}for(let k=0;k<3;k++)bx(S,fireX,.25,fireZ,1.4,.18,.18,'#5a3f2a',k*PI/3);
    const fl=new THREE.Group();for(let k=0;k<3;k++){const c=new THREE.Mesh(new THREE.ConeGeometry(.35-k*.08,1-k*.15,6),new THREE.MeshBasicMaterial({color:['#ff6a00','#ffb300','#fff176'][k]}));c.position.set((k-1)*.12,.6,0);fl.add(c)}fl.position.set(fireX,0,fireZ);scene.add(fl);W.bonfire=fl;
    col(fireX-1.1,fireX+1.1,0,.4,fireZ-1.1,fireZ+1.1);
@@ -149,7 +150,7 @@ export function buildDistricts(scene,ctx){const {S,WIN,LMP,building,addPlane,ben
    roadSign(-7.6,17.6,PI/2,'MYSURU · SOUTH','#8b1e2d');BL(-44,-12,63,68)}
   // school
   outs.school=building({name:'Vashu Town Public School',short:'School',x0:-44,x1:-28,z0:72,z1:88,h:7,col:'#f5d06f',trim:'#8b1e2d',door:{side:'e',at:80},room:'school',roof:'none',win:false,awn:false,doorCol:'#8b1e2d'});
-  {const b={x0:-44,x1:-28,z0:72,z1:88};gable(S,-36,80,7,16,16,2.6,'#8b1e2d','z',.6,'#f5d06f');
+  if(!G.LOT){const b={x0:-44,x1:-28,z0:72,z1:88};gable(S,-36,80,7,16,16,2.6,'#8b1e2d','z',.6,'#f5d06f');
    for(const side of['e','n']){const F=fac(b,side);const L=side==='e'?[73.5,86.5]:[-42.5,-29.5];for(const y of[1.9,5])for(let u=L[0];u<=L[1];u+=2.6){if(side==='e'&&y===1.9&&Math.abs(u-80)<1.6)continue;F.box(WIN,u,y,.04,1.4,1.5,.08,'#ffffff');F.box(S,u,y-.85,.1,1.6,.12,.2,'#8b1e2d')}}
    addPlane(scene,8,1,signTex('VASHU TOWN PUBLIC SCHOOL','#8b1e2d','#f5d06f',1024,128),[-27.86,4.1,80],PI/2,null);
    blk(S,-26,-10,0,.04,72,88,'#d8c7a5',false);
@@ -161,7 +162,7 @@ export function buildDistricts(scene,ctx){const {S,WIN,LMP,building,addPlane,ben
    BL(-45,-9,70,90)}
   // Outpulse.EV showroom
   outs.ev=building({name:'Outpulse.EV Showroom',short:'Outpulse.EV',x0:22,x1:38,z0:12.5,z1:22,h:6,col:'#f4f4f4',trim:'#141414',door:{side:'w',at:17},room:'ev',win:false,awn:false,band:false,doorCol:'#d7263d'});
-  {const b={x0:22,x1:38,z0:12.5,z1:22};for(const side of['w','n','s']){const F=fac(b,side);const L=side==='w'?[13,21.5]:[23,37];const mid=(L[0]+L[1])/2;F.box(WIN,mid,2.4,.04,L[1]-L[0],3.6,.08,'#ffffff');for(let u=L[0];u<=L[1];u+=2.1)F.box(S,u,2.4,.08,.1,3.6,.1,'#141414')}
+  if(!G.LOT){const b={x0:22,x1:38,z0:12.5,z1:22};for(const side of['w','n','s']){const F=fac(b,side);const L=side==='w'?[13,21.5]:[23,37];const mid=(L[0]+L[1])/2;F.box(WIN,mid,2.4,.04,L[1]-L[0],3.6,.08,'#ffffff');for(let u=L[0];u<=L[1];u+=2.1)F.box(S,u,2.4,.08,.1,3.6,.1,'#141414')}
    addPlane(scene,7,1.1,signTex('OUTPULSE.EV','#d7263d','#ffffff',1024,160),[21.86,5,17],-PI/2,null);
    const tt=new THREE.Group();const tb=new Batch();cyl(tb,0,.12,0,1.6,1.6,.24,'#141414',24);const sc=prop(tb,0,.24,0,0);sc.box(0,.35,0,.5,.12,1.6,'#d7263d');sc.box(0,.9,.72,.1,1.1,.1,'#1d1d1d');sc.box(0,1.42,.72,.9,.08,.08,'#1d1d1d');sc.wheel(0,.25,.72,.25,.16);sc.wheel(0,.25,-.72,.25,.16);
    tt.add(tb.mesh(CHM));tt.position.set(19.4,0,13.4);scene.add(tt);W.evTurntable=tt;col(17.8,21,0,1.8,11.8,15);

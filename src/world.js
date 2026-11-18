@@ -2,6 +2,7 @@ import {THREE,G,Batch,bx,cyl,col,blk,tex,wrap,lum,plane,signTex,FONT_T,FONT_D,rn
 import {PROJECTS,NUMS,ROLES,SKILLS,STORY,WA,MEMERS,FREELOADERS} from './data.js';
 import {buildArch} from './arch.js';
 import {buildDistricts,pine,palm} from './districts.js';
+import {makeLot} from './lots.js';
 export const W={};
 const PJ=n=>PROJECTS.find(p=>p.n===n)||{n,tag:'',st:'',d:'',href:'',color:'#f4efe6'};
 
@@ -19,6 +20,7 @@ export const projPoster=p=>posterTex({bg:p.color,kicker:p.tag+' · '+p.st,title:
 function addPlane(scene,w,h,map,pos,ry,tap,o={}){const m=plane(w,h,map,o);m.position.set(pos[0],pos[1],pos[2]);m.rotation.y=ry;m.receiveShadow=!!o.shadow;scene.add(m);if(tap){m.userData.tap=tap;m.userData.reach=o.reach||6;G.pick.push(m)}return m}
 
 export function buildWorld(scene){
+  G.LOT=true; // every building plot is an empty construction lot for now
   const S=new Batch(),WIN=new Batch(),LMP=new Batch(),RW=new Batch();
   const sideRot={s:0,n:Math.PI,e:Math.PI/2,w:-Math.PI/2};
   /* ground */
@@ -38,7 +40,7 @@ export function buildWorld(scene){
   const mm=new THREE.Matrix4();lampPos.forEach(([x,z],i)=>{mm.makeTranslation(x,.09,z);pools.setMatrixAt(i,mm)});pools.renderOrder=2;scene.add(pools);W.pools=pools;
 
   /* ---------- buildings ---------- */
-  const building=o=>{const {x0,x1,z0,z1,h}=o;blk(S,x0,x1,0,h,z0,z1,o.col);if(o.band!==false)blk(S,x0-.15,x1+.15,h-.5,h,z0-.15,z1+.15,o.trim||'#f4efe6',false);
+  const building=o=>{if(G.LOT)return makeLot(scene,{S,addPlane},o);const {x0,x1,z0,z1,h}=o;blk(S,x0,x1,0,h,z0,z1,o.col);if(o.band!==false)blk(S,x0-.15,x1+.15,h-.5,h,z0-.15,z1+.15,o.trim||'#f4efe6',false);
     if(o.roof==='none'){}else if(o.roof==='step'){const rc=o.roofCol||'#c0392b';for(let i=0;i<3;i++){const k=i*1.3-.5;blk(S,x0+k,x1-k,h+i*.65,h+(i+1)*.65,z0+k,z1-k,i%2?rc:shade(rc),false)}}
     else{blk(S,x0,x1,h,h+.7,z0-.15,z0+.25,o.trim||'#f4efe6',!!o.walkRoof);blk(S,x0,x1,h,h+.7,z1-.25,z1+.15,o.trim||'#f4efe6',!!o.walkRoof);blk(S,x0-.15,x0+.25,h,h+.7,z0,z1,o.trim||'#f4efe6',!!o.walkRoof);blk(S,x1-.25,x1+.15,h,h+.7,z0,z1,o.trim||'#f4efe6',!!o.walkRoof);if(!o.walkRoof)bx(S,(x0+x1)/2+1,h+.6,(z0+z1)/2,2,1.2,1.6,'#9aa3ad')}
     const d=o.door,dr=sideRot[d.side];const nx=d.side==='e'?1:d.side==='w'?-1:0,nz=d.side==='s'?1:d.side==='n'?-1:0;
@@ -75,11 +77,12 @@ export function buildWorld(scene){
   const lad=new Batch();for(const z of[-36.4,-35.6])bx(lad,12.2,7.6,z,.12,15.2,.12,'#ffcc3a');for(let y=.6;y<15;y+=.6)bx(lad,12.2,y,-36,.1,.08,.9,'#ffcc3a');
   W.ladder=lad.mesh(CHM);W.ladder.visible=false;scene.add(W.ladder);
   const roofB=new Batch();for(let i=0;i<10;i++)bx(roofB,-9+i*2,15.9,-27,.18,.18,.18,'#ffffff');
-  W.roofLights=roofB.mesh(new THREE.MeshBasicMaterial({vertexColors:true}));scene.add(W.roofLights);
+  W.roofLights=roofB.mesh(new THREE.MeshBasicMaterial({vertexColors:true}));scene.add(W.roofLights);if(G.LOT)W.roofLights.visible=false;
+  if(!G.LOT){
   for(let i=0;i<10;i++){bx(S,-9+i*2,16.6,-26.6,.04,1.6,.04,'#333')}
   blk(S,-8,-6,15,15.7,-34,-32,'#ff8fc1');blk(S,-4,-2,15,15.7,-34,-32,'#3d7be8');blk(S,2,4,15,15.7,-34,-32,'#c9f26b');blk(S,-2,2,15,15.6,-40,-38,'#6b4a35');
   addPlane(scene,6,7.5,posterTex({bg:'#141414',kicker:'Rooftop · secret',title:"You made it to the roof.",body:'All 8 beans found. You\'re officially a regular. Tap to WhatsApp me the word "beans" and the first coffee chat is on me.',foot:'TAP TO SAY HI'}),[0,19.6,-45.2],0,()=>{G.host.egg('ow_roof','Rooftop reached. Respect.');window.open(WA,'_blank','noopener')});
-  blk(S,-3.2,-2.8,15,19.6,-45.5,-45.1,'#333');blk(S,2.8,3.2,15,19.6,-45.5,-45.1,'#333');
+  blk(S,-3.2,-2.8,15,19.6,-45.5,-45.1,'#333');blk(S,2.8,3.2,15,19.6,-45.5,-45.1,'#333');}
   const sc=new Batch();bx(sc,0,.35,0,.5,.12,1.6,'#d7263d');bx(sc,0,.9,.72,.1,1.1,.1,'#1d1d1d');bx(sc,0,1.42,.72,.9,.08,.08,'#1d1d1d');cyl(sc,0,.25,.72,.25,.25,.16,'#1d1d1d',14);cyl(sc,0,.25,-.72,.25,.25,.16,'#1d1d1d',14);
   sc.g.forEach(g=>{});const scm=sc.mesh(CHM);scm.children;W.scooterMesh=scm;
   // wheels were made as cylinders standing up; rotate them by rebuilding:
@@ -105,7 +108,7 @@ export function buildWorld(scene){
   // disco ball + beams
   const disco=new THREE.Group();const dball=new THREE.Mesh(new THREE.IcosahedronGeometry(1,1),new THREE.MeshLambertMaterial({color:'#e8e8f0',flatShading:true,emissive:'#333'}));dball.position.y=9;disco.add(dball);
   const beamG=new THREE.ConeGeometry(2.4,9,16,1,true);beamG.translate(0,-4.5,0);const beams=[];['#ff3b8d','#3bd1ff','#c9f26b','#ffcc3a','#a463ff','#ff6a3d'].forEach((c,i)=>{const m=new THREE.Mesh(beamG,new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.18,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}));m.position.y=9;m.rotation.z=.5;m.userData.a=i/6*Math.PI*2;disco.add(m);beams.push(m)});
-  blk(S,-.1,.1,6.4,9,-.1,.1,'#333',false);disco.visible=false;scene.add(disco);W.disco={g:disco,ball:dball,beams};
+  const pole=new THREE.Mesh(new THREE.BoxGeometry(.2,2.6,.2),new THREE.MeshLambertMaterial({color:'#333'}));pole.position.y=10.3;disco.add(pole);disco.visible=false;scene.add(disco);W.disco={g:disco,ball:dball,beams};
 
   /* ---------- poster street ---------- */
   PROJECTS.forEach((p,i)=>{const x=24+i*5.2;blk(S,x-2.25,x+2.25,1,6.5,9.2,9.5,'#141414');blk(S,x-.15,x+.15,0,1,9.25,9.45,'#141414');

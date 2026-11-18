@@ -58,7 +58,7 @@ export function buildArch(scene,ctx){const {S,WIN,LMP,building,addPlane,bench,mo
 
   /* ===== OUTPULSE LABS HQ — futuristic ===== */
   outs.hq=building({name:'Outpulse Labs HQ',short:'HQ',x0:-12,x1:12,z0:-46,z1:-24,h:15,col:'#f2f4f7',trim:'#ffffff',door:{side:'s',at:0},room:'hq',walkRoof:true,win:false,awn:false,band:false,doorCol:'#1d2733'});
-  {const b={x0:-12,x1:12,z0:-46,z1:-24};
+  if(!G.LOT){const b={x0:-12,x1:12,z0:-46,z1:-24};
    for(const [x,z] of[[-12,-24],[12,-24],[-12,-46],[12,-46]]){cyl(S,x,7.6,z,1.9,1.9,15.2,'#ffffff',20);for(let y=1.2;y<15;y+=3.6)cyl(NEON,x,y,z,1.94,1.94,.1,'#3bd1ff',20)}
    for(const side of['s','e','w']){const F=fac(b,side);const L=side==='s'?[-10,10]:[-44,-26];const mid=(L[0]+L[1])/2,len=L[1]-L[0];
      for(const y of[2.4,6,9.6]){if(side==='s'&&y===2.4){F.box(WIN,-6.5,y,.03,5,1.7,.1,'#ffffff');F.box(WIN,6.5,y,.03,5,1.7,.1,'#ffffff')}else F.box(WIN,mid,y,.03,len,1.7,.1,'#ffffff');
@@ -77,7 +77,7 @@ export function buildArch(scene,ctx){const {S,WIN,LMP,building,addPlane,bench,mo
 
   /* ===== TOKI — Japanese-minimal specialty coffee + studio above ===== */
   outs.cafe=building({name:'TOKI',short:'TOKI',x0:-40,x1:-22,z0:-22,z1:-8,h:4.2,col:'#f3eee6',trim:'#8b6a4a',door:{side:'s',at:-31},room:'cafe',roof:'none',win:false,awn:false,band:false,doorCol:'#5a3f2a'});
-  {const b={x0:-40,x1:-22,z0:-22,z1:-8},F=fac(b,'s');
+  if(!G.LOT){const b={x0:-40,x1:-22,z0:-22,z1:-8},F=fac(b,'s');
    for(let u=-39.7;u<-22.2;u+=.32){if(Math.abs(u+31)<1.3)continue;if(u>-37.6&&u<-32.6)continue;if(u>-29.4&&u<-24.4)continue;F.box(S,u,2.1,.08,.14,4.2,.12,'#c89b6d')}
    for(const u0 of[-35.1,-26.9]){F.box(WIN,u0,1.9,.04,4.8,2.9,.08,'#ffffff');F.box(S,u0,.25,.12,5,.5,.25,'#8b6a4a');F.box(S,u0,3.4,.12,5,.14,.2,'#5a3f2a');F.box(S,u0,1.9,.12,.1,2.9,.12,'#5a3f2a')}
    blk(S,-40.4,-21.6,4.05,4.25,-22.4,-7.4,'#3b3f46',false);bx(S,-31,4.0,-7.45,18.8,.18,.12,'#5a3f2a');
@@ -106,7 +106,7 @@ export function buildArch(scene,ctx){const {S,WIN,LMP,building,addPlane,bench,mo
 
   /* ===== GOTHIC — dark gothic boutique ===== */
   outs.gothic=building({name:'Gothic Bakehouse',short:'Gothic',x0:22,x1:36,z0:-22,z1:-8,h:7,col:'#2e2a2d',trim:'#1d1a1c',door:{side:'s',at:29},room:'gothic',win:false,awn:false,doorCol:'#1d1a1c'});
-  {const b={x0:22,x1:36,z0:-22,z1:-8},F=fac(b,'s');
+  if(!G.LOT){const b={x0:22,x1:36,z0:-22,z1:-8},F=fac(b,'s');
    for(const u of[24.9,33.1]){F.box(WARM,u,1.9,.04,2.6,2.6,.08,'#ffffff');F.dia(WARM,u,3.2,.04,1.84,.08,'#ffffff');F.box(S,u,1.9,.1,.08,2.6,.1,'#141414');F.box(S,u,1.9,.1,2.6,.08,.1,'#141414');F.box(S,u,.5,.25,3,.18,.5,'#141414');
      for(let i=0;i<5;i++)F.box(S,u-1+i*.5,.66,.3,.35,.16,.25,i%2?'#a0642e':'#3b2214');F.box(S,u-1.4,1.9,.12,.16,3.2,.16,'#1d1a1c');F.box(S,u+1.4,1.9,.12,.16,3.2,.16,'#1d1a1c')}
    for(const u of[23.8,26.6,31.4,34.2]){F.box(WARM,u,5,.04,.9,1.5,.08,'#ffffff');F.dia(WARM,u,5.75,.04,.64,.08,'#ffffff');F.box(S,u,4.2,.12,1.1,.1,.2,'#141414')}
@@ -124,7 +124,7 @@ export function buildArch(scene,ctx){const {S,WIN,LMP,building,addPlane,bench,mo
 
   /* ===== WAFF WAFF — playful waffle shop ===== */
   outs.waff=building({name:'Waff Waff',x0:41,x1:53,z0:-20,z1:-8,h:6,col:'#ffd23f',trim:'#e94b3c',door:{side:'s',at:50},room:'waff',win:false,awn:false});
-  {const b={x0:41,x1:53,z0:-20,z1:-8},F=fac(b,'s');
+  if(!G.LOT){const b={x0:41,x1:53,z0:-20,z1:-8},F=fac(b,'s');
    for(let i=0;i<10;i++)for(let j=0;j<3;j++)F.box(S,41.7+i*1.17,3.3+j*.95,.06,.82,.72,.14,'#f0b429');
    F.box(S,44.2,1.5,.02,3.6,1.9,.1,'#5a2a12');F.box(S,44.2,.75,.45,3.8,.12,.9,'#ffffff');F.box(S,44.2,.38,.12,3.6,.76,.25,'#e94b3c');
    for(let i=0;i<7;i++)F.box(S,42.4+i*.6,2.75,.6,.6,.12,1.2,i%2?'#ffffff':'#e94b3c');
@@ -139,7 +139,7 @@ export function buildArch(scene,ctx){const {S,WIN,LMP,building,addPlane,bench,mo
 
   /* ===== OLD GREEN HOUSE CAFE — heritage ===== */
   outs.ogh=building({name:'Old Green House Cafe',short:'Old Green House',x0:58,x1:74,z0:-22,z1:-8,h:5,col:'#2f6b45',trim:'#f4efe6',door:{side:'s',at:66},room:'ogh',roof:'none',win:false,awn:false,doorCol:'#6b3e22'});
-  {const b={x0:58,x1:74,z0:-22,z1:-8},F=fac(b,'s');
+  if(!G.LOT){const b={x0:58,x1:74,z0:-22,z1:-8},F=fac(b,'s');
    gable(S,66,-15,5,16,14,3.1,'#b5482e','x',.7,'#2f6b45');
    blk(S,57.6,74.4,0,.3,-8,-4.6,'#c9b79a',true);for(let u=58.4;u<74;u+=3.1){cyl(S,u,2.2,-5,.17,.2,3.8,'#6b3e22',10);cyl(S,u,.36,-5,.3,.3,.14,'#4a2a16',10);col(u-.2,u+.2,.3,4.1,-5.2,-4.8)}
    leanTo(S,57.4,74.6,-8,-4.2,4.6,3.6,'#b5482e');bx(S,66,4.1,-4.8,17,.14,.18,'#6b3e22');
@@ -156,7 +156,7 @@ export function buildArch(scene,ctx){const {S,WIN,LMP,building,addPlane,bench,mo
 
   /* ===== CITY CLINIC — clean modern ===== */
   outs.clinic=building({name:'City Clinic',short:'Clinic',x0:79,x1:93,z0:-22,z1:-8,h:7,col:'#f7f9fb',trim:'#cfe6f5',door:{side:'s',at:86},room:'clinic',win:false,awn:false,doorCol:'#2b6cb0'});
-  {const b={x0:79,x1:93,z0:-22,z1:-8},F=fac(b,'s');
+  if(!G.LOT){const b={x0:79,x1:93,z0:-22,z1:-8},F=fac(b,'s');
    for(const y of[1.9,5.2])for(const u of[80.4,82.4,89.6,91.6])F.box(WIN,u,y,.04,1.6,1.7,.08,'#ffffff');
    F.box(S,86,3.6,.05,14,.35,.12,'#cfe6f5');F.box(S,86,6.8,.05,14,.4,.12,'#9cc6e8');
    blk(S,83.5,88.5,0,.3,-8,-4.8,'#e6eef5',true);bx(WIN,86,1.95,-6.4,4.6,3.3,.08,'#ffffff');bx(WIN,83.7,1.95,-7.2,.08,3.3,1.6,'#ffffff');bx(WIN,88.3,1.95,-7.2,.08,3.3,1.6,'#ffffff');
@@ -172,7 +172,7 @@ export function buildArch(scene,ctx){const {S,WIN,LMP,building,addPlane,bench,mo
 
   /* ===== AJJI — heritage courtyard house ===== */
   outs.ajji=building({name:"Ajji's House",x0:-42,x1:-32,z0:10,z1:20,h:4,col:'#e8b04a',trim:'#ffffff',door:{side:'n',at:-37},room:'ajji',roof:'none',win:false,awn:false,doorCol:'#6b3e22'});
-  {const b={x0:-42,x1:-32,z0:10,z1:20},F=fac(b,'n');
+  if(!G.LOT){const b={x0:-42,x1:-32,z0:10,z1:20},F=fac(b,'n');
    gable(S,-37,15,4,10,10,2.6,'#b5482e','x',.6,'#e8b04a');
    blk(S,-42.3,-31.7,0,.3,7.6,10,'#d8c7a5',true);for(const u of[-41.6,-39.2,-34.8,-32.4]){cyl(S,u,2,8.1,.16,.18,3.4,'#6b3e22',10);col(u-.18,u+.18,.3,3.7,7.92,8.28)}leanTo(S,-42.5,-31.5,10,7.5,3.9,3.1,'#b5482e');
    for(const u of[-40.2,-33.8]){F.box(WARM,u,1.7,.04,1,1.3,.08,'#ffffff');F.arch(WARM,u,2.35,.04,.5,.08,'#ffffff');F.arch(S,u,2.38,.08,.62,.06,'#ffffff');F.box(S,u,.95,.12,1.3,.1,.25,'#ffffff');
@@ -186,7 +186,7 @@ export function buildArch(scene,ctx){const {S,WIN,LMP,building,addPlane,bench,mo
 
   /* ===== MEERA — modern apartment with RGB window ===== */
   outs.meera=building({name:"Meera's House",x0:-60,x1:-50,z0:10,z1:20,h:10,col:'#e9ecef',trim:'#2b2f36',door:{side:'n',at:-55},room:'meera',win:false,awn:false,doorCol:'#2b2f36'});
-  {const b={x0:-60,x1:-50,z0:10,z1:20},F=fac(b,'n');
+  if(!G.LOT){const b={x0:-60,x1:-50,z0:10,z1:20},F=fac(b,'n');
    for(const y of[1.8,5,8.2])for(const u of[-58.4,-51.6]){if(y===8.2&&u===-58.4)continue;F.box(WIN,u,y,.04,2,1.6,.08,'#ffffff');F.box(S,u,y,.08,2.2,1.8,.04,'#2b2f36')}
    const rgb=new THREE.Mesh(new THREE.BoxGeometry(2,1.6,.08),new THREE.MeshBasicMaterial({color:'#ff3b8d'}));const rp=F.pt(-58.4,8.2,.04);rgb.position.set(rp[0],rp[1],rp[2]);scene.add(rgb);ctx.W.rgb=rgb;F.box(S,-58.4,8.2,.08,2.2,1.8,.04,'#2b2f36');
    for(const y of[3.4,6.6]){F.box(S,-55,y,.9,4.4,.18,1.8,'#cfd4da');rails(S,-57.2,-52.8,10-1.75,10-1.75,y,.95,'#2b2f36',.6,GL);F.box(WIN,-55,y+1.25,.04,2.6,1.9,.08,'#ffffff')}
@@ -200,7 +200,7 @@ export function buildArch(scene,ctx){const {S,WIN,LMP,building,addPlane,bench,mo
   const venture=(o)=>{const out=building(Object.assign({win:false,awn:false},o));return out};
   // Handi Biryani House
   venture({name:'Handi Biryani House',x0:-60,x1:-46,z0:-22,z1:-8,h:5.5,col:'#c1693c',trim:'#7a2e1b',door:{side:'s',at:-53},doorCol:'#4a1e10'});
-  {const b={x0:-60,x1:-46,z0:-22,z1:-8},F=fac(b,'s');F.box(S,-53,1.4,.08,2.2,2.8,.14,'#7a2e1b');F.arch(S,-53,2.8,.08,1.1,.14,'#7a2e1b');
+  if(!G.LOT){const b={x0:-60,x1:-46,z0:-22,z1:-8},F=fac(b,'s');F.box(S,-53,1.4,.08,2.2,2.8,.14,'#7a2e1b');F.arch(S,-53,2.8,.08,1.1,.14,'#7a2e1b');
    for(const u of[-57.5,-48.5]){F.box(WARM,u,2,.04,1.6,1.5,.08,'#ffffff');F.arch(WARM,u,2.75,.04,.8,.08,'#ffffff');F.box(S,u,1.2,.12,1.9,.1,.25,'#7a2e1b')}
    addPlane(scene,8,1.1,signTex('HANDI BIRYANI HOUSE','#1f5a36','#ffcc3a',1024,140),[-53,4.6,-7.86],0,null);
    for(let i=0;i<5;i++){const x=-58.6+i*.85;cyl(S,x,.42,-6.9,.38,.3,.84,'#8a4a2a',10);bx(S,x,.92,-6.9,.6,.1,.6,'#e94b3c')}for(let i=0;i<3;i++){const x=-58.2+i*.85;cyl(S,x,1.25,-6.9,.34,.28,.7,'#8a4a2a',10)}
@@ -211,14 +211,14 @@ export function buildArch(scene,ctx){const {S,WIN,LMP,building,addPlane,bench,mo
    BL(-61,-45,-23,-5.5)}
   // FLTTR
   venture({name:'FLTTR',x0:-70,x1:-62,z0:-22,z1:-10,h:5,col:'#f4efe6',trim:'#141414',door:{side:'s',at:-66},doorCol:'#141414'});
-  {const b={x0:-70,x1:-62,z0:-22,z1:-10},F=fac(b,'s');F.box(WIN,-68.4,2,.04,2.4,2.6,.08,'#ffffff');F.box(S,-66,4.4,.06,8,.6,.12,'#141414');
+  if(!G.LOT){const b={x0:-70,x1:-62,z0:-22,z1:-10},F=fac(b,'s');F.box(WIN,-68.4,2,.04,2.4,2.6,.08,'#ffffff');F.box(S,-66,4.4,.06,8,.6,.12,'#141414');
    const can=new THREE.Mesh(new THREE.CylinderGeometry(1.6,1.6,4.6,24),[new THREE.MeshLambertMaterial({map:canTex()}),new THREE.MeshLambertMaterial({color:'#c9ccd1'}),new THREE.MeshLambertMaterial({color:'#c9ccd1'})]);can.position.set(-66,7.3,-16);can.castShadow=true;scene.add(can);cyl(S,-66,9.68,-16,1.45,1.45,.16,'#9aa3ad',20);
    for(const x of[-64.2,-63.2]){blk(S,x-.45,x+.45,0,2.2,-9.9,-9.2,'#ff6a3d');bx(WARM,x,1.45,-9.18,.7,1,.04,'#ffffff');bx(S,x,.5,-9.16,.6,.2,.04,'#141414')}
    addPlane(scene,3,.6,signTex('FLTTR','#141414','#f4efe6',512,100),[-66,4.4,-9.86],0,null);
    info(-66,-8.2,0,1.6,'FLTTR (coming soon)',{n:'FLTTR',tag:'Future venture',st:'Planned',d:'A premium canned coffee brand, positioned to take on the big chains with better beans and cleaner design.',href:'',color:'#141414'});BL(-71,-61,-23,-8)}
   // The Tiramisu Theory
   venture({name:'The Tiramisu Theory',x0:-26,x1:-16,z0:10,z1:20,h:5,col:'#f6c1cf',trim:'#5a3825',door:{side:'n',at:-21},doorCol:'#5a3825'});
-  {const b={x0:-26,x1:-16,z0:10,z1:20},F=fac(b,'n');for(const u of[-24,-18])F.box(WARM,u,1.9,.04,2,1.8,.08,'#ffffff');
+  if(!G.LOT){const b={x0:-26,x1:-16,z0:10,z1:20},F=fac(b,'n');for(const u of[-24,-18])F.box(WARM,u,1.9,.04,2,1.8,.08,'#ffffff');
    for(let i=0;i<9;i++){F.box(S,-25.4+i*1.1,3.05,.6,1.1,.5,1.2,i%2?'#ffffff':'#f19cb3');F.arch(S,-25.4+i*1.1,2.8,1.2,.55,.1,i%2?'#ffffff':'#f19cb3')}
    const tm=prop(S,-21,5,15);[['#3b2214',.3],['#f6efe1',.35],['#c9a26b',.4],['#f6efe1',.35],['#c9a26b',.4]].reduce((y,[c,h])=>{tm.box(0,y-h/2,0,3.4,h,2.2,c);return y-h},2.4);tm.box(0,2.45,0,3.4,.1,2.2,'#5a3825');
    addPlane(scene,6,.9,signTex('THE TIRAMISU THEORY','#5a3825','#f6c1cf',1024,150),[-21,4.4,9.86],PI,null);
