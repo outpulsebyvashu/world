@@ -1,5 +1,5 @@
 import {THREE,G,Batch,bx,cyl,col,blk,tex,wrap,signTex,FONT_T,FONT_D,rng,makeChar,CHM} from './core.js';
-import {prop,fac,pot,rails,shade} from './arch.js';
+import {prop,fac,pot,rails,shade,gable,stringLights} from './arch.js';
 import {TOWNS,ORDER} from './towns.js';
 import {STORY,NUMS,ROLES,SKILLS} from './data.js';
 const PI=Math.PI;
@@ -59,8 +59,54 @@ function museum(scene,ctx){const {S,WIN,LMP,addPlane,W}=ctx;const st='#efe4cc',d
   G.blocked.push([-13,13,-47,-23]);
   return{x:0,z:-24.8,fx:0,fz:1}}
 
+
+/* ---------- welcome arch across an x-road at x ---------- */
+function welcomeArch(scene,ctx,x,east,west,col){const {S,LMP,addPlane}=ctx;
+  for(const z of[-5.2,5.2]){blk(S,x-.4,x+.4,0,6.6,z-.4,z+.4,col);bx(S,x,6.75,z,1,.3,1,'#f4efe6')}
+  blk(S,x-.35,x+.35,5.3,6.6,-5.2,5.2,col,false);for(let z=-4.8;z<=4.8;z+=.6)bx(LMP,x,5.22,z,.12,.12,.12,'#ffffff');
+  addPlane(scene,8.6,1.1,signTex(east,col,'#ffffff',1024,130),[x+.37,5.95,0],PI/2,null);addPlane(scene,8.6,1.1,signTex(west,col,'#ffffff',1024,130),[x-.37,5.95,0],-PI/2,null)}
+
+/* ---------- Vedshree Kunj (Kaapikunj): a garden home ---------- */
+function kunj(scene,ctx){const {S,WIN,LMP,addPlane}=ctx;const cr='#f6efe2',tc='#c1693c',wl='#efe2c8';
+  // compound wall with a gate on the north side (x=-47)
+  const wall=(x0,x1,z0,z1)=>{blk(S,x0,x1,0,1.1,z0,z1,wl);blk(S,x0-.04,x1+.04,1.1,1.24,z0-.04,z1+.04,tc,false)};
+  wall(-60,-48.6,9.5,9.8);wall(-45.4,-34,9.5,9.8);wall(-60,-34,21.7,22);wall(-60,-59.7,9.5,22);wall(-34.3,-34,9.5,22);
+  for(const x of[-48.8,-45.2]){blk(S,x-.35,x+.35,0,2.6,9.3,10,wl);bx(S,x,2.7,9.65,.8,.2,.8,tc);bx(LMP,x,3.05,9.65,.34,.5,.34,'#ffffff')}
+  blk(S,-49.1,-44.9,2.85,3.35,9.45,9.85,tc,false);addPlane(scene,3.6,.42,signTex('VEDSHREE KUNJ',tc,'#fff6e6',768,96),[-47,3.1,9.42],PI,null);
+  blk(S,-47.8,-46.2,0,.07,9.8,14,'#d9cdb8',false);for(let z=10.3;z<13.8;z+=.9)bx(S,-47,.08,z,1.2,.02,.6,'#cbbd9f');
+  // house: two storeys, terracotta trims, tiled gable roof
+  blk(S,-56,-38,0,3.6,14,21.5,cr);blk(S,-56.1,-37.9,3.5,3.75,13.9,21.6,tc,false);blk(S,-56,-38,3.75,7.2,14,21.5,cr);gable(S,-47,17.75,7.2,18,7.5,2,'#b5552e','x',.6,cr);
+  const F=fac({x0:-56,x1:-38,z0:14,z1:21.5},'n');F.box(S,-47,1.3,.06,1.5,2.6,.12,'#5a3220');F.arch(S,-47,2.6,.06,.75,.12,'#5a3220');F.arch(S,-47,2.6,.1,.95,.08,tc);
+  for(const u of[-53.5,-50.5,-43.5,-40.5]){F.box(WIN,u,1.9,.04,1.2,1.4,.08,'#ffffff');F.arch(WIN,u,2.6,.04,.6,.08,'#ffffff');F.box(S,u,1.1,.1,1.5,.12,.22,tc)}
+  for(const u of[-53.5,-49,-45,-40.5]){F.box(WIN,u,5.4,.04,1.1,1.5,.08,'#ffffff');F.box(S,u,6.3,.1,1.3,.14,.2,tc)}
+  for(let i=0;i<6;i++)for(let j=0;j<4;j++)F.box(S,-55.2+i*.3,1.2+j*.45,.05,.06,.3,.06,tc);
+  // balcony with rails and bougainvillea
+  blk(S,-52,-42,3.5,3.72,13.1,14,'#e7d8bf',false);col(-52,-42,3.5,3.72,13.1,14);rails(S,-52,-42,13.12,13.12,3.72,.95,tc,.4);
+  const bg=(x,y,z,k=1)=>{for(let i=0;i<5;i++){const g=new THREE.IcosahedronGeometry((.35+((i*37)%5)*.06)*k,0);g.translate(x+Math.sin(i*2.1)*.5*k,y+Math.cos(i*1.7)*.3*k,z+Math.cos(i*2.9)*.3*k);S.add(g,i%3?'#e64a8b':i%2?'#d63a7a':'#4f8f3a')}};
+  bg(-52.2,4.4,13.3);bg(-41.8,4.4,13.3);bg(-59.5,1.4,9.9,1.3);bg(-34.5,1.4,9.9,1.3);bg(-55.8,3.3,13.8,.9);
+  // jhoola (swing) in the front garden + tulsi planter + pots
+  const sw=prop(S,-53,0,11.8);sw.box(-1.3,1.3,0,.12,2.6,.12,'#6b4a35');sw.box(1.3,1.3,0,.12,2.6,.12,'#6b4a35');sw.box(0,2.6,0,2.8,.14,.14,'#6b4a35');for(const s2 of[-.75,.75])sw.box(s2,1.6,0,.03,2,.03,'#555');sw.box(0,.55,0,1.8,.08,.6,tc);sw.box(0,.95,-.28,1.8,.7,.06,tc);
+  col(-54.4,-54.2,0,2.6,11.7,11.9);col(-51.8,-51.6,0,2.6,11.7,11.9);G.seats.push({x:-53,z:11.85,y:.6,yaw:PI,label:'Sit on the jhoola'});
+  blk(S,-43.5,-42.5,0,.9,11.3,12.3,'#e7c9a0');blk(S,-43.6,-42.4,.9,1,11.2,12.4,tc,false);bx(S,-43,1.3,11.8,.45,.6,.45,'#3f8f3a',.6);bx(S,-43,1.65,11.8,.25,.35,.25,'#4caf50',.2);
+  for(const x of[-55,-50,-44,-39])pot(S,x,13.4,'#b5552e','#3f9b4a',.5);
+  // pergola + vines in the east garden
+  for(const [x,z] of[[-37.2,15],[-34.8,15],[-37.2,20.5],[-34.8,20.5]])bx(S,x,1.4,z,.14,2.8,.14,'#6b4a35');for(let z=15;z<=20.5;z+=.7)bx(S,-36,2.85,z,2.8,.1,.12,'#6b4a35');
+  for(let i=0;i<8;i++){const g=new THREE.IcosahedronGeometry(.45,0);g.translate(-36.6+(i%3)*.6,3.05,15.3+i*.7);S.add(g,i%3?'#4f8f3a':'#e64a8b')}
+  G.triggers.push({x:-47,z:12.7,r:1.8,label:'Enter Vedshree Kunj',act:()=>G.enter('kunj')});
+  G.buildings.push({name:'Vedshree Kunj',short:'Vedshree Kunj',x0:-56,x1:-38,z0:14,z1:21.5,col:tc,door:{x:-47,z:11.2},room:'kunj'});
+  G.blocked.push([-61,-33,8,23]);G.noGrass.push([-47.9,-46.1,9.8,14]);
+  return{x:-47,z:12.4,fx:0,fz:-1}}
+
+/* ---------- Kaapikunj coffee estate ---------- */
+function estate(scene,ctx){const {S,addPlane}=ctx;
+  for(let z=12.8;z<24;z+=2.1){for(let x=-75;x<=-63;x+=1.6){const g=new THREE.IcosahedronGeometry(.62,0);g.scale(1,.85,1);g.rotateY(x*z);g.translate(x,.62,z);S.add(g,(Math.round(x+z)%2)?'#2f5a2a':'#2a5226');
+      for(let k=0;k<3;k++)bx(S,x-.3+k*.3,.45+((k*7+Math.round(x))%3)*.2,z+.55,.1,.1,.1,'#c62828')}col(-75.6,-62.4,0,.9,z-.5,z+.5)}
+  for(const [x,z] of[[-74.5,18],[-68.2,14],[-64,22.3]]){cyl(S,x,3.2,z,.14,.2,6.4,'#8a7a66',7);const g=new THREE.ConeGeometry(1.5,3.6,7);g.translate(x,7.4,z);S.add(g,'#5d7f4a');col(x-.2,x+.2,0,6.4,z-.2,z+.2)}
+  for(const x of[-72,-66]){blk(S,x-.08,x+.08,0,2.2,11.1,11.3,'#5a3f2a')}addPlane(scene,6.4,.8,signTex('KAAPIKUNJ COFFEE ESTATE','#2f5a2a','#f3eee6',1024,128),[-69,2.25,11.06],PI,null)}
+
 export function buildLandmarks(scene,ctx){const {on}=ctx;const outs={};G.blocked=G.blocked||[];
   busStop(scene,ctx);
+  if(on('kaapikunj')){outs.kunj=kunj(scene,ctx);estate(scene,ctx);welcomeArch(scene,ctx,-18,'WELCOME TO KAAPIKUNJ','KAAPIKUNJ · CUP FIRST','#8b6a4a')}
   if(on('vashupur')){outs.museum=museum(scene,ctx);G.noGrass.push([-16.5,16.5,-16.5,16.5],[-11.5,11.5,-31,-24.6],[-7.4,7.4,15.5,18.7])}
   return outs}
 
@@ -110,6 +156,33 @@ export function extraRooms(room,env){const {scene,addPlane,posterTex,npc,outs}=e
     blk(S,cx+10.25,cx+10.95,0,1.1,-6.95,-6.25,'#cdbb95');
     R.right(9.2,2.4,2.4,.6,signTex('GIFT SHOP · COMING SOON','#9c4a2f','#efe4cc',512,128),null);
     R.npc({name:'Curator Kamala',x:cx-4.6,z:7.4,yaw:PI*.8,look:{shirt:'#7a2e1b',pants:'#2b2118',hair:'bun',glasses:true,face:'smile',long:true},lines:['Welcome to the Vashu Museum. Entry is free. Leaving is also free.','No flash photography. The statue is shy.','Every exhibit here is real. The coffee stains are original.'],barks:['Shh.','Please don\'t lick the exhibits.']});
+  });
+
+
+  /* ---------- Vedshree Kunj ---------- */
+  room('kunj',{name:'Vedshree Kunj',w:16,d:12,h:5.5,wall:'#f3e6d6',floor:'#b07a4f',trim:'#c1693c',light:'#ffeccc'},R=>{const {cx,x0,x1,z0,z1,S,WIN}=R;
+    cyl(S,cx-1.5,.02,-1.2,2.7,2.7,.03,'#c1693c',28);cyl(S,cx-1.5,.04,-1.2,2.1,2.1,.03,'#f3d7a8',28);cyl(S,cx-1.5,.06,-1.2,1.1,1.1,.03,'#2f7a6b',24);
+    // sofa + coffee table
+    blk(S,cx-5.2,cx-1.6,0,.48,z0+.35,z0+1.35,'#5a7a6a');blk(S,cx-5.2,cx-1.6,.48,1.15,z0+.2,z0+.5,'#4e6b5c');for(const x of[cx-5.3,cx-1.5])blk(S,x-.15,x+.15,0,.75,z0+.2,z0+1.35,'#4e6b5c');
+    for(let i=0;i<3;i++)bx(S,cx-4.6+i*1.2,.75,z0+.6,.6,.45,.2,['#ffcc3a','#e64a8b','#f3eee6'][i],0,-.25);G.seats.push({x:cx-3.4,z:z0+.95,y:.5,yaw:0,label:'Sit on the sofa'});
+    blk(S,cx-4.2,cx-2.6,0,.42,z0+2.2,z0+3,'#8a5a3b');cyl(S,cx-3.7,.52,z0+2.6,.09,.08,.18,'#ffffff',10);cyl(S,cx-3.2,.52,z0+2.5,.09,.08,.18,'#ffffff',10);bx(S,cx-3,.44,z0+2.75,.4,.04,.3,'#2f5bff');
+    // bookshelf (right wall)
+    blk(S,x1-.3,x1-.15,0,3.4,-3.6,.2,'#6b4a35');for(const z of[-3.6,.2])blk(S,x1-.75,x1-.15,0,3.4,z-.05,z+.05,'#6b4a35');for(let i=0;i<5;i++)blk(S,x1-.75,x1-.15,.2+i*.8,.26+i*.8,-3.6,.2,'#6b4a35',i===0);
+    for(let i=0;i<4;i++)for(let j=0;j<7;j++)bx(S,x1-.5,.55+i*.8,-3.2+j*.48,.36,.5+((i+j)%3)*.04,.3,['#e94b3c','#3d7be8','#ffcc3a','#5cc46b','#a463ff','#f3eee6'][(i*3+j)%6]);
+    // kitchen counter with two cups and a kettle
+    blk(S,x1-4.4,x1-.2,0,1,z0+.2,z0+1,'#f3eee6');bx(S,x1-2.3,1.03,z0+.6,4.3,.06,.85,'#2b2b2b');cyl(S,x1-3.4,1.15,z0+.6,.1,.08,.2,'#c1693c',10);cyl(S,x1-3.05,1.15,z0+.6,.1,.08,.2,'#2f7a6b',10);cyl(S,x1-1.4,1.22,z0+.55,.22,.26,.36,'#c9ccd1',12);
+    R.back(5.4,2.6,2.6,.5,signTex('TWO CUPS. ALWAYS TWO.','#f3e6d6','#5a3220',512,96),null);
+    // desk + terminal (left wall)
+    blk(S,x0+.2,x0+1.2,0,.95,-.6,2,'#8a5a3b');bx(S,x0+.55,1.42,.7,.08,.85,1.2,'#1d1d1d');bx(S,x0+.75,.96,.7,.3,.04,.7,'#2b2b2b');blk(S,x0+1.6,x0+2.2,0,.5,.4,1,'#2f7a6b');
+    const term=tex(512,320,(c,W,H)=>{c.fillStyle='#0b0f0c';c.fillRect(0,0,W,H);c.fillStyle='#39ff7a';c.font='600 24px ui-monospace,Menlo,Consolas,monospace';
+      ['vedshree@kunj:~$ whoami','vedshree','vedshree@kunj:~$ status --today','shipping. ask later.','vedshree@kunj:~$ ./open-door','welcome in. shoes outside.','vedshree@kunj:~$ _'].forEach((l,i)=>c.fillText(l,20,40+i*38))});
+    addPlane(scene,1.1,.7,term,[x0+.6,1.45,.7],PI/2,()=>{G.host.egg('ow_terminal','You found the terminal at Vedshree Kunj.');G.say('Terminal','$ whoami → vedshree. $ status → shipping. Ask later.')},{reach:4});
+    // window to the garden, fairy lights, poster, plants, photo frames
+    R.back(-1.5,3,3.6,2.2,tex(512,312,(c,W,H)=>{const g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,'#bfe3f7');g.addColorStop(1,'#eaf6ff');c.fillStyle=g;c.fillRect(0,0,W,H);c.fillStyle='#4f8f3a';for(let i=0;i<9;i++){c.beginPath();c.arc(i*64,H-30+(i%2)*14,46,0,7);c.fill()}c.fillStyle='#e64a8b';for(let i=0;i<14;i++){c.beginPath();c.arc(30+i*36,H-60+(i%3)*12,8,0,7);c.fill()}c.strokeStyle='#f3e6d6';c.lineWidth=14;c.strokeRect(0,0,W,H);c.beginPath();c.moveTo(W/2,0);c.lineTo(W/2,H);c.stroke()}),null);
+    for(let i=0;i<=20;i++){const u=-6.6+i*.66;bx(WIN,cx+u,4.6-Math.sin(i/20*PI)*.4,z0+.08,.1,.12,.1,'#ffffff')}
+    R.back(-6,2.8,2,2.6,posterTex({w:320,h:416,bg:'#c1693c',fg:'#fff6e6',kicker:'Kunj (n.)',title:'A little garden home.',big:42}),null);
+    for(let i=0;i<4;i++)R.left(-4.6+i*1.2,2.9+(i%2)*.5,.9,.7,tex(128,100,(c,W,H)=>{c.fillStyle='#f3eee6';c.fillRect(0,0,W,H);c.fillStyle=['#2f7a6b','#e64a8b','#ffcc3a','#3d7be8'][i];c.fillRect(12,12,W-24,H-24)}),null);
+    for(const [x,z] of[[x0+.7,z0+.7],[x1-.7,2.4],[cx+.4,z0+.7]])pot(S,x,z,'#b5552e','#3f9b4a',.7);
   });
 
   /* ---------- Fire Station ---------- */

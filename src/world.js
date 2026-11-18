@@ -188,6 +188,7 @@ export function buildWorld(scene){
   if(on('basti'))blocked.push([-47,-9,25,69],[2,12,18,32]);
   if(on('kaapikunj'))blocked.push([-76,-62,6,25],[-16,-9,6,10]);
   if(on('barfii'))blocked.push([-95,-81,10,24],[-36,-26,6,10]);
+  blocked.push([TD.spawn.x-6,TD.spawn.x+6,TD.spawn.z-6,TD.spawn.z+6]);
   const free=(x,z)=>!blocked.concat(G.blocked).some(b=>x>b[0]-1.5&&x<b[1]+1.5&&z>b[2]-1.5&&z<b[3]+1.5);
   const tree=(x,z,s=1)=>{const lc=['#3d6b2c','#4a7a33','#355f28','#557f38','#46702f'];s*=1.25;const tg=new THREE.CylinderGeometry(.13*s,.24*s,2.4*s,7);tg.translate(x,1.2*s,z);S.add(tg,'#5b4330');col(x-.2*s,x+.2*s,0,2.4*s,z-.2*s,z+.2*s);
     const n=3+Math.floor(R()*3);for(let i=0;i<n;i++){const r=(.9+R()*.7)*s;const g=new THREE.IcosahedronGeometry(r,1);const pa=g.attributes.position;for(let k=0;k<pa.count;k++){const f=.82+R()*.3;pa.setXYZ(k,pa.getX(k)*f,pa.getY(k)*f*.85,pa.getZ(k)*f)}g.computeVertexNormals();

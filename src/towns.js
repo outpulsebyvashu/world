@@ -12,7 +12,7 @@ export const TOWNS={
       [-56,-50,-44,-30,'s'],[38,46,-44,-28,'s'],[49,56,-44,-28,'s']],
     zones:[['Town Square',-17,17,-17,15],['Gateway',-10,10,15,30],['Vashu Museum',-14,14,-50,-17],['Marine Drive',-30,-10,-36,-24],['Fire Station',-48,-29,-48,-25],['Police Station',15,36,-48,-23]],
     trees:60,flora:'mix'},
-  kaapikunj:{name:'Kaapikunj',tag:'Coffee town. TOKI, the café strip and Vedshree Kunj.',color:'#8b6a4a',
+  kaapikunj:{ready:true,name:'Kaapikunj',tag:'Coffee town. TOKI, the café strip and Vedshree Kunj.',color:'#8b6a4a',
     b:[-78,-8,-52,26],
     roads:[[-78,-8,-4,4,'x']],
     bus:{x:-12.4,z:8,ry:PI,bx:-17,bz:2.4,bry:PI/2},spawn:{x:-15,z:5.4,yaw:-PI/2},scooter:[-19.5,6.2,0],
