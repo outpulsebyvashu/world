@@ -222,13 +222,67 @@ function boringWear(scene,ctx){const {S,WIN,addPlane}=ctx;const x0=62,x1=88,z0=3
   G.blocked.push([58,94,31.6,57.6]);G.noGrass.push([x0,x1,z1,57.6]);
   return{x:cx,z:z1+2.2,fx:0,fz:1}}
 
+/* =================== Outpulse Residential Towers (Vashupur, NW block) =================== */
+export const RES={ang:.567,L:33,W:20,r:6,A:[-76.6,-33.3],B:[-25.7,-33.9],floors:13,gH:4.5,fH:3.2};
+function rrect(cx,cz,L,Wd,ang,r,seg=6){const pts=[],hl=L/2-r,hw=Wd/2-r;for(const [ux,uz,a0] of[[hw,hl,0],[-hw,hl,PI/2],[-hw,-hl,PI],[hw,-hl,1.5*PI]])for(let i=0;i<=seg;i++){const a=a0+i/seg*PI/2;pts.push([ux+Math.cos(a)*r,uz+Math.sin(a)*r])}
+  const c=Math.cos(ang),s=Math.sin(ang);return pts.map(([u,v])=>[cx+u*c+v*s,cz-u*s+v*c])}
+function boxPts(x0,x1,z0,z1,r){const p=[];const C=[[x1-r,z1-r,0],[x0+r,z1-r,PI/2],[x0+r,z0+r,PI],[x1-r,z0+r,1.5*PI]];for(const [cx,cz,a0] of C)for(let i=0;i<=5;i++){const a=a0+i/5*PI/2;p.push([cx+Math.cos(a)*r,cz+Math.sin(a)*r])}return p}
+const shp=pts=>new THREE.Shape(pts.map(([x,z])=>new THREE.Vector2(x,-z)));
+function flatShape(B,pts,y,col){const g=new THREE.ShapeGeometry(shp(pts));g.rotateX(-PI/2);g.translate(0,y,0);B.add(g,col)}
+function extShape(B,pts,y,h,col){const g=new THREE.ExtrudeGeometry(shp(pts),{depth:h,bevelEnabled:false,curveSegments:1});g.rotateX(-PI/2);g.translate(0,y,0);B.add(g,col)}
+const inPoly=(x,z,P)=>{let c=false;for(let i=0,j=P.length-1;i<P.length;j=i++){const [xi,zi]=P[i],[xj,zj]=P[j];if(((zi>z)!==(zj>z))&&(x<(xj-xi)*(z-zi)/(zj-zi)+xi))c=!c}return c};
+function residences(scene,ctx){const {S,WIN,LMP,addPlane,W}=ctx;const {ang,L,W:Wd,r}=RES;const c=Math.cos(ang),s=Math.sin(ang);const d=[s,c],n=[c,-s];const R=rng(77);const outs={};
+  const X0=-97,X1=-6,Z0=-57.5,Z1=-6;
+  blk(S,X0,X1,0,.02,Z0,Z1,'#2f3238',false);G.noGrass.push([X0,X1,Z0,Z1]);
+  G.mapPolys=G.mapPolys||[];G.grassPolys=G.grassPolys||[];G.mapPolys.push({pts:[[X0,Z0],[X1,Z0],[X1,Z1],[X0,Z1]],col:'#2f3238'});
+  const gardens=[rrect(-96,-58,24,16,ang,7),rrect(-96,-12,40,28,ang,10),boxPts(-66,-53,-16,-3,5.5),boxPts(-35,-3,-10.4,-3,3.5),rrect(-50.5,-31.7,44,12,ang,6),rrect(-42,-60,18,14,ang,7),rrect(-7,-50,44,20,ang,10)];
+  for(const g of gardens){flatShape(S,g,.03,'#5f9a43');G.grassPolys.push(g);G.mapPolys.push({pts:g,col:'#79c267'})}
+  // garden trees and benches
+  const tree=(x,z,k)=>{cyl(S,x,1.2*k,z,.14*k,.22*k,2.4*k,'#5b4330',7);for(let i=0;i<4;i++){const g=new THREE.IcosahedronGeometry((.9+R()*.6)*k,1);g.translate(x+(R()-.5)*1.4*k,(2.6+R()*1.2)*k,z+(R()-.5)*1.4*k);S.add(g,['#3d6b2c','#4a7a33','#557f38'][i%3])}col(x-.2,x+.2,0,2.4*k,z-.2,z+.2)};
+  gardens.forEach((g,gi)=>{let k=0;for(let t=0;t<60&&k<(gi===4?6:3);t++){const x=X0+R()*(X1-X0),z=Z0+R()*(Z1-Z0);if(inPoly(x,z,g)&&x>X0+1.5&&x<X1-1.5&&z>Z0+1.5&&z<Z1-1.5){let ok=true;for(const g2 of gardens)if(g2!==g&&inPoly(x,z,g2))ok=false;if(ok){tree(x,z,1+R()*.3);k++}}}});
+  for(const t of[-10,10]){const x=-50.5+d[0]*t,z=-31.7+d[1]*t;bx(S,x+n[0]*4,.45,z+n[1]*4,.6,.12,2.2,'#8a5a3b',ang);G.seats.push({x:x+n[0]*3.8,z:z+n[1]*3.8,y:.5,yaw:ang-PI/2,label:'Sit in the garden'})}
+  // the two towers
+  for(const T of['A','B']){const [cx,cz]=RES[T];const P=rrect(cx,cz,L,Wd,ang,r),Pin=rrect(cx,cz,L-.6,Wd-.6,ang,r-.3),Pout=rrect(cx,cz,L+.5,Wd+.5,ang,r+.25);const H=RES.gH+RES.floors*RES.fH;
+    extShape(S,Pout,0,.25,'#d9d4c7');extShape(WIN,Pin,.25,RES.gH-.25,'#ffffff');extShape(S,Pout,RES.gH-.4,.5,'#efe9df');
+    for(let f=1;f<=RES.floors;f++){const y=RES.gH+(f-1)*RES.fH;extShape(WIN,Pin,y+.1,RES.fH-.6,'#ffffff');extShape(S,P,y+RES.fH-.5,.5,f%4===0?'#e2dccf':'#f2ede3');
+      for(const side of[-1,1]){const bxp=cx+n[0]*side*(Wd/2+.7),bzp=cz+n[1]*side*(Wd/2+.7);bx(S,bxp,y+.12,bzp,1.4,.24,7,'#e6e1d6',ang);bx(S,cx+n[0]*side*(Wd/2+1.38),y+.7,cz+n[1]*side*(Wd/2+1.38),.08,1,7,'#9aa3ad',ang)}}
+    // pilasters around the shaft
+    for(let i=0;i<P.length;i+=3){const [x,z]=P[i];bx(S,x,H/2,z,.5,H,.5,'#e9e3d6',ang)}
+    extShape(S,Pout,H,.35,'#cfc8b8');extShape(S,P,H+.35,1.2,'#3b3f46');
+    bx(S,cx,H+2.4,cz,5,2.4,7,'#9aa3ad',ang);cyl(S,cx-d[0]*8,H+2.2,cz-d[1]*8,1.8,1.8,2.2,'#c9ccd1',16);
+    bx(LMP,cx+d[0]*(L/2-1),H+1.2,cz+d[1]*(L/2-1),.25,.25,.25,'#ff2d2d');
+    const sp=[cx-n[0]*(Wd/2+.2),cz-n[1]*(Wd/2+.2)];addPlane(scene,7,7,tex(256,256,(x2,W_,H_)=>{x2.fillStyle='#ff6a3d';x2.fillRect(0,0,W_,H_);x2.fillStyle='#ffffff';x2.font='400 200px '+FONT_D;x2.textAlign='center';x2.fillText(T,W_/2,212)}),[sp[0],H-4,sp[1]],Math.atan2(-n[0],-n[1]),null);
+    const sp2=[cx+n[0]*(Wd/2+.2),cz+n[1]*(Wd/2+.2)];addPlane(scene,7,7,tex(256,256,(x2,W_,H_)=>{x2.fillStyle='#ff6a3d';x2.fillRect(0,0,W_,H_);x2.fillStyle='#ffffff';x2.font='400 200px '+FONT_D;x2.textAlign='center';x2.fillText(T,W_/2,212)}),[sp2[0],H-4,sp2[1]],Math.atan2(n[0],n[1]),null);
+    // entrance at the south cap
+    const ex=cx+d[0]*(L/2),ez=cz+d[1]*(L/2);bx(S,ex+d[0]*2,4,ez+d[1]*2,8,.3,5,'#ffffff',ang);for(const sd of[-1,1])cyl(S,ex+d[0]*4+n[0]*sd*3.6,2,ez+d[1]*4+n[1]*sd*3.6,.14,.14,4,'#cfd6de',8);
+    bx(S,ex+d[0]*.1,1.6,ez+d[1]*.1,3.2,3.2,.2,'#1d2733',ang);bx(WIN,ex+d[0]*.22,1.6,ez+d[1]*.22,2.8,2.9,.05,'#ffffff',ang);
+    addPlane(scene,6,.75,signTex('OUTPULSE RESIDENCES · TOWER '+T,'#141414','#ffffff',1024,128),[ex+d[0]*4.52,4.55,ez+d[1]*4.52],Math.atan2(d[0],d[1]),null);
+    for(let t=-(L/2-Wd/2);t<=(L/2-Wd/2)+.01;t+=2.6){const x=cx+d[0]*t,z=cz+d[1]*t;col(x-8,x+8,0,H+1.5,z-8,z+8)}
+    const tx=ex+d[0]*2.2,tz=ez+d[1]*2.2;G.triggers.push({x:tx,z:tz,r:2.4,label:'Enter Tower '+T,act:()=>{G.res={tower:T,floor:0};G.enter('res'+T)}});
+    G.buildings.push({name:'Outpulse Residences · Tower '+T,short:'Tower '+T,x0:cx-8,x1:cx+8,z0:cz-8,z1:cz+8,col:'#c9ccd1',door:{x:tx+d[0],z:tz+d[1]},room:'res'+T,poly:true});
+    G.mapPolys.push({pts:P,col:'#c9ccd1'});
+    outs['res'+T]={x:ex+d[0]*2.8,z:ez+d[1]*2.8,fx:d[0],fz:d[1]}}
+  // compound wall with entry and exit gates on the main road
+  const wc='#e6dfd0',cap='#c9bfae';const wallX=(a,b,z)=>{blk(S,a,b,0,2,z-.25,z+.25,wc);blk(S,a,b,2,2.15,z-.35,z+.35,cap,false)};const wallZ=(a,b,x)=>{blk(S,x-.25,x+.25,0,2,a,b,wc);blk(S,x-.35,x+.35,2,2.15,a,b,cap,false)};
+  wallX(X0,-81,Z1);wallX(-68,-50,Z1);wallX(-37,X1,Z1);wallX(X0,X1,Z0);wallZ(Z0,Z1,X1);wallZ(Z0,Z1,X0);
+  addPlane(scene,13,1.25,signTex('OUTPULSE RESIDENTIAL TOWERS','#141414','#ff6a3d',1024,98),[-59,1.25,Z1+.27],0,null);
+  W.booms=[];const gate=(a,b,label,guard,lines)=>{const mid=(a+b)/2;for(const x of[a,b]){blk(S,x-.45,x+.45,0,4.8,Z1-.45,Z1+.45,'#d9d4c7');bx(LMP,x,4.95,Z1,.5,.25,.5,'#ffffff')}
+    blk(S,a,b,4.8,5.5,Z1-.3,Z1+.3,'#141414',false);addPlane(scene,(b-a)-1.2,.6,signTex(label,'#141414','#ffcc3a',768,90),[mid,5.15,Z1+.32],0,null);
+    const bo=new THREE.Group();const bb=new Batch();for(let k=0;k<6;k++)bx(bb,1+k*1.8,0,0,1.8,.16,.16,k%2?'#ffffff':'#e53935');bo.add(bb.mesh(CHM));bo.position.set(a+1.4,1.05,Z1+1.4);scene.add(bo);bx(S,a+1.4,.55,Z1+1.4,.5,1.1,.5,'#ffcc3a');W.booms.push({g:bo,x:mid,z:Z1,open:0});
+    const bk=prop(S,b-2.2,0,Z1-2.6);bk.box(0,1.3,0,2.2,2.6,2.2,'#f4f1ea');bk.box(0,2.7,0,2.6,.2,2.6,'#1d3f8f');bk.box(0,1.6,1.11,1.6,.9,.04,'#9cc6dd');col(b-3.3,b-1.1,0,2.6,Z1-3.7,Z1-1.5);
+    G.extraNPCs.push({name:guard,look:{shirt:'#3a4a6b',pants:'#2b2b2b',hair:'short',hat:'#1d3f8f',mustache:true,face:'flat'},x:b-2.2,z:Z1-.9,yaw:0,lines,barks:['Name? Flat number?','Visitor pass, please.']})};
+  gate(-81,-68,'ENTRY','Guard Bahadur (entry gate)',['Welcome to Outpulse Residential Towers. Entry is this gate, exit is the other one. Rules.','Tower A on the left, Tower B on the right. Lifts work. Every floor. I checked.','No, I can\'t tell you who lives on 13. Okay fine, it\'s a gym bro.']);
+  gate(-50,-37,'EXIT','Guard Shinde (exit gate)',['This is the exit. Entry is the other gate. Please don\'t make me explain twice.','Twenty-six floors, fifty-two flats, one very tired guard.','Drive slow. Kids, dogs and aunties on the driveway.']);
+  G.blocked.push([X0-1,X1+1,Z0-1,Z1+1]);
+  return outs}
+
 export function buildLandmarks(scene,ctx){const {on}=ctx;const outs={};G.blocked=G.blocked||[];
   busStop(scene,ctx);
   if(on('kaapikunj')){outs.kunj=kunj(scene,ctx);estate(scene,ctx);welcomeArch(scene,ctx,-18,'WELCOME TO KAAPIKUNJ','KAAPIKUNJ · CUP FIRST','#8b6a4a')}
   if(on('memepura')){memepura(scene,ctx);welcomeArch(scene,ctx,33,'MEMEPURA · VERY ONLINE','WELCOME TO MEMEPURA','#ff3b8d')}
   if(on('basti')){basti(scene,ctx);welcomeArchZ(scene,ctx,32,'WELCOME TO POLITICAL BASTI','POLITICAL BASTI · VOTE WISELY','#8b1e2d')}
   if(on('barfii')){barfii(scene,ctx);welcomeArch(scene,ctx,-44,'WELCOME TO BARFII TOWN','BARFII TOWN · SNOW & SWEETS','#3d6b8f')}
-  if(on('vashupur')){const cpM=mark(scene,[ctx.S,ctx.WIN,ctx.LMP]);outs.museum=museum(scene,ctx);G.noGrass.push([-11.5,11.5,-31,-24.6]);move(cpM,[0,0],[-20,18],0,[outs.museum]);
+  if(on('vashupur')){const cpM=mark(scene,[ctx.S,ctx.WIN,ctx.LMP]);outs.museum=museum(scene,ctx);G.noGrass.push([-11.5,11.5,-31,-24.6]);move(cpM,[0,0],[52,18],0,[outs.museum]);Object.assign(outs,residences(scene,ctx));
     vashupurStreets(scene,ctx);outs.labs=outpulseLabs(scene,ctx);outs.boring=boringWear(scene,ctx)}
   return outs}
 
@@ -384,4 +438,52 @@ export function extraRooms(room,env){const {scene,addPlane,posterTex,npc,outs}=e
     G.triggers.push({x:x0+1.8,z:-.4,r:1.6,label:'Browse the rack',act:()=>G.card(card)});G.triggers.push({x:x1-1.8,z:-.4,r:1.6,label:'Browse the rack',act:()=>G.card(card)});
     R.npc({name:'Store staff Kabir',x:cx+4.2,z:z1-4.8,yaw:PI,look:{shirt:'#141414',pants:'#141414',hair:'short',face:'smile'},lines:['Welcome to The Boring Wear. Plain tees, heavy cotton, zero logos shouting at you.','Boring is a feature, not a bug.','Colours today: black, white, grey, sand, navy and a brave olive.'],barks:['Need a size?','Boring is beautiful.']});
   });
+
+  /* ---------- Outpulse Residences: lobbies, lift, floors, flats ---------- */
+  for(const T of['A','B'])room('res'+T,{name:'Outpulse Residences · Tower '+T+' lobby',w:22,d:14,h:5,wall:'#efe9df',floor:'#e3ddd0',trim:'#ff6a3d',light:'#fff6ea'},R=>{const {cx,x0,x1,z0,z1,S,WIN}=R;
+    for(let i=0;i<11;i++)blk(S,x0+i*2,x0+i*2+1.96,0,.012,z0,z1,i%2?'#e9e3d7':'#ddd6c8',false);
+    for(const u of[-2,2]){blk(S,cx+u-1.1,cx+u+1.1,0,3,z0,z0+.25,'#9aa3ad');bx(S,cx+u,1.5,z0+.27,.04,3,.02,'#6b737c');bx(WIN,cx+u,3.4,z0+.28,1,.4,.02,'#ffffff')}
+    R.back(0,4.1,4.2,.55,signTex('LIFTS · ALL FLOORS','#141414','#ffcc3a',768,100),null);
+    G.triggers.push({x:cx,z:z0+1.6,r:2,label:'Take the lift',act:()=>G.lift(T)});
+    blk(S,x1-5.2,x1-1,0,1.1,z0+2.6,z0+3.6,'#141414');bx(S,x1-3.1,1.13,z0+3.1,4.3,.06,1.1,'#ff6a3d');
+    R.npc({name:'Reception Rekha (Tower '+T+')',x:x1-3.1,z:z0+1.7,yaw:0,look:{shirt:'#ff6a3d',pants:'#141414',hair:'bun',face:'smile'},lines:['Welcome to Outpulse Residences, Tower '+T+'. Ground floor has the shops, flats start on floor 1.','Thirteen floors, two flats each. The lift stops everywhere. Even 13.','Parcels? Mailboxes on the right wall. Gossip? Ask the shop uncle.'],barks:['Good evening!','Parcel for you?']});
+    for(let i=0;i<6;i++)for(let j=0;j<5;j++)bx(S,x1-.12,1+j*.42,-2.4+i*.62,.18,.36,.56,j%2?'#c9b37e':'#b89f66');R.right(-.6,3.4,3.6,.5,signTex('MAILBOXES','#efe9df','#141414',512,72),null);
+    for(const [u,label,col2,keeper,kl] of[[-5,'DAILY NEEDS','#2e7d32','Shop uncle Manoj',['Milk, bread, eggs. Gossip is free.','Flat 704 ordered three cakes this week. I don\'t ask questions.']],[-.6,'MEDICO · PHARMACY','#1d6fb8','Pharmacist Neha',['Cough syrup, band-aids, sunscreen. Prescription for anything stronger.','Second floor keeps buying ginger tea. Stress, I think.']]]){
+      blk(S,x0+.1,x0+.6,0,3.2,u-1.8,u+1.8,'#ffffff');blk(S,x0+.6,x0+2,0,1,u-1.5,u+1.5,col2);R.left(u,3.6,3.4,.5,signTex(label,col2,'#ffffff',512,72),null);
+      for(let k=0;k<3;k++)bx(S,x0+.4,1.5+k*.5,u,.3,.06,3.2,'#c9b37e');for(let k=0;k<9;k++)bx(S,x0+.45,1.65+Math.floor(k/3)*.5,u-1.2+(k%3)*1.2,.25,.3,.5,['#ff6a3d','#ffcc3a','#3fa7e0','#5cc46b'][k%4]);
+      R.npc({name:keeper,x:x0+1.2,z:u+.2,yaw:PI/2,look:{shirt:col2,pants:'#2b2b2b',hair:'short',face:'smile',apron:'#ffffff'},lines:kl,barks:['Next!','Anything else?']})}
+    for(const z of[3.2,5.6]){blk(S,cx+2,cx+6,0,.45,z-.45,z+.45,'#8a6a4a');G.seats.push({x:cx+4,z,y:.48,yaw:PI,label:'Sit in the lobby'})}pot(S,x1-1,z1-1.2,'#141414','#3f9b4a',.8);pot(S,x0+1,z1-1.2,'#141414','#3f9b4a',.8);
+  });
+  const floorTex=document.createElement('canvas');floorTex.width=256;floorTex.height=128;const fT=new THREE.CanvasTexture(floorTex);fT.colorSpace=THREE.SRGBColorSpace;fT.userData.keep=true;
+  const plate=[0,1].map(()=>{const c2=document.createElement('canvas');c2.width=256;c2.height=96;const t=new THREE.CanvasTexture(c2);t.colorSpace=THREE.SRGBColorSpace;t.userData.keep=true;return{c2,t}});
+  const drawFloor=()=>{const r2=G.res||{tower:'A',floor:1};const x=floorTex.getContext('2d');x.fillStyle='#141414';x.fillRect(0,0,256,128);x.fillStyle='#ffcc3a';x.font='400 84px '+FONT_D;x.textAlign='center';x.fillText(r2.tower+' · '+r2.floor,128,96);fT.needsUpdate=true;
+    plate.forEach((p,i)=>{const y=p.c2.getContext('2d');y.fillStyle='#2b2118';y.fillRect(0,0,256,96);y.fillStyle='#e8d7b0';y.font='800 46px '+FONT_T;y.textAlign='center';y.fillText(r2.tower+'-'+r2.floor+String(i+1).padStart(2,'0'),128,64);p.t.needsUpdate=true})};
+  const fl=room('resFloor',{name:'Outpulse Residences',w:16,d:8,h:3.4,wall:'#f3eee4',floor:'#cfc6b4',trim:'#8a6a4a',light:'#fff3e2',exit:false},R=>{const {cx,x0,x1,z0,z1,S,WIN}=R;
+    for(const u of[-1.6,1.6]){blk(S,cx+u-1,cx+u+1,0,2.6,z0,z0+.22,'#9aa3ad');bx(S,cx+u,1.3,z0+.24,.04,2.6,.02,'#6b737c')}R.back(0,3,1.4,.7,fT,null);
+    G.triggers.push({x:cx,z:z0+1.4,r:1.8,label:'Take the lift',act:()=>G.lift((G.res||{}).tower||'A')});
+    [[x0,1],[x1,-1]].forEach(([wx,sd],i)=>{blk(S,wx+sd*.02-(sd<0?.18:0),wx+sd*.02+(sd>0?.18:0),0,2.4,-.7,.7,'#6b3e22');bx(S,wx+sd*.22,1.2,.45,.06,.1,.1,'#c9a227');R[i?'right':'left'](0,2.75,1,.38,plate[i].t,null);bx(S,wx+sd*.9,.02,0,1,.02,1.4,'#8a5a3b');
+      G.triggers.push({x:wx+sd*1.3,z:0,r:1.4,get label(){const r2=G.res||{tower:'A',floor:1};return 'Enter flat '+r2.tower+'-'+r2.floor+String(i+1).padStart(2,'0')},act:()=>{G.res.flat=i+1;const r2=G.res;G.rooms.resFlat.name='Flat '+r2.tower+'-'+r2.floor+String(i+1).padStart(2,'0');G.enter('resFlat')}})});
+    for(const x of[x0+1.2,x1-1.2])pot(S,x,z1-1,'#8a6a4a','#3f9b4a',.6);for(let x=x0+2;x<x1-1;x+=4)bx(WIN,x,3.3,0,.5,.06,.5,'#ffffff');
+  });
+  if(fl)fl.refresh=drawFloor;
+  const RESIDENTS=[{name:'WFH Wanda',look:{shirt:'#3d7be8',pants:'#2b2b2b',hair:'long',headset:true,face:'flat'},lines:['You\'re on mute. No wait, I\'m on mute.','Floor high enough, the Wi-Fi is perfect. The meetings are not.']},
+    {name:'Aunty Sharma',look:{shirt:'#c94f7c',pants:'#7a2d4a',hair:'bun',face:'smile',long:true},lines:['Beta, which flat? New? Married? Salary?','The lift is fast. Gossip is faster.']},
+    {name:'Gym Bro Gaurav',look:{shirt:'#141414',pants:'#3a3a3a',hair:'short',face:'grin'},lines:['Leg day. Taking the stairs. All thirteen floors.','Protein shake? I have four. Per hour.']},
+    {name:'Plant Parent Pooja',look:{shirt:'#5cc46b',pants:'#6b5a3a',hair:'curly2',face:'smile'},lines:['Forty-seven plants. They all have names.','Don\'t touch Monstera Kumar. He\'s sensitive.']},
+    {name:'Night-shift Nikhil',look:{shirt:'#8a63d2',pants:'#2b2b2b',hair:'short',face:'flat'},lines:['Shh. I sleep at 9 AM and wake at 5 PM.','If the lift dings one more time…']}];
+  const fr=room('resFlat',{name:'Flat',w:18,d:12,h:3.2,wall:'#f6f1e7',floor:'#c8a67e',trim:'#8a6a4a',light:'#fff1dc',exit:false},R=>{const {cx,x0,x1,z0,z1,S,WIN}=R;
+    // two bedrooms at the back corners with doorways, open kitchen between them
+    for(const sd of[-1,1]){const xa=sd<0?x0:x1-6,xb=sd<0?x0+6:x1;const wx=sd<0?x0+6:x1-6;blk(S,wx-.1,wx+.1,0,3.2,z0,z0+5.5);const g0=sd<0?xa+2.2:xb-3.4;blk(S,xa,g0,0,3.2,z0+5.4,z0+5.6);blk(S,g0+1.2,xb,0,3.2,z0+5.4,z0+5.6);
+      const bxc=(xa+xb)/2;blk(S,bxc-1.3,bxc+1.3,0,.55,z0+.2,z0+2.4,'#ffffff');bx(S,bxc,.62,z0+1.4,2.4,.14,1.9,sd<0?'#3d7be8':'#ff8fc1');bx(S,bxc-.6,.75,z0+.55,.8,.2,.5,'#ffffff');bx(S,bxc+.6,.75,z0+.55,.8,.2,.5,'#ffffff');
+      blk(S,sd<0?xa+.1:xb-.7,sd<0?xa+.7:xb-.1,0,2.2,z0+3,z0+5,'#8a6a4a');R.back(bxc-cx,2,2.4,1.3,tex(256,140,(x,W_,H_)=>{const g=x.createLinearGradient(0,0,0,H_);g.addColorStop(0,'#9fd0ff');g.addColorStop(1,'#e8f4ff');x.fillStyle=g;x.fillRect(0,0,W_,H_);x.fillStyle='#b9c7d6';for(let i=0;i<9;i++)x.fillRect(i*30,H_-30-((i*37)%60),24,90);x.strokeStyle='#ffffff';x.lineWidth=8;x.strokeRect(0,0,W_,H_);x.beginPath();x.moveTo(W_/2,0);x.lineTo(W_/2,H_);x.stroke()}),null)}
+    blk(S,x0+6.2,x1-6.2,0,1,z0+.1,z0+.8,'#ececec');bx(S,cx,1.02,z0+.45,5.4,.05,.8,'#2b2b2b');blk(S,x1-7.2,x1-6.3,0,2,z0+.1,z0+.9,'#c9ccd1');bx(S,cx-1.4,1.06,z0+.45,.7,.04,.5,'#141414');
+    blk(S,cx-1.3,cx+1.3,0,.78,z0+2.4,z0+3.6,'#8a6a4a');for(const [a,b2] of[[-.8,2],[.8,2],[-.8,4],[.8,4]])blk(S,cx+a-.22,cx+a+.22,0,.48,z0+b2-.22,z0+b2+.22,'#5a3f2a');
+    cyl(S,x0+3,.02,2,2.2,2.2,.02,'#d9c7a5',24);blk(S,x0+4.4,x0+5.2,0,.45,.2,3.8,'#5b6b7a');blk(S,x0+5,x0+5.2,.45,1.05,.2,3.8,'#5b6b7a');blk(S,x0+2.4,x0+3.4,0,.4,1.2,2.8,'#8a6a4a');
+    G.seats.push({x:x0+4.75,z:1.2,y:.48,yaw:-PI/2,label:'Sit on the sofa'});G.seats.push({x:x0+4.75,z:2.8,y:.48,yaw:-PI/2,label:'Sit on the sofa'});
+    blk(S,x0+.1,x0+.3,1,2,.6,3.4,'#141414');bx(WIN,x0+.32,1.5,2,.02,.9,2.6,'#ffffff');pot(S,x1-.8,z1-1,'#8a6a4a','#3f9b4a',.7);pot(S,x0+.8,z1-1,'#8a6a4a','#3f9b4a',.7);
+    G.triggers.push({x:cx,z:z1-1,r:1.4,label:'Back to the corridor',act:()=>{const r2=G.res;G.rooms.resFloor.name='Tower '+r2.tower+' · Floor '+r2.floor;G.enter('resFloor')}});
+    const ppl=RESIDENTS.map(rd=>R.npc(Object.assign({x:cx+3,z:3,yaw:PI*.75,barks:['Hello?','Oh! A visitor.']},rd)));G.rooms.resFlat.people=ppl;
+    const forSale=R.back(0,2.2,2.6,1.2,signTex('FOR SALE · SOMETHING\'S COOKING','#ffcc3a','#141414',768,150),null);G.rooms.resFlat.forSale=forSale;
+  });
+  if(fr)fr.refresh=()=>{const r2=G.res||{tower:'A',floor:1,flat:1};const k=(r2.floor*7+r2.flat*3+(r2.tower==='B'?5:0))%7;(fr.people||[]).forEach((p,i)=>{p.hidden=i!==k});if(fr.forSale)fr.forSale.visible=k>=5};
 }

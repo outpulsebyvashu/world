@@ -45,6 +45,7 @@ export const HUD=`
   <p class="d">Six towns, one bus. Every building, billboard and character is part of my portfolio. Blue-fenced plots? Something's cooking. Find all 8 coffee beans across the towns for secrets.</p>
   <div class="ow-pa"><button type="button" class="ow-btn p" data-go>Start exploring</button><button type="button" class="ow-btn" data-cv>Just show me the CV</button></div></div></div>
 <div class="ow-ov ow-bus" hidden role="dialog" aria-modal="true" aria-label="Bus route"><div class="ow-pan"><button type="button" class="x" data-close aria-label="Close">×</button><p class="k">Vashu Transport · the only way between towns</p><h2>Where to?</h2><div class="ow-towns"></div></div></div>
+<div class="ow-ov ow-lift" hidden role="dialog" aria-modal="true" aria-label="Lift"><div class="ow-pan"><button type="button" class="x" data-close aria-label="Close">×</button><p class="k">Lift</p><h2>Which floor?</h2><div class="ow-floors"></div></div></div>
 <div class="ow-ride" hidden aria-live="polite"><div><svg viewBox="0 0 64 40" aria-hidden="true"><rect x="2" y="4" width="60" height="28" rx="6" fill="#ffcc3a" stroke="#141414" stroke-width="3"/><rect x="8" y="9" width="12" height="9" rx="2" fill="#26323d"/><rect x="24" y="9" width="12" height="9" rx="2" fill="#26323d"/><rect x="40" y="9" width="16" height="9" rx="2" fill="#26323d"/><circle cx="16" cy="33" r="5" fill="#141414"/><circle cx="48" cy="33" r="5" fill="#141414"/></svg><p class="k">Next stop</p><b></b><em></em><i></i></div></div>`;
 
 export const CSS=`
@@ -150,4 +151,9 @@ export const CSS=`
 @keyframes owbus{from{transform:translateY(0)}to{transform:translateY(-4px)}}
 @keyframes owbar{to{width:100%}}
 @media (prefers-reduced-motion: reduce){.ow-ride.go svg,.ow-ride.go i::after{animation:none}.ow-ride.go i::after{width:100%}}
+
+.ow-floors{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.ow-fl{min-height:52px;border:2.5px solid #141414;border-radius:14px;background:#fff;font:400 24px Anton,Impact,sans-serif}
+.ow-fl.here{background:#ffcc3a}
+.ow-fl:active{transform:scale(.96)}
 `;

@@ -141,8 +141,8 @@ export function buildWorld(scene){
 
 
   /* ---------- water tower cup + construction lot ---------- */
-  if(on('vashupur')){for(const [x,z] of[[-26,-38],[-22,-38],[-26,-34],[-22,-34]])blk(S,x-.25,x+.25,0,7,z-.25,z+.25,'#6b6f78');
-  cyl(S,-24,8.5,-36,2.6,2.2,3,'#ffffff',18);cyl(S,-24,8.5,-36,2.62,2.62,.6,'#ff6a3d',18);cyl(S,-24,10.01,-36,2.45,2.45,.04,'#6b3e22',18);}
+  if(on('vashupur')){const cpW=mark(scene,[S]);for(const [x,z] of[[-26,-38],[-22,-38],[-26,-34],[-22,-34]])blk(S,x-.25,x+.25,0,7,z-.25,z+.25,'#6b6f78');
+  cyl(S,-24,8.5,-36,2.6,2.2,3,'#ffffff',18);cyl(S,-24,8.5,-36,2.62,2.62,.6,'#ff6a3d',18);cyl(S,-24,10.01,-36,2.45,2.45,.04,'#6b3e22',18);move(cpW,[-24,-36],[-30,82]);}
 
 
 
@@ -185,7 +185,7 @@ export function buildWorld(scene){
   /* ---------- trees, flowers, hills, bounds ---------- */
   const R=rng(42+TN.length*7);const [bx0,bx1,bz0,bz1]=TD.b;
   const blocked=RD.map(q=>[q[0]-2.5,q[1]+2.5,q[2]-2.5,q[3]+2.5]);
-  if(on('vashupur'))blocked.push([-46,-10,12,48],[-36,-20,47,54],[-15,15,48,78],[5,94,5,58],[-33,-6,-28,-5],[-30,-8,-52,-40],[-30,-20,-40,-32],[-32,-19,68,72],[-14,-10,9,14]);
+  if(on('vashupur'))blocked.push([-46,-10,12,48],[-36,-20,47,54],[-15,15,48,78],[5,94,5,58],[38,66,-30,-5],[66,90,74,92],[-33,-27,79,85],[-98,-5,-58,-5],[-32,-19,68,72],[-14,-10,9,14]);
   if(on('memepura'))blocked.push([18,46,24,46],[49,79,49,79],[15,98,8,11],[95,99,18,90],[14,22,6,10]);
   if(on('basti'))blocked.push([-47,-9,25,69],[2,12,18,32]);
   if(on('kaapikunj'))blocked.push([-76,-62,6,25],[-16,-9,6,10]);
@@ -226,7 +226,7 @@ export function buildWorld(scene){
 /* =================== interiors =================== */
 function buildRooms(scene,S,RW,WIN,outs){
   let RX=600;
-  const LIVE={vashupur:['museum','police','fire','cafe','home','labs','boring'],kaapikunj:['kunj'],delulugarh:['nth','nthlab']};
+  const LIVE={vashupur:['museum','police','fire','cafe','home','labs','boring','resA','resB','resFloor','resFlat'],kaapikunj:['kunj'],delulugarh:['nth','nthlab']};
   const LMAT=new THREE.MeshLambertMaterial({vertexColors:true}),BMAT=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.BackSide});
   /* rooms are registered now but only built the first time someone walks in */
   const room=(id,o,fill)=>{if(G.LOT&&!(LIVE[G.TOWN]||[]).includes(id))return null;const cx=RX;RX+=80;const w=o.w,d=o.d,h=o.h||5.5,x0=cx-w/2,x1=cx+w/2,z0=-d/2,z1=d/2;

@@ -52,7 +52,7 @@ export function buildDistricts(scene,ctx){const {S,WIN,LMP,building,addPlane,ben
    col(-21,-17,0,3.3,-30.1,-27.1);for(const x of[-20.2,-17.8])cyl(S,x,.38,-26.2,.24,.2,.06,'#e94b3c',12);addPlane(scene,3.6,.6,signTex('SPREEWALK · COMING SOON','#ffffff','#e94b3c',512,90),[-19,2.75,-27.04],0,null);
    info(-19,-25.8,0,1.6,'Spreewalk (coming soon)',{n:'Spreewalk',tag:'Future venture',st:'Planned',d:'A burger kiosk planned for Marine Drive, Raipur. Smash patties, quick lines, lakefront vibes.',href:'',color:'#e94b3c'});}
    blk(S,-28,-11,0,.06,-34.6,-31.4,'#3fa7e0',false);rails(S,-28,-11,-31.3,-31.3,0,1,'#9aa3ad',.8);col(-28,-11,0,1.1,-31.5,-31.2);for(let x=-27;x<-11;x+=4)lantern(S,WARM,x,1.4,-31.3);
-   addPlane(scene,3.4,.6,signTex('MARINE DRIVE','#1f7a4c','#ffffff',512,90),[-13.4,1.6,-31.1],0,null);BL(-29,-10,-35,-26);move(cpR,[0,0],[0,-16],0,[])}
+   addPlane(scene,3.4,.6,signTex('MARINE DRIVE','#1f7a4c','#ffffff',512,90),[-13.4,1.6,-31.1],0,null);BL(-29,-10,-35,-26);move(cpR,[-19.5,-30.5],[77,82],2,[])}
   // police station
   if(on('vashupur')){const cpR=mark(scene,RB);outs.police=building({real:true,name:'Police Station',x0:16,x1:34,z0:-46,z1:-31,h:7,col:'#f4f1ea',trim:'#1d3f8f',door:{side:'s',at:25},room:'police',win:false,awn:false,doorCol:'#1d3f8f'});
   {const b={x0:16,x1:34,z0:-46,z1:-31},F=fac(b,'s');F.box(S,25,3.6,.05,18,.35,.12,'#1d3f8f');F.box(S,25,3.95,.05,18,.2,.12,'#c62828');
@@ -75,7 +75,7 @@ export function buildDistricts(scene,ctx){const {S,WIN,LMP,building,addPlane,ben
    addPlane(scene,7,1,signTex('FIRE STATION · 101','#ffffff','#c62828',1024,150),[-38,6.4,-29.86],0,null);
    const bell=prop(S,-31.4,0,-29.2);bell.box(0,1.2,0,.12,2.4,.12,'#555');bell.cyl(0,2.6,0,.12,.42,.55,'#c9a227',12);col(-31.6,-31.2,0,2.6,-29.4,-29);
    G.triggers.push({x:-31.4,z:-28.2,r:1.5,label:'Ring the fire bell',act:()=>{G.snd&&G.snd.fanfare();W.fireT=6;G.host.egg('ow_fire','You rang the fire bell. Nobody panicked. Mostly.')}});
-   blk(S,-46,-30,0,.05,-30,-26.4,'#9aa3ad',false);BL(-47,-29,-47,-26)};move(cpR,[0,0],[-24,18],0,[outs.fire])}
+   blk(S,-46,-30,0,.05,-30,-26.4,'#9aa3ad',false);BL(-47,-29,-47,-26)};move(cpR,[0,0],[116,18],0,[outs.fire])}
   // Construction site — projects under construction
   if(false){const site={x0:40,x1:92,z0:-46,z1:-29};blk(S,40,92,0,.05,-45.7,-29,'#b9a27a',false);
    for(const x of[44,48,52,56])for(const z of[-43,-39,-35])blk(S,x-.25,x+.25,0,7.6,z-.25,z+.25,'#a9a9a9',true);

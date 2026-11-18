@@ -13,9 +13,10 @@ export function makeMask(roads,b){if(b){MASK.x0=b[0]-40;MASK.z0=b[2]-40;MASK.w=b
   x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);
   const R=(x0,x1,z0,z1,col='#000')=>{x.fillStyle=col;x.fillRect((x0-MASK.x0)*S,(z0-MASK.z0)*S,(x1-x0)*S,(z1-z0)*S)};
   for(const r of roads)R(r[0],r[1],r[2],r[3]);
-  for(const b of G.buildings)R(b.x0-1.6,b.x1+1.6,b.z0-1.6,b.z1+1.6);
+  for(const b of G.buildings)if(!b.poly)R(b.x0-1.6,b.x1+1.6,b.z0-1.6,b.z1+1.6);
   if(G.TOWN==='memepura'){x.fillStyle='#000';x.beginPath();x.arc((64-MASK.x0)*S,(64-MASK.z0)*S,19.2*S,0,7);x.fill();R(20,44,26,44,'#5a5a5a')}
   for(const r of(G.noGrass||[]))R(r[0],r[1],r[2],r[3]);
+  x.fillStyle='#fff';for(const P of(G.grassPolys||[])){x.beginPath();P.forEach(([px,pz],i)=>{const X=(px-MASK.x0)*S,Y=(pz-MASK.z0)*S;i?x.lineTo(X,Y):x.moveTo(X,Y)});x.closePath();x.fill()}
   const blur=document.createElement('canvas');blur.width=c.width;blur.height=c.height;const bx=blur.getContext('2d');bx.filter='blur(3px)';bx.drawImage(c,0,0);
   const t=new THREE.CanvasTexture(blur);t.flipY=false;t.colorSpace=THREE.NoColorSpace;t.minFilter=THREE.LinearFilter;t.magFilter=THREE.LinearFilter;t.generateMipmaps=false;return t}
 

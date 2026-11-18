@@ -41,7 +41,7 @@ OW.init=async(host,el,progress=()=>{})=>{
   hemi=new THREE.HemisphereLight('#cfe9ff','#6a8f4e',1.1);scene.add(hemi);amb=new THREE.AmbientLight('#ffffff',.25);scene.add(amb);
   sunL=new THREE.DirectionalLight('#fff3dc',2.2);sunL.castShadow=true;const sm=innerWidth>900?2048:1024;sunL.shadow.mapSize.set(sm,sm);const sc=sunL.shadow.camera;sc.left=-32;sc.right=32;sc.top=32;sc.bottom=-32;sc.near=1;sc.far=220;sunL.shadow.bias=-.0004;sunL.shadow.normalBias=.03;scene.add(sunL,sunL.target);
   G.enter=enterRoom;G.exit=exitRoom;G.card=card;G.talk=talk;G.say=(n,t)=>dlg(n,[t]);G.cv=openCV;G.brew=brew;
-  G.tp=tpTo;G.bus=openBus;
+  G.tp=tpTo;G.bus=openBus;G.lift=openLift;G.res={tower:'A',floor:0,flat:1};
   sky=makeSky(scene);grass=makeGrass(scene,makeMask([]));progress(.5);
   player=makeChar({skin:'#c48a60',shirt:'#141414',pants:'#8a7f5a',cargo:'#6f6646',shoes:'#f5f5f5',hair:'curly',glasses:true,face:'smile',seed:3,logo:'#ff6a3d'});scene.add(player);
   const cb=new Batch();cyl(cb,0,0,0,.11,.09,.22,'#ffffff',10);cyl(cb,0,.11,0,.1,.1,.01,'#8a5a3b',10);cupMesh=cb.mesh(CHM);cupMesh.position.set(0,-.72,.12);cupMesh.visible=false;player.userData.armR.add(cupMesh);
@@ -145,7 +145,7 @@ function disposeTree(o){o.traverse(n=>{if(n.geometry)n.geometry.dispose();const 
 function placeAtSpawn(){const s=TOWNS[curTown].spawn;if(P.ride)dismount();P.state='walk';P.seat=null;P.climb=null;P.pos.set(s.x,0,s.z);P.vel.set(0,0,0);P.world='out';P.yaw=s.yaw;cam.yaw=s.yaw+Math.PI;cam.pitch=.36;inp.target=null;if(marker)marker.visible=false}
 function loadTown(id){if(!TOWNS[id])id='vashupur';
   if(townRoot){scene.remove(townRoot);disposeTree(townRoot)}
-  Object.assign(G,{colliders:[],triggers:[],pick:[],npcs:[],zones:[],buildings:[],rooms:{},beans:[],seats:[],chairs:[],blocked:[],camCols:[],cranes:[],extraNPCs:[],noGrass:[]});
+  Object.assign(G,{colliders:[],triggers:[],pick:[],npcs:[],zones:[],buildings:[],rooms:{},beans:[],seats:[],chairs:[],blocked:[],camCols:[],cranes:[],extraNPCs:[],noGrass:[],grassPolys:[],mapPolys:[]});
   for(const k of Object.keys(W))delete W[k];
   curTown=id;G.TOWN=id;LS.set('ow_town',id);const T=TOWNS[id];party=false;evPhase=-1;tour=null;closeDlg&&$('.ow-dlg')&&closeDlg();
   townRoot=new THREE.Group();scene.add(townRoot);
@@ -166,10 +166,13 @@ function openBus(){const o=$('.ow-bus');const l=o.querySelector('.ow-towns');l.i
     if(!b.disabled)b.onclick=()=>{o.hidden=true;ride(id)};l.appendChild(b)});o.hidden=false;const f=l.querySelector('button:not([disabled])');if(f)f.focus()}
 function ride(id){const r=$('.ow-ride'),T=TOWNS[id];r.querySelector('b').textContent=T.name;r.querySelector('em').textContent=T.tag;r.hidden=false;r.classList.remove('go');void r.offsetWidth;r.classList.add('go');snd.door();
   setTimeout(()=>{try{loadTown(id)}catch(e){console.error(e)}G.host.egg('ow_bus','You took the bus. Next stop: '+T.name+'.')},RM?50:700);setTimeout(()=>{r.hidden=true},RM?400:1900)}
+function openLift(T){const o=$('.ow-lift');o.querySelector('.k').textContent='Lift · Outpulse Residences Tower '+T;const g=o.querySelector('.ow-floors');g.innerHTML='';
+  for(let f=13;f>=0;f--){const b=document.createElement('button');b.type='button';b.className='ow-fl'+((G.res.tower===T&&G.res.floor===f&&P.world!=='out')?' here':'');b.textContent=f?String(f):'G';b.setAttribute('aria-label',f?'Floor '+f:'Ground floor');
+    b.onclick=()=>{o.hidden=true;snd.blip();G.res.tower=T;G.res.floor=f;if(!f){G.enter('res'+T);return}G.rooms.resFloor.name='Tower '+T+' · Floor '+f;G.enter('resFloor')};g.appendChild(b)}o.hidden=false}
 function tpTo(x,y,z,yaw,label){snd.door();fade(()=>{if(P.ride)dismount();P.world='out';P.pos.set(x,y,z);P.vel.set(0,0,0);P.yaw=yaw||0;cam.yaw=(yaw||0)+Math.PI;cam.pitch=.42;inp.target=null;marker.visible=false;setTime();zone(label||TOWNS[curTown].name,true);snapCam()})}
 
 function fade(fn){const f=$('.ow-fade');f.classList.add('on');setTimeout(()=>{fn();setTimeout(()=>f.classList.remove('on'),60)},RM?0:260)}
-function enterRoom(id){const r=G.rooms[id];if(!r)return;snd.door();fade(()=>{if(r.build){r.build();r.build=null}if(P.ride)dismount();P.pos.set(r.spawn.x,0,r.spawn.z);P.vel.set(0,0,0);P.world=id;cam.yaw=0;cam.pitch=.55;cam.tdist=Math.min(cam.tdist,7.5);P.yaw=Math.PI;inp.target=null;marker.visible=false;setTime();zone(r.name,true);snapCam()})}
+function enterRoom(id){const r=G.rooms[id];if(!r)return;snd.door();fade(()=>{if(r.build){r.build();r.build=null}if(r.refresh)r.refresh();if(P.ride)dismount();P.pos.set(r.spawn.x,0,r.spawn.z);P.vel.set(0,0,0);P.world=id;cam.yaw=0;cam.pitch=.55;cam.tdist=Math.min(cam.tdist,7.5);P.yaw=Math.PI;inp.target=null;marker.visible=false;setTime();zone(r.name,true);snapCam()})}
 function exitRoom(id){const r=G.rooms[id];snd.door();fade(()=>{const o=r.out;P.pos.set(o.x+o.fx*1.2,o.y||0,o.z+o.fz*1.2);P.vel.set(0,0,0);P.world='out';P.yaw=Math.atan2(o.fx,o.fz);cam.yaw=Math.atan2(o.fx,o.fz)+.7;cam.pitch=.42;inp.target=null;marker.visible=false;setTime();zone('',true);snapCam()})}
 
 /* ================= main loop ================= */
@@ -308,6 +311,7 @@ function lakeCheck(){const L=W.lake;if(!L)return;if(Math.hypot(P.pos.x-L.x,P.pos
 function ambientTick(dt,T){if(G.cranes)for(const c of G.cranes){c.g.rotation.y+=c.sp*dt;}if(G.cranes&&G.cranes[0])G.cranes[0].red.material.color.set(Math.sin(T*3)>.4?'#ff2d2d':'#5a1010');
   if(W.snow){const a=W.snow.geometry.attributes.position,v=a.array;for(let i=0;i<v.length;i+=3){v[i+1]-=dt*(1.2+(i%7)*.12);v[i]+=Math.sin(T+i)*dt*.3;if(v[i+1]<0)v[i+1]+=26}a.needsUpdate=true;W.snow.position.set(P.pos.x,P.pos.y,P.pos.z)}
   if(W.signals){const t=T%16;for(const L of W.signals){const ns=L.axis==='ns';const ph=ns?(t<6.5?'g':t<8?'a':'r'):(t<8?'r':t<14.5?'g':'a');L.r.material.color.set(ph==='r'?'#ff2d2d':'#3a0d0d');L.a.material.color.set(ph==='a'?'#ffb300':'#3a2a05');L.g.material.color.set(ph==='g'?'#2ee66b':'#0b3a1a')}}
+  if(W.booms)for(const b of W.booms){const near=P.world==='out'&&Math.abs(P.pos.x-b.x)<9&&P.pos.z>b.z-12&&P.pos.z<b.z+9;b.open+=((near?1:0)-b.open)*Math.min(1,dt*3);b.g.rotation.z=b.open*1.35}
   if(W.steam)W.steam.forEach(s=>{const k=(T*.4+s.userData.o)%1;const sa=W.steamAt||[0,0];s.position.set(sa[0]+Math.sin(k*9+s.userData.o*7)*.4,1.5+k*3,sa[1]+Math.cos(k*7)*.3);s.material.opacity=.45*(1-k);s.scale.setScalar(.6+k)});
   W.clouds.position.x=((T*.8)%400)-200;
   if(W.holo){W.holo[0].rotation.set(Math.PI/2+Math.sin(T*.6)*.3,T*.8,0);W.holo[1].rotation.set(Math.PI/2,0,T*1.2);W.holo[1].rotation.x=T*.9}
@@ -338,7 +342,7 @@ function npcTick(dt,T){const px=P.pos.x,pz=P.pos.z,now=performance.now();
     if(n.lie){c.rotation.x=-Math.PI/2;p.y=.3}
     if(c.userData.legL)anim(c,dt,{speed:sp,sit:n.sit&&!sp,emote:sp?null:em})}}
 function turn(c,ty,dt){let d=ty-c.rotation.y;d=Math.atan2(Math.sin(d),Math.cos(d));c.rotation.y+=d*Math.min(1,dt*8)}
-const STOPS=[{p:[[-10,69.5]],t:'Welcome to Vashupur, the capital. Roundabout, coffee-cup fountain, and a bus to five more towns.'},{p:[[-10,58.4],[12,58.4],[60,58.4]],t:'The Boring Wear. Plain clothes, done properly. Walk in and have a look.'},{p:[[12,58.4],[5,52],[5,31]],t:'Outpulse Labs, my company. We build identity. The front door is right here.'},{p:[[5,5],[60,5]],t:'TOKI. Specialty coffee downstairs, my studio upstairs. Brew yourself a cup.'},{p:[[5,5],[-5,-5],[-20,-5]],t:'The Vashu Museum. My whole journey under one dome. Entry is free.'},{p:[[-5,-5],[25,-5]],t:'The Police Station. They arrested Scope Creep this morning.'},{p:[[-5,-5],[-62,-5]],t:'The Fire Station. Ring the bell outside, slide down the pole inside.'},{p:[[-30,6],[-28,12]],t:'The town square: my results in giant numbers, a phone booth and a DJ booth. Tour done, thanks for walking with me!'}];
+const STOPS=[{p:[[-10,69.5]],t:'Welcome to Vashupur, the capital. Roundabout, coffee-cup fountain, and a bus to five more towns.'},{p:[[-10,58.4],[12,58.4],[60,58.4]],t:'The Boring Wear. Plain clothes, done properly. Walk in and have a look.'},{p:[[12,58.4],[5,52],[5,31]],t:'Outpulse Labs, my company. We build identity. The front door is right here.'},{p:[[5,5],[60,5]],t:'TOKI. Specialty coffee downstairs, my studio upstairs. Brew yourself a cup.'},{p:[[5,5],[-5,-3.5],[-74,-3.5]],t:'Outpulse Residential Towers. Two towers, thirteen floors of flats, lifts that actually work. Entry gate here, exit gate there.'},{p:[[-5,-3.5],[5,-5],[25,-5]],t:'The Police Station. They arrested Scope Creep this morning.'},{p:[[52,-5]],t:'The Vashu Museum. My whole journey under one dome. Entry is free.'},{p:[[78,-5]],t:'The Fire Station. Ring the bell outside, slide down the pole inside.'},{p:[[5,-5],[-5,6],[-28,12]],t:'The town square: my results in giant numbers, a phone booth and a DJ booth. Tour done, thanks for walking with me!'}];
 function guideTick(n,dt){const c=n.c,p=c.position;if(!tour){const dx=-15-p.x,dz=69.8-p.z,d=Math.hypot(dx,dz);if(d>.5){p.x+=dx/d*5*dt;p.z+=dz/d*5*dt;turn(c,Math.atan2(dx,dz),dt);return 5}turn(c,Math.atan2(P.pos.x-p.x,P.pos.z-p.z),dt);return 0}
   const st=STOPS[tour.i];const wp=st.p[tour.w||0];const dx=wp[0]-p.x,dz=wp[1]-p.z,d=Math.hypot(dx,dz);const pd=Math.hypot(P.pos.x-p.x,P.pos.z-p.z);
   if(P.world!=='out'){return 0}
@@ -375,7 +379,8 @@ function mapBG(){const T=TOWNS[curTown];bg=document.createElement('canvas');bg.w
   if(curTown==='vashupur'){R(-44,-12,14,46,'#e9dfca');x.fillStyle='#545861';x.beginPath();x.arc((0-MX0)*MS,(63.2-MZ0)*MS,11.7*MS,0,7);x.fill();x.fillStyle='#cfe3c0';x.beginPath();x.arc((0-MX0)*MS,(63.2-MZ0)*MS,7.5*MS,0,7);x.fill()}
   if(curTown==='memepura'){R(20,44,26,44,'#6dbb5c');x.fillStyle='#3fa7e0';x.beginPath();x.arc((64-MX0)*MS,(64-MZ0)*MS,13*MS,0,7);x.fill();R(22,94,9,9.6,'#141414')}
   if(curTown==='basti'){R(-46,-10,26,68,'#8fd07a');R(-40,-16,58,64,'#2b2b2b')}
-  for(const b of G.buildings)R(b.x0,b.x1,b.z0,b.z1,b.col);x.strokeStyle='rgba(0,0,0,.35)';x.lineWidth=2;for(const b of G.buildings)x.strokeRect((b.x0-MX0)*MS,(b.z0-MZ0)*MS,(b.x1-b.x0)*MS,(b.z1-b.z0)*MS);
+  for(const p of(G.mapPolys||[])){x.fillStyle=p.col;x.beginPath();p.pts.forEach(([px,pz],i)=>{const X=(px-MX0)*MS,Y=(pz-MZ0)*MS;i?x.lineTo(X,Y):x.moveTo(X,Y)});x.closePath();x.fill()}
+  for(const b of G.buildings)if(!b.poly)R(b.x0,b.x1,b.z0,b.z1,b.col);x.strokeStyle='rgba(0,0,0,.35)';x.lineWidth=2;for(const b of G.buildings)if(!b.poly)x.strokeRect((b.x0-MX0)*MS,(b.z0-MZ0)*MS,(b.x1-b.x0)*MS,(b.z1-b.z0)*MS);
   const bs=T.bus;x.fillStyle='#ffcc3a';x.fillRect((bs.x-MX0)*MS-9,(bs.z-MZ0)*MS-9,18,18);x.strokeStyle='#141414';x.lineWidth=3;x.strokeRect((bs.x-MX0)*MS-9,(bs.z-MZ0)*MS-9,18,18)}
 function drawMini(){const c=$('.ow-map canvas'),x=c.getContext('2d'),W_=c.width,S=2.6;x.clearRect(0,0,W_,W_);x.fillStyle=TOWNS[curTown].snow?'#e6edf2':'#79c267';x.fillRect(0,0,W_,W_);
   if(P.world!=='out'){x.fillStyle='#141414';x.fillRect(0,0,W_,W_);x.fillStyle='#f4efe6';x.font='700 22px "Inter Tight",sans-serif';x.textAlign='center';x.fillText('INSIDE',W_/2,W_/2-8);x.font='600 16px "Inter Tight",sans-serif';const n=G.rooms[P.world].name;x.fillText(n.length>18?n.slice(0,17)+'…':n,W_/2,W_/2+18);return}

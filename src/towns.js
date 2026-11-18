@@ -3,17 +3,16 @@
 const PI=Math.PI;
 export const ORDER=['vashupur','kaapikunj','memepura','basti','barfii','delulugarh'];
 export const TOWNS={
-  vashupur:{ready:true,name:'Vashupur',tag:'The capital. Outpulse Labs, TOKI, The Boring Wear, the museum and the roundabout.',color:'#ff6a3d',
+  vashupur:{ready:true,name:'Vashupur',tag:'The capital. Outpulse Labs, TOKI, The Boring Wear, the residential towers and the museum.',color:'#ff6a3d',
     b:[-100,94,-62,96],
     roads:[[-100,94,-4,4,'x'],[-4,4,-62,51.5,'z'],[-4,4,74.9,96,'z'],[-100,-11.7,59.2,67.2,'x'],[11.7,94,59.2,67.2,'x']],
     round:{x:0,z:63.2,r0:7.5,r1:11.7},
     bus:{x:-26,z:70.3,ry:PI,bx:-26,bz:64.9,bry:PI/2},spawn:{x:-18.5,z:68.3,yaw:2.36},scooter:[-34,70.8,PI/2],
-    plots:[[-95,-80,-26,-9,'s'],[-50,-36,-26,-9,'s'],[-95,-80,-54,-34,'s'],[-76,-60,-54,-34,'s'],[-56,-38,-54,-36,'s'],
-      [40,52,-26,-9,'s'],[56,68,-26,-9,'s'],[72,86,-26,-9,'s'],[8,22,-56,-36,'s'],[26,40,-56,-36,'s'],[44,58,-56,-36,'s'],[62,76,-56,-36,'s'],[80,92,-56,-36,'s'],
+    plots:[[8,22,-56,-36,'s'],[26,40,-56,-36,'s'],[44,58,-56,-36,'s'],[62,76,-56,-36,'s'],[80,92,-56,-36,'s'],
       [-94,-78,9,28,'n'],[-74,-56,9,28,'n'],[-94,-78,34,54,'s'],[-74,-56,34,54,'s'],
       [-94,-78,72,90,'n'],[-74,-58,72,90,'n'],[-54,-38,72,90,'n'],[-22,-11,76,90,'n'],
-      [11,24,76,90,'n'],[28,44,72,90,'n'],[48,64,72,90,'n'],[68,88,72,90,'n']],
-    zones:[['Signal Chowk',-14,14,-14,14],['Roundabout',-16,16,49,77],['Town Square',-46,-10,12,48],['Vashu Museum',-34,-6,-30,-5],['Fire Station',-72,-52,-30,-6],['Police Station',14,36,-30,-6],['Outpulse Labs',5.6,58,5.6,57.6],['TOKI',58,94,5.6,31.6],['The Boring Wear',58,94,31.6,57.6],['Marine Drive',-30,-9,-52,-41]],
+      [11,24,76,90,'n'],[28,44,72,90,'n'],[48,64,72,90,'n']],
+    zones:[['Signal Chowk',-14,14,-14,14],['Roundabout',-16,16,49,77],['Town Square',-46,-10,12,48],['Outpulse Residential Towers',-98,-5.6,-58,-5.6],['Vashu Museum',38,66,-30,-5],['Fire Station',68,90,-30,-6],['Police Station',14,36,-30,-6],['Outpulse Labs',5.6,58,5.6,57.6],['TOKI',58,94,5.6,31.6],['The Boring Wear',58,94,31.6,57.6],['Marine Drive',66,90,74,92]],
     trees:50,flora:'mix'},
   kaapikunj:{ready:true,name:'Kaapikunj',tag:'Coffee town. The café strip, the coffee estate and Vedshree Kunj.',color:'#8b6a4a',
     b:[-78,-8,-52,26],
