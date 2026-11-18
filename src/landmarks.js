@@ -253,8 +253,8 @@ export function extraRooms(room,env){const {scene,addPlane,posterTex,npc,outs}=e
 
   /* ---------- NTH Labs: lobby (L0) and lab floor (L12) ---------- */
   const skyDeck=()=>G.tp(0,84,-44,PI,'NTH Labs · Sky Deck');
-  room('nth',{name:'NTH Labs · Lobby',w:22,d:14,h:7,wall:'#1b2230',floor:'#2a2f3a',trim:'#3bd1ff',light:'#e8f4ff'},R=>{const {cx,x0,x1,z0,z1,S,WIN}=R;
-    for(let i=0;i<11;i++)blk(S,x0+i*2,x0+i*2+1.96,0,.012,z0,z1,i%2?'#2f3542':'#2a2f3a',false);
+  room('nth',{name:'NTH Labs · Lobby',w:22,d:14,h:7,wall:'#3a4558',floor:'#c9ced6',trim:'#3bd1ff',light:'#ffffff'},R=>{const {cx,x0,x1,z0,z1,S,WIN}=R;
+    for(let i=0;i<11;i++)blk(S,x0+i*2,x0+i*2+1.96,0,.012,z0,z1,i%2?'#d5dae1':'#c4cad3',false);for(let x=x0+2;x<x1-1;x+=4)bx(WIN,x,6.9,0,.7,.06,.7,'#ffffff');
     R.back(0,4.3,9,2.4,tex(900,240,(c,W,H)=>{c.fillStyle='#10151d';c.fillRect(0,0,W,H);c.fillStyle='#3bd1ff';c.font='400 130px '+FONT_D;c.textAlign='center';c.fillText('NTH LABS',W/2,150);c.font='600 30px '+FONT_T;c.fillStyle='#cfe9f5';c.fillText('Building the nth thing.',W/2,205)}),null);
     bx(WIN,cx,2.95,z0+.06,9.2,.08,.08,'#ffffff');bx(WIN,cx,5.65,z0+.06,9.2,.08,.08,'#ffffff');
     blk(S,cx-3.2,cx+3.2,0,1.1,z0+3.2,z0+4,'#f4f6f8');bx(S,cx,1.13,z0+3.6,6.5,.06,.9,'#d9dee4');bx(WIN,cx,.6,z0+4.02,6,.06,.04,'#ffffff');
