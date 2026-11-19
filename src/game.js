@@ -1,4 +1,5 @@
-import {THREE,G,clamp,lerp,anim,makeChar,Batch,bx,cyl,CHM,drawTex} from './core.js';
+import {THREE,G,clamp,lerp,anim,makeChar,Batch,bx,cyl,CHM,drawTex,setCharLight} from './core.js';
+import {RoomEnvironment} from 'three/examples/jsm/environments/RoomEnvironment.js';
 import {buildWorld,spawnTown,W} from './world.js';
 import {PROJECTS,WA,STORY,NUMS,ROLES,SKILLS,RALLY} from './data.js';
 import {CSS,HUD} from './hud.js';
@@ -43,8 +44,10 @@ OW.init=async(host,el,progress=()=>{})=>{
   progress(.2);
   renderer=new THREE.WebGLRenderer({antialias:devicePixelRatio<2,powerPreference:'high-performance'});
   renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.9;
+  /* a soft studio environment so characters get the satin, toy-like look */
+  try{const pm=new THREE.PMREMGenerator(renderer);G.envTex=pm.fromScene(new RoomEnvironment(),.04).texture;pm.dispose()}catch(e){}
   root.prepend(renderer.domElement);renderer.domElement.className='ow-cv3';renderer.domElement.setAttribute('aria-hidden','true');
-  scene=new THREE.Scene();scene.fog=new THREE.Fog('#8fd0ff',70,260);
+  scene=new THREE.Scene();scene.fog=new THREE.Fog('#8fd0ff',70,260);if(G.envTex)scene.environment=G.envTex;
   camera=new THREE.PerspectiveCamera(58,1,.1,1700);
   hemi=new THREE.HemisphereLight('#cfe9ff','#6a8f4e',1.1);scene.add(hemi);amb=new THREE.AmbientLight('#ffffff',.25);scene.add(amb);
   sunL=new THREE.DirectionalLight('#fff3dc',2.2);sunL.castShadow=true;const sm=innerWidth>900?2048:1024;sunL.shadow.mapSize.set(sm,sm);const sc=sunL.shadow.camera;sc.left=-32;sc.right=32;sc.top=32;sc.bottom=-32;sc.near=1;sc.far=220;sunL.shadow.bias=-.0004;sunL.shadow.normalBias=.03;scene.add(sunL,sunL.target);
@@ -81,7 +84,7 @@ function setTime(){const h=hourNow(),a=(h-6)/12*Math.PI,alt=Math.sin(a);
   if(P.world!=='out'){const r=G.rooms[P.world];scene.background=tc.set('#141414').clone();scene.fog.color.set('#141414');scene.fog.near=34;scene.fog.far=60;hemi.color.set(r.light);hemi.groundColor.set('#8a7a6a');hemi.intensity=1.25;amb.intensity=.35;sunL.intensity=1.1;sunL.color.set('#fff4e0');sunDir.set(.3,1,.5).normalize();W.winMat.color.set('#bfe0ff');setNight(0);setFar();return}
   tc.copy(NIGHT).lerp(DAY,dayK).lerp(DUSK,dusk*.55);scene.background=sky?null:tc.clone();scene.fog.color.copy(tc);scene.fog.near=90;scene.fog.far=dayK>.3?520:260;setFar();
   const twi=alt<0?clamp((alt+.24)/.24,0,1):1;
-  if(sky){const sAlt=alt>-.24?Math.max(alt,.012):alt;const sd=new THREE.Vector3(Math.cos(a)*.85,sAlt,-.45).normalize();sky.material.uniforms.sunPosition.value.copy(sd);renderer.toneMappingExposure=(.5+.42*dayK)*(.25+.75*twi)+(1-twi)*.32}
+  if(sky){const sAlt=alt>-.24?Math.max(alt,.012):alt;const sd=new THREE.Vector3(Math.cos(a)*.85,sAlt,-.45).normalize();sky.material.uniforms.sunPosition.value.copy(sd);renderer.toneMappingExposure=(.5+.42*dayK)*(.25+.75*twi)+(1-twi)*.32;setCharLight(.12+.5*dayK*twi)}
   if(alt>-.05){sunDir.set(Math.cos(a)*.8,Math.max(alt,.18),-.45).normalize();sunL.color.copy(C('#ffc58a')).lerp(C('#fff4e2'),dayK);sunL.intensity=.8+2.6*dayK}
   else{sunDir.set(-Math.cos(a)*.6,.7,.4).normalize();sunL.color.set('#9fb6ff');sunL.intensity=.55}
   hemi.color.copy(C('#5b6fb0')).lerp(C('#d6ecff'),dayK);hemi.groundColor.copy(C('#26304a')).lerp(C('#6a8f4e'),dayK);hemi.intensity=1+.2*dayK;amb.intensity=.3+.0*dayK;
