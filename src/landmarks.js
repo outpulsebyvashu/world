@@ -331,7 +331,7 @@ export function buildLandmarks(scene,ctx){const {on}=ctx;const outs={};G.blocked
 
 /* =================== Vashupur map v4: National Stadium, parking, Central Jail, Meow Club =================== */
 const TIRANGA=['#ff9933','#f4f1ea','#138808'];
-function stadium(scene,ctx){const {S,WIN,LMP,addPlane}=ctx;const X0=-180.3,X1=-42.6,Z0=12,Z1=106.6,TR=[-166,-56.4,25.8,95.6],FD=[-159,-63.5,32.9,88.7],cx=-111.25,cz=60.8,CON='#cfcac0',DK='#2b2d31';
+function stadium(scene,ctx){const {S,WIN,LMP,addPlane,W}=ctx;const X0=-180.3,X1=-42.6,Z0=12,Z1=106.6,TR=[-166,-56.4,25.8,95.6],FD=[-159,-63.5,32.9,88.7],cx=-111.25,cz=60.8,CON='#cfcac0',DK='#2b2d31';
   flatShape(S,boxPts(X0,X1,Z0,Z1,10),.03,'#e9e6df');flatShape(S,boxPts(...TR,13),.045,'#e2a72e');flatShape(S,boxPts(...FD,6),.06,'#4c9a3f');
   for(let k=1;k<6;k++){const o=k*1.18;bx(S,cx,.052,TR[2]+o,82,.01,.07,'#ffffff');bx(S,cx,.052,TR[3]-o,82,.01,.07,'#ffffff');bx(S,TR[0]+o,.052,cz,.07,.01,44,'#ffffff');bx(S,TR[1]-o,.052,cz,.07,.01,44,'#ffffff')}
   /* football pitch */
@@ -340,24 +340,32 @@ function stadium(scene,ctx){const {S,WIN,LMP,addPlane}=ctx;const X0=-180.3,X1=-4
   for(const s of[-1,1]){const gx=s<0?FD[0]+.6:FD[1]-.6,px=gx-s*16.5;L(px,cz,.14,40.3);L((gx+px)/2,cz-20.15,16.5,.14);L((gx+px)/2,cz+20.15,16.5,.14);
     for(const z of[cz-3.66,cz+3.66]){cyl(S,gx,1.22,z,.07,.07,2.44,'#ffffff',8);col(gx-.1,gx+.1,0,2.44,z-.1,z+.1)}bx(S,gx,2.44,cz,.14,.14,7.46,'#ffffff');
     for(const z of[cz-3.66,cz+3.66])bx(S,gx+s*1.1,1.2,z,2.2,.05,.05,'#d0d0d0');bx(S,gx+s*2.2,1.22,cz,.05,2.44,7.32,'#e9e9e9')}
-  /* stands: tiers rise away from the track, seats in the colours of the flag */
-  const stand=(along,a0,a1,inner,outer,n)=>{const dep=(outer-inner)/n;let lo=Math.min(inner,outer),hi=Math.max(inner,outer);
-    for(let k=0;k<n;k++){const p0=inner+dep*k,p1=inner+dep*(k+1),h=.75*(k+1),q0=Math.min(p0,p1),q1=Math.max(p0,p1),sc=TIRANGA[k%3],sp=p0+dep*.62;
-      if(along==='x'){blk(S,a0,a1,0,h,q0,q1,CON);bx(S,(a0+a1)/2,h+.2,sp,a1-a0-.3,.4,.5,sc)}else{blk(S,q0,q1,0,h,a0,a1,CON);bx(S,sp,h+.2,(a0+a1)/2,.5,.4,a1-a0-.3,sc)}}
-    const top=n*.75+1.5;if(along==='x'){blk(S,a0,a1,0,top,outer-(dep>0?.4:-0)-(dep>0?0:0),outer+(dep>0?0:.4),'#dcd8d0');col(a0,a1,0,top,lo,hi)}else{blk(S,outer-(dep>0?.4:0),outer+(dep>0?0:.4),0,top,a0,a1,'#dcd8d0');col(lo,hi,0,top,a0,a1)}
-    return top};
-  stand('x',-152,-115,24.6,14.6,6);stand('x',-107.5,-70,24.6,14.6,6);stand('x',-152,-115,96.8,104.4,4);stand('x',-107.5,-70,96.8,104.4,4);
-  stand('z',39,82.6,-167.2,-177.8,6);stand('z',39,56.8,-55.2,-45,6);stand('z',64.8,82.6,-55.2,-45,6);
-  /* gates: lintels over the gaps */
-  blk(S,-115,-107.5,4.4,6,14.2,24.6,CON);blk(S,-115,-107.5,3.6,4.4,97.6,104.4,CON);blk(S,-55.2,-45,4.4,6,56.8,64.8,CON);
-  addPlane(scene,30,2.6,signTex('NATIONAL STADIUM','#141414','#ff9933',1024,90),[cx,7.3,14.05],PI,null);blk(S,cx-15.4,cx+15.4,5.9,8.7,14.2,14.6,DK,false);
-  addPlane(scene,5.2,1,signTex('GATE 2 · PARKING','#141414','#ffffff',512,100),[-44.9,5.2,cz],PI/2,null);
-  /* outer wall, the dark ring on the map */
-  const wall=(x0,x1,z0,z1)=>{blk(S,x0,x1,0,2.6,z0,z1,DK);col(x0,x1,0,2.6,z0,z1)};
-  wall(-170,-115,12,12.8);wall(-107.5,-52.6,12,12.8);wall(-170,-115,105.8,106.6);wall(-107.5,-52.6,105.8,106.6);wall(X0,X0+.8,22,96.6);wall(X1-.8,X1,22,56.8);wall(X1-.8,X1,64.8,96.6);
+  /* stands: walkable steps (30 cm each) with a row of seats in the colours of the flag; sit anywhere */
+  const RISE=.3,DEP=.85;G.stands=G.stands||[];
+  const stand=(along,a0,a1,inner,outer,yaw)=>{const dir=Math.sign(outer-inner),n=Math.floor(Math.abs(outer-inner)/DEP);
+    for(let k=0;k<n;k++){const p0=inner+dir*DEP*k,p1=p0+dir*DEP,h=RISE*(k+1),q0=Math.min(p0,p1),q1=Math.max(p0,p1),sc=TIRANGA[k%3],sp=p0+dir*DEP*.72;
+      if(along==='x'){blk(S,a0,a1,0,h,q0,q1,CON,false);bx(S,(a0+a1)/2,h+.12,sp,a1-a0-.3,.24,.3,sc);col(a0,a1,0,h,q0,q1,{cam:false})}else{blk(S,q0,q1,0,h,a0,a1,CON,false);bx(S,sp,h+.12,(a0+a1)/2,.3,.24,a1-a0-.3,sc);col(q0,q1,0,h,a0,a1,{cam:false})}}
+    const top=RISE*n,e0=inner+dir*DEP*n,e1=e0+dir*.35,lo=Math.min(e0,e1),hi=Math.max(e0,e1);
+    if(along==='x'){blk(S,a0,a1,0,top+1.2,lo,hi,'#dcd8d0');col(a0,a1,0,top+1.2,lo,hi)}else{blk(S,lo,hi,0,top+1.2,a0,a1,'#dcd8d0');col(lo,hi,0,top+1.2,a0,a1)}
+    G.stands.push({along,a0,a1,inner,dir,n,yaw,DEP,RISE});return top};
+  stand('x',-152,-70,24.6,14.6,0);stand('x',-152,-70,96.8,104.4,PI);stand('z',39,82.6,-167.2,-177.8,PI/2);stand('z',39,56.8,-55.2,-45,-PI/2);stand('z',64.8,82.6,-55.2,-45,-PI/2);
+  /* the one gate: a tunnel under the east stand, out to the parking */
+  blk(S,-55.2,-45,4.8,6.4,56.8,64.8,CON);blk(S,-45.4,-42,0,6.4,55.9,56.8,DK);blk(S,-45.4,-42,0,6.4,64.8,65.7,DK);blk(S,-45.4,-42,5.2,6.4,56.8,64.8,DK);col(-45.4,-42,0,6.4,55.9,56.8);col(-45.4,-42,0,6.4,64.8,65.7);
+  addPlane(scene,7.4,1,signTex('ENTRY  ·  EXIT','#ff9933','#141414',512,70),[-41.97,5.8,cz],PI/2,null);
+  addPlane(scene,30,2,signTex('NATIONAL STADIUM','#141414','#ff9933',1024,70),[cx,4.6,14.84],PI,null);
+  /* boundary wall all the way round, broken only by the gate */
+  {const pts=boxPts(X0,X1,Z0,Z1,10),seg=(ax,az,bx_,bz)=>{const dx=bx_-ax,dz=bz-az,len=Math.hypot(dx,dz);if(len<.05)return;bx(S,(ax+bx_)/2,1.6,(az+bz)/2,len+.08,3.2,.6,DK,Math.atan2(-dz,dx));bx(S,(ax+bx_)/2,3.25,(az+bz)/2,len+.08,.1,.7,'#ff9933',Math.atan2(-dz,dx));
+      col(Math.min(ax,bx_)-.3,Math.max(ax,bx_)+.3,0,3.2,Math.min(az,bz)-.3,Math.max(az,bz)+.3)};
+    for(let i=0;i<pts.length;i++){const [ax,az]=pts[i],[bx_,bz]=pts[(i+1)%pts.length];
+      if(Math.abs(ax-X1)<.01&&Math.abs(bx_-X1)<.01&&Math.abs(bz-az)>20){const zl=Math.min(az,bz),zh=Math.max(az,bz);seg(X1,zl,X1,55.9);seg(X1,65.7,X1,zh)}else seg(ax,az,bx_,bz)}}
   /* floodlights and the scoreboard */
+  const FL={beams:[],pool:null};
   for(const [x,z] of[[-172.5,19.5],[-50.5,19.5],[-172.5,99.5],[-50.5,99.5]]){cyl(S,x,15,z,.45,.7,30,'#9aa3ad',8);col(x-.7,x+.7,0,30,z-.7,z+.7);const a=Math.atan2(cx-x,cz-z);
-    bx(S,x,30.6,z,5.2,3.2,.7,DK,a);bx(LMP,x+Math.sin(a)*.4,30.6,z+Math.cos(a)*.4,4.8,2.8,.1,'#fff6d8',a)}
+    bx(S,x,30.6,z,5.2,3.2,.7,DK,a);bx(LMP,x+Math.sin(a)*.4,30.6,z+Math.cos(a)*.4,4.8,2.8,.1,'#fff6d8',a);
+    const L=Math.hypot(cx-x,cz-z,30),beam=new THREE.Mesh(new THREE.ConeGeometry(18,L,20,1,true),new THREE.MeshBasicMaterial({color:'#fff3cf',transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide}));
+    beam.geometry.translate(0,-L/2,0);beam.position.set(x,30.6,z);beam.lookAt(cx,0,cz);beam.rotateX(-PI/2);beam.renderOrder=3;scene.add(beam);FL.beams.push(beam)}
+  {const t=tex(256,256,(c,w,h)=>{const g=c.createRadialGradient(w/2,h/2,10,w/2,h/2,w*.55);g.addColorStop(0,'rgba(255,248,225,1)');g.addColorStop(.7,'rgba(255,244,214,.85)');g.addColorStop(1,'rgba(255,240,200,0)');c.fillStyle=g;c.fillRect(0,0,w,h)});
+    const pool=new THREE.Mesh(new THREE.PlaneGeometry(TR[1]-TR[0]+30,TR[3]-TR[2]+26),new THREE.MeshBasicMaterial({map:t,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending}));pool.rotation.x=-PI/2;pool.position.set(cx,.09,cz);pool.renderOrder=2;scene.add(pool);FL.pool=pool;W.flood=FL}
   blk(S,-179.6,-178.4,7,17.2,50.6,71,DK);
   addPlane(scene,19.6,9.6,tex(1024,500,(c,w,h)=>{c.fillStyle='#0d0f12';c.fillRect(0,0,w,h);c.fillStyle='#ff9933';c.font='800 64px '+FONT_D;c.textAlign='center';c.fillText('NATIONAL STADIUM',w/2,92);
     c.fillStyle='#ffffff';c.font='800 120px '+FONT_D;c.fillText('2  –  0',w/2,270);c.font='700 46px '+FONT_T;c.fillText('VASHUPUR XI',w*.25,360);c.fillText('DELULUGARH FC',w*.75,360);c.fillStyle='#c9f26b';c.font='700 40px '+FONT_T;c.fillText("89'  ·  WELCOME, VISITOR",w/2,450)}),[-178.3,12.1,cz],PI/2,null);

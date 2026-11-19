@@ -79,13 +79,13 @@ function setTime(){const h=hourNow(),a=(h-6)/12*Math.PI,alt=Math.sin(a);
   if(P.world!=='out'){const r=G.rooms[P.world];scene.background=tc.set('#141414').clone();scene.fog.color.set('#141414');scene.fog.near=34;scene.fog.far=60;hemi.color.set(r.light);hemi.groundColor.set('#8a7a6a');hemi.intensity=1.25;amb.intensity=.35;sunL.intensity=1.1;sunL.color.set('#fff4e0');sunDir.set(.3,1,.5).normalize();W.winMat.color.set('#bfe0ff');setNight(0);setFar();return}
   tc.copy(NIGHT).lerp(DAY,dayK).lerp(DUSK,dusk*.55);scene.background=sky?null:tc.clone();scene.fog.color.copy(tc);scene.fog.near=90;scene.fog.far=dayK>.3?520:260;setFar();
   const twi=alt<0?clamp((alt+.24)/.24,0,1):1;
-  if(sky){const sAlt=alt>-.24?Math.max(alt,.012):alt;const sd=new THREE.Vector3(Math.cos(a)*.85,sAlt,-.45).normalize();sky.material.uniforms.sunPosition.value.copy(sd);renderer.toneMappingExposure=(.5+.42*dayK)*(.25+.75*twi)}
+  if(sky){const sAlt=alt>-.24?Math.max(alt,.012):alt;const sd=new THREE.Vector3(Math.cos(a)*.85,sAlt,-.45).normalize();sky.material.uniforms.sunPosition.value.copy(sd);renderer.toneMappingExposure=(.5+.42*dayK)*(.25+.75*twi)+(1-twi)*.32}
   if(alt>-.05){sunDir.set(Math.cos(a)*.8,Math.max(alt,.18),-.45).normalize();sunL.color.copy(C('#ffc58a')).lerp(C('#fff4e2'),dayK);sunL.intensity=.8+2.6*dayK}
   else{sunDir.set(-Math.cos(a)*.6,.7,.4).normalize();sunL.color.set('#9fb6ff');sunL.intensity=.55}
-  hemi.color.copy(C('#5b6fb0')).lerp(C('#d6ecff'),dayK);hemi.groundColor.copy(C('#26304a')).lerp(C('#6a8f4e'),dayK);hemi.intensity=.75+.45*dayK;amb.intensity=.18+.12*dayK;
+  hemi.color.copy(C('#5b6fb0')).lerp(C('#d6ecff'),dayK);hemi.groundColor.copy(C('#26304a')).lerp(C('#6a8f4e'),dayK);hemi.intensity=1+.2*dayK;amb.intensity=.3+.0*dayK;
   W.winMat.color.copy(C('#ffd27a')).lerp(C('#9fc4e6'),dayK);setNight(1-dayK);W.stars.material.opacity=clamp((-alt-.04)/.16,0,1);
   W.sun.visible=false;W.moon.visible=dayK<.5}
-function setNight(k){if(W.neonMat)W.neonMat.color.copy(C('#a8a8a8')).lerp(C('#ffffff'),k);W.lampMat.color.copy(C('#cfcfcf')).lerp(C('#fff1b8'),k);W.pools.material.opacity=k*.6;W.stars.material.opacity=k;W.clouds.material.opacity=.35+.6*(1-k);if(W.roofLights)W.roofLights.material.color.set(k>.4?'#fff1b8':'#dddddd')}
+function setNight(k){if(W.flood){const f=Math.min(1,k*1.4);W.flood.pool.material.opacity=f*.42;for(const b of W.flood.beams)b.material.opacity=f*.035}if(W.neonMat)W.neonMat.color.copy(C('#a8a8a8')).lerp(C('#ffffff'),k);W.lampMat.color.copy(C('#cfcfcf')).lerp(C('#fff1b8'),k);W.pools.material.opacity=k*.6;W.stars.material.opacity=k;W.clouds.material.opacity=.35+.6*(1-k);if(W.roofLights)W.roofLights.material.color.set(k>.4?'#fff1b8':'#dddddd')}
 
 /* ================= beans ================= */
 function makeBeans(){const geo=new THREE.SphereGeometry(.3,12,10);geo.scale(1,1.3,.8);const mat=new THREE.MeshLambertMaterial({color:'#6b3e22',emissive:'#3a1a08'});const gm=new THREE.MeshBasicMaterial({color:'#2a160a'});
@@ -377,12 +377,17 @@ function pickAction(){let best=null,bd=1e9;const px=P.pos.x,pz=P.pos.z,py=P.pos.
   else if(!P.climb){
     for(const t of G.triggers){if(t.cond&&!t.cond())continue;consider(t.x,t.z,t.y||0,t.r,t.label,t.act)}
     for(const s of G.seats){if(s.event&&s.taken)continue;consider(s.x,s.z,0,1.15,s.label,()=>sit(s))}
+    {const st=standSeat();if(st)consider(st.x,st.z,P.pos.y,1.2,st.label,()=>sit(st))}
     for(const n of G.npcs){if(!n.c.visible||n.hidden)continue;const p=n.c.position;consider(p.x,p.z,p.y,2.3,'Talk to '+n.name.replace(/ \(.*\)$/,''),()=>talk(n))}
     consider(W.scooter.position.x,W.scooter.position.z,0,2.2,unlocked?'Ride Arc-Street':'Arc-Street (locked)',()=>unlocked?mount():toast('LOCKED','Find all 8 coffee beans to unlock the Arc-Street scooter.'));
     if(unlocked){if(!G.LOT){consider(12.9,-36,0,1.8,'Climb to the roof',()=>climb(true));consider(10.6,-36,15,1.8,'Climb down',()=>climb(false))}if(W.dj)consider(W.dj.position.x+1.4,W.dj.position.z,0,2.2,party?'Stop the party':'Start the party',toggleParty)}}
   curAct=best;const b=$('.ow-act');if(best){b.hidden=false;if(b.textContent!==best.label)b.textContent=best.label}else b.hidden=true}
 function sit(s){P.state='sit';P.seat=s;P.pos.set(s.x,s.y-.52,s.z);P.vel.set(0,0,0);P.yaw=s.yaw;inp.target=null;marker.visible=false;if(s.event)s.taken=true}
-function stand(){const s=P.seat;P.state='walk';if(s){P.pos.x+=Math.sin(s.yaw)*.9;P.pos.z+=Math.cos(s.yaw)*.9;P.pos.y=0;s.taken=false}P.seat=null}
+function stand(){const s=P.seat;P.state='walk';if(s){P.pos.x+=Math.sin(s.yaw)*.9;P.pos.z+=Math.cos(s.yaw)*.9;P.pos.y=s.stand?s.y-.52:0;s.taken=false}P.seat=null}
+/* stadium stands: you can sit on any row you are standing on, facing the field */
+function standSeat(){if(P.world!=='out'||!G.stands||!P.grounded)return null;for(const st of G.stands){const along=st.along==='x';const a=along?P.pos.x:P.pos.z,d=along?P.pos.z:P.pos.x;if(a<st.a0+.3||a>st.a1-.3)continue;
+  const k=Math.floor((d-st.inner)*st.dir/st.DEP);if(k<0||k>=st.n)continue;const sp=st.inner+st.dir*st.DEP*(k+.72),h=st.RISE*(k+1);if(Math.abs(P.pos.y-h)>.25)continue;
+  return along?{x:P.pos.x,z:sp,y:h+.42,yaw:st.yaw,label:'Sit in the stands',stand:true}:{x:sp,z:P.pos.z,y:h+.42,yaw:st.yaw,label:'Sit in the stands',stand:true}}return null}
 function mount(){P.ride=true;P.emote=null;P.pos.copy(W.scooter.position);P.yaw=W.scooter.rotation.y;G.host.egg('ow_scooter','You rode the Arc-Street. 600W of pure joy.')}
 function dismount(){P.ride=false;W.scooter.rotation.z=0;P.pos.x+=Math.cos(P.yaw)*1.1;P.pos.z-=Math.sin(P.yaw)*1.1}
 function climb(up){P.climb={up,t:0};P.vel.set(0,0,0);P.yaw=up?-Math.PI/2:Math.PI/2}
