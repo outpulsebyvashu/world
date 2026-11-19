@@ -18,7 +18,7 @@ const cam={yaw:0,pitch:.36,dist:8.5,tdist:8.5,lastDrag:0};
 const inp={jx:0,jy:0,keys:{},target:null,pend:null,jump:false};
 let player,cupMesh,marker,timeMode=LS.get('ow_time','auto'),zoneName='',beansGot=new Set(LS.get('ow_beans',[])),unlocked=LS.get('ow_unlocked',false),party=false;
 let quest=LS.get('ow_quest',{doctor:0}),dlgState=null,tour=null,evPhase=-1,rallyI=0,rallyT=0,heard=0,concertT=0;
-G.player=P;G.snd=snd;OW._={P,G,cam,W,fire:()=>fire&&fire.start(),get fireState(){return fire&&fire.active},get traffic(){return traffic},step(n,dt=.05){let t=performance.now()/1000;for(let i=0;i<n;i++){t+=dt;update(dt,t)}},drone:on=>setDrone(on!==false),dronePos:(x,y,z)=>{drone.pos.set(x,y,z);drone.vel.set(0,0,0)},get party(){return party},get camera(){return camera},get scene(){return scene},get grass(){return grass},get town(){return curTown},load:id=>loadTown(id),view(x,y,z,tx,ty,tz){running=false;camera.position.set(x,y,z);camera.lookAt(tx,ty,tz);setTime();renderer.render(scene,camera)},THREE};
+G.player=P;G.snd=snd;OW._={P,G,cam,W,fire:()=>fire&&fire.start(),get fireState(){return fire&&fire.active},get traffic(){return traffic},step(n,dt=.05){OW._.simT=OW._.simT||performance.now()/1000;for(let i=0;i<n;i++){OW._.simT+=dt;update(dt,OW._.simT)}},drone:on=>setDrone(on!==false),dronePos:(x,y,z)=>{drone.pos.set(x,y,z);drone.vel.set(0,0,0)},get party(){return party},get camera(){return camera},get scene(){return scene},get grass(){return grass},get town(){return curTown},get td(){return TOWNS[curTown]},load:id=>loadTown(id),view(x,y,z,tx,ty,tz){running=false;camera.position.set(x,y,z);camera.lookAt(tx,ty,tz);setTime();renderer.render(scene,camera)},THREE};
 export const EGGS=['ow_beans','ow_roof','ow_call','ow_laptop','ow_mirror','ow_lake','ow_goal','ow_freeloader','ow_rally','ow_concert','ow_doctor','ow_party','ow_scooter','ow_dog','ow_tour','ow_fire','ow_bonfire','ow_statue','ow_firepole','ow_bus','ow_alltowns','ow_terminal','ow_snowman','ow_skydeck'];
 
 /* ================= host (standalone or inside portfolio) ================= */
@@ -50,7 +50,7 @@ OW.init=async(host,el,progress=()=>{})=>{
   player=makeChar({skin:'#c48a60',shirt:'#141414',pants:'#8a7f5a',cargo:'#6f6646',shoes:'#f5f5f5',hair:'curly',glasses:true,face:'smile',seed:3,logo:'#ff6a3d'});scene.add(player);
   const cb=new Batch();cyl(cb,0,0,0,.11,.09,.22,'#ffffff',10);cyl(cb,0,.11,0,.1,.1,.01,'#8a5a3b',10);cupMesh=cb.mesh(CHM);cupMesh.position.set(0,-.72,.12);cupMesh.visible=false;player.userData.armR.add(cupMesh);
   marker=new THREE.Mesh(new THREE.RingGeometry(.35,.5,24).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:.9,depthWrite:false}));marker.visible=false;scene.add(marker);
-  fire=makeFire({scene,camera,P,snd,W,toast,bubbleNear});traffic=makeTraffic({P,snd,bubble});
+  fire=makeFire({scene,camera,P,snd,W,toast,bubbleNear});traffic=makeTraffic({P,snd,bubble,toast,fire});
   if(!TOWNS[curTown]||!TOWNS[curTown].ready)curTown='vashupur';
   loadTown(curTown);progress(.75);await fontsP;fontsOK=true;streamNear(P.pos,70);progress(.9);await new Promise(r=>setTimeout(r,0));
   bindInput();resize();addEventListener('resize',resize);
@@ -155,7 +155,7 @@ function disposeTree(o){o.traverse(n=>{if(n.geometry)n.geometry.dispose();const 
 function placeAtSpawn(){const s=TOWNS[curTown].spawn;if(P.ride)dismount();P.state='walk';P.seat=null;P.climb=null;P.pos.set(s.x,0,s.z);P.vel.set(0,0,0);P.world='out';P.yaw=s.yaw;cam.yaw=s.yaw+Math.PI;cam.pitch=.36;inp.target=null;if(marker)marker.visible=false}
 function loadTown(id){if(!TOWNS[id])id='vashupur';
   if(townRoot){scene.remove(townRoot);disposeTree(townRoot)}
-  Object.assign(G,{colliders:[],triggers:[],pick:[],npcs:[],zones:[],buildings:[],rooms:{},beans:[],seats:[],chairs:[],blocked:[],camCols:[],cranes:[],extraNPCs:[],noGrass:[],grassPolys:[],mapPolys:[]});
+  Object.assign(G,{colliders:[],triggers:[],pick:[],npcs:[],zones:[],buildings:[],rooms:{},beans:[],seats:[],chairs:[],blocked:[],camCols:[],cranes:[],extraNPCs:[],noGrass:[],grassPolys:[],mapPolys:[],zebras:[],noLamp:[]});
   for(const k of Object.keys(W))delete W[k];
   curTown=id;G.TOWN=id;LS.set('ow_town',id);const T=TOWNS[id];party=false;evPhase=-1;tour=null;closeDlg&&$('.ow-dlg')&&closeDlg();
   townRoot=new THREE.Group();scene.add(townRoot);lazy=[];

@@ -40,7 +40,7 @@ export function makeFire(ctx){
     F={b,x:cx,z:cz,ax:alongX?1:0,az:alongX?0:1,span:Math.max(1.5,span),k:0,t:0,phase:'burn',water:0,seed:Math.random()*100,smoke:[]};
     for(let i=0;i<NS;i++)F.smoke.push(Math.random());
     const dp=depot(cx,cz),stop=net.project(d.x,d.z);
-    let path=net.lane(net.route(dp.out?dp.out.x:dp.x,dp.out?dp.out.z:dp.z,stop.x,stop.z),net.W*.22);
+    let path=net.lane(net.route(dp.out?dp.out.x:dp.x,dp.out?dp.out.z:dp.z,stop.x,stop.z),net.W/4);
     const curb={x:stop.x+(d.x-stop.x)/(stop.d||1)*Math.min(stop.d,net.W*.3),z:stop.z+(d.z-stop.z)/(stop.d||1)*Math.min(stop.d,net.W*.3)};
     path=[{x:dp.x,z:dp.z},...(dp.out?[dp.out]:[]),...path,curb];
     F.truck={path,i:1,wait:3.5,home:false,spd:0};truck.position.set(dp.x,0,dp.z);truck.visible=false;
@@ -86,4 +86,6 @@ export function makeFire(ctx){
       const onScreen=prj.z<1&&Math.abs(prj.x)<1.05&&Math.abs(prj.y)<1.1;screamT-=dt;
       if(onScreen&&dc<90&&screamT<=0&&screams<5){snd.sample('fire.mp3',Math.max(.25,1-dc/100));screamT=seenOnce?8+Math.random()*5:9;screams++;
         if(!seenOnce){seenOnce=true;ctx.bubbleNear(F.x,F.z,['Aag! Aag!','Call 101!','Bhaago!','Paani lao!'])}}}}
-  return{reset,tick,start:()=>{if(F)end();return start()},get active(){return F},depot}}
+  /* where the truck is while it is out on a call (other traffic pulls over) */
+  function truckPos(){return F&&truck.visible&&F.truck.spd>1?truck.position:null}
+  return{reset,tick,truckPos,start:()=>{if(F)end();return start()},get active(){return F},depot}}

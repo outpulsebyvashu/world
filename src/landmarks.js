@@ -175,8 +175,9 @@ function vashupurStreets(scene,ctx){const {S,LMP,TD,W}=ctx;const R0=TD.round,cx=
   cyl(S,cx,.15,cz,R0.r0,R0.r0,.3,'#cfc7b6',48);cyl(S,cx,.31,cz,R0.r0-.45,R0.r0-.45,.04,'#5f9a43',48);col(cx-R0.r0*.7,cx+R0.r0*.7,0,.3,cz-R0.r0*.7,cz+R0.r0*.7);
   const so=R0.r1+(TD.road?TD.road.side:2),gap=Math.asin((hw+.1)/((R0.r1+so)/2));for(let k=0;k<4;k++){const g=new THREE.RingGeometry(R0.r1,so,14,1,k*PI/2+gap,PI/2-2*gap);g.rotateX(-PI/2);g.translate(cx,.07,cz);S.add(g,'#cfc7b6')}
   const zebra=(x,z,alongX)=>{for(let u=-hw+.7;u<=hw-.69;u+=.9){if(alongX)bx(S,x+u,.05,z,.48,.012,sw,'#ffffff');else bx(S,x,.05,z+u,sw,.012,.48,'#ffffff')}};
-  const zo=hw+sw/2;zebra(0,-zo,true);zebra(0,zo,true);zebra(-zo,0,false);zebra(zo,0,false);
-  zebra(cx,cz-R0.r1-sw/2-.2,true);zebra(cx,cz+R0.r1+sw/2+.2,true);zebra(cx-R0.r1-sw/2-.2,cz,false);zebra(cx+R0.r1+sw/2+.2,cz,false);
+  const zo=hw+sw/2,zr=R0.r1+sw/2+.2;G.zebras=[];const Z=(x,z,a)=>{zebra(x,z,a);G.zebras.push({x,z,alongX:a,hw,sw})};
+  Z(0,-zo,true);Z(0,zo,true);Z(-zo,0,false);Z(zo,0,false);
+  Z(cx,cz-zr,true);Z(cx,cz+zr,true);Z(cx-zr,cz,false);Z(cx+zr,cz,false);
   // signal chowk: four signal poles that cycle
   W.signals=[];const sig=(x,z,face,axis)=>{const p=prop(S,x,0,z,face);p.box(0,1.5,0,.16,3,.16,'#2c2f36');p.box(0,3.6,0,.5,1.4,.34,'#1d1d1d');p.box(0,3.6,-.2,.56,1.5,.04,'#2c2f36');
     const s=Math.sin(face),c=Math.cos(face);const mk=(y,col)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(.28,.28,.05),new THREE.MeshBasicMaterial({color:col}));m.position.set(x+.19*s,y,z+.19*c);m.rotation.y=face;scene.add(m);return m};
@@ -270,7 +271,7 @@ function residences(scene,ctx){const {S,WIN,LMP,addPlane,W}=ctx;const {ang,L,W:W
     blk(S,a,b,4.8,5.5,Z1-.3,Z1+.3,'#141414',false);addPlane(scene,(b-a)-1.2,.6,signTex(label,'#141414','#ffcc3a',768,90),[mid,5.15,Z1+.32],0,null);
     const bo=new THREE.Group();const bb=new Batch();for(let k=0;k<12;k++)bx(bb,1+k*1.8,0,0,1.8,.16,.16,k%2?'#ffffff':'#e53935');bo.add(bb.mesh(CHM));bo.position.set(a+1.4,1.05,Z1+1.4);scene.add(bo);bx(S,a+1.4,.55,Z1+1.4,.5,1.1,.5,'#ffcc3a');W.booms.push({g:bo,x:mid,z:Z1,open:0,w:(b-a)/2});
     const bk=prop(S,b-2.2,0,Z1-2.6);bk.box(0,1.3,0,2.2,2.6,2.2,'#f4f1ea');bk.box(0,2.7,0,2.6,.2,2.6,'#1d3f8f');bk.box(0,1.6,1.11,1.6,.9,.04,'#9cc6dd');col(b-3.3,b-1.1,0,2.6,Z1-3.7,Z1-1.5);
-    G.extraNPCs.push({name:guard,look:{shirt:'#3a4a6b',pants:'#2b2b2b',hair:'short',hat:'#1d3f8f',mustache:true,face:'flat'},x:b-2.2,z:Z1-.9,yaw:0,lines,barks:['Name? Flat number?','Visitor pass, please.']})};
+    G.noLamp.push([a-1.5,b+1.5,Z1-1.5,Z1+4]);G.extraNPCs.push({name:guard,look:{shirt:'#3a4a6b',pants:'#2b2b2b',hair:'short',hat:'#1d3f8f',mustache:true,face:'flat'},x:b-2.2,z:Z1-.9,yaw:0,lines,barks:['Name? Flat number?','Visitor pass, please.']})};
   gate(-153.1,-128.5,'ENTRY','Guard Bahadur (entry gate)',['Welcome to Outpulse Residential Towers. Entry is this gate, exit is the other one. Rules.','Tower A on the left, Tower B on the right. Lifts work. Every floor. I checked.','No, I can\'t tell you who lives on 13. Okay fine, it\'s a gym bro.']);
   gate(-94.5,-70,'EXIT','Guard Shinde (exit gate)',['This is the exit. Entry is the other gate. Please don\'t make me explain twice.','Twenty-six floors, fifty-two flats, one very tired guard.','Drive slow. Kids, dogs and aunties on the driveway.']);
   G.blocked.push([X0-1,X1+1,Z0-1,Z1+1]);
@@ -290,7 +291,8 @@ function busStand(scene,ctx){const {S,WIN,LMP,addPlane,TN}=ctx;const X0=-169.6,X
   for(let i=0;i<=11;i++){const x=-160.4+i*6.08;bx(S,x,.09,159.5,.16,.01,18,'#ffffff')}for(let i=0;i<11;i++){const x=-160.4+(i+.5)*6.08;addPlane(scene,1.6,1.6,signTex(String(i+1),'#2f5bff','#ffffff',128,128),[x,.1,152],0,null).rotation.set(-PI/2,0,0)}
   // concourse with a long canopy
   blk(S,-162.2,-91.8,0,.25,131,150.5,'#d9d4c7');blk(S,-162.2,-91.8,.25,.3,150.2,150.5,'#ffcc3a',false);
-  for(let x=-160;x<=-94;x+=11)for(const z of[132.5,149])cyl(S,x,3.75,z,.22,.22,7,'#c9ccd1',10);for(let x=-160;x<=-94;x+=11)for(const z of[132.5,149])col(x-.25,x+.25,0,7,z-.25,z+.25);
+  /* canopy pillars; the front one at the middle is left out so it does not stand in front of the departure board */
+  for(let x=-160;x<=-94;x+=11)for(const z of[132.5,149]){if(x===-127&&z===132.5)continue;cyl(S,x,3.75,z,.22,.22,7,'#c9ccd1',10);col(x-.25,x+.25,0,7,z-.25,z+.25)}
   blk(S,-163.5,-90.5,7.2,7.7,130.3,151.2,'#2f5bff',false);blk(S,-163.5,-90.5,7.7,8.4,130.3,130.6,'#ffcc3a',false);blk(S,-163.5,-90.5,7.7,8.4,150.9,151.2,'#ffcc3a',false);
   for(let x=-158;x<=-96;x+=6)bx(LMP,x,7.1,140.7,.8,.08,.8,'#ffffff');
   addPlane(scene,30,1.9,signTex('VASHUPUR BUS STAND','#2f5bff','#ffffff',1024,64),[-127,9.5,130.25],PI,null);
@@ -301,10 +303,10 @@ function busStand(scene,ctx){const {S,WIN,LMP,addPlane,TN}=ctx;const X0=-169.6,X
   G.triggers.push({x:-127,z:137.5,y:.25,r:3.2,label:'Take the bus',act:()=>G.bus()});
   // buses in bays, one leaving, one on the back curve
   [[0,'#ffcc3a'],[2,'#f4f4f2'],[5,'#ff6a3d'],[7,'#3d7be8'],[9,'#5cc46b']].forEach(([i,c])=>busModel(scene,S,-160.4+(i+.5)*6.08,159,PI,c));
-  busModel(scene,S,-80,121,-1.92,'#9cd9e0');busModel(scene,S,-160,169.5,-2.8,'#f4f4f2');
+  busModel(scene,S,-140,168.2,-Math.PI/2,'#f4f4f2');
   G.extraNPCs.push({name:'Conductor Raju',look:{shirt:'#c9b48a',pants:'#3a4a6b',hair:'short',hat:'#2f5bff',mustache:true,face:'grin'},x:-122,z:146,yaw:PI,lines:['Vashupur bus stand! Kaapikunj, Memepura, Basti, Barfii, Delulugarh. All buses, all day.','Ticket? Free. The bus is part of the portfolio.','Window seat? Everyone wants window seat.'],barks:['Chalo chalo!','Next bus: now.']});
   G.buildings.push({name:'Vashupur Bus Stand',short:'Bus stand',x0:X0,x1:X1,z0:Z0,z1:Z1,col:'#a8a8a8',door:{x:-127,z:128.5},room:null});
-  G.noGrass.push([X0,X1,Z0-3,Z1+2]);G.blocked.push([X0-3,X1+3,Z0-3,Z1+3])}
+  G.noGrass.push([X0,X1,Z0-3,Z1+2]);G.blocked.push([X0-3,X1+3,Z0-3,Z1+3]);G.noLamp.push([X0-1.5,X1+1.5,124,153])}
 
 export function buildLandmarks(scene,ctx){const {on}=ctx;const outs={};G.blocked=G.blocked||[];
   if(ctx.TD.busStand)busStand(scene,ctx);else busStop(scene,ctx);

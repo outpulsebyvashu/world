@@ -41,6 +41,16 @@ export function buildWorld(scene){
       for(const [a,b] of minus(z0,z1,cr.map(q=>[q[2],q[3]])))for(let z=a+1.5;z<b-1;z+=3.2)bx(S,(x0+x1)/2,.045,z,.18,.01,1.6,'#f4efe6');
       for(const [a,b] of minus(z0,z1,cr.map(q=>[q[2]-SW,q[3]+SW]))){blk(S,x0-SW,x0,0,.07,a,b,'#cfc7b6',false);blk(S,x1,x1+SW,0,.07,a,b,'#cfc7b6',false)}}};
   RD.forEach(road);
+  /* roads that run out at the edge of town end at a barrier instead of stopping in the grass */
+  const joined=(q,x,z)=>RD.some(r=>r!==q&&x>r[0]-.3&&x<r[1]+.3&&z>r[2]-.3&&z<r[3]+.3)||(TD.round&&Math.hypot(x-TD.round.x,z-TD.round.z)<TD.round.r1+3);
+  const endTex=signTex('ROAD ENDS','#ffcc3a','#141414',256,64);
+  for(const q of RD){const ax=q[4]==='x',ends=ax?[[q[0],(q[2]+q[3])/2,1],[q[1],(q[2]+q[3])/2,-1]]:[[(q[0]+q[1])/2,q[2],1],[(q[0]+q[1])/2,q[3],-1]];
+    for(const [ex,ez,inw] of ends){if(joined(q,ax?ex-inw*.5:ex,ax?ez:ez-inw*.5))continue;const a=ax?q[2]:q[0],b=ax?q[3]:q[1],at=(ax?ex:ez)+inw*.6;const P=(u,v)=>ax?[at+v,u]:[u,at+v];
+      for(const u of[a+.7,b-.7]){const [x,z]=P(u,0);blk(S,x-.14,x+.14,0,1.25,z-.14,z+.14,'#f4f4f2')}
+      for(let u=a+.7,k=0;u<b-.7;u+=1,k++){const e=Math.min(u+1,b-.7),[x0_,z0_]=P(u,0),[x1_,z1_]=P(e,0);blk(S,Math.min(x0_,x1_)-(ax?.12:0),Math.max(x0_,x1_)+(ax?.12:0),.82,1.08,Math.min(z0_,z1_)-(ax?0:.12),Math.max(z0_,z1_)+(ax?0:.12),k%2?'#ffffff':'#e53935',false)}
+      for(const u of[a+2.2,b-2.2]){const [x,z]=P(u,inw*.02);bx(S,x,1.55,z,ax?.06:1,.6,ax?1:.06,'#141414');bx(S,x,1.55,z+(ax?0:inw*.04),ax?.07:.8,.4,ax?.8:.07,'#ffcc3a')}
+      const [mx,mz]=P((a+b)/2,inw*.05);addPlane(scene,2.6,.65,endTex,[mx,1.5,mz],ax?(inw>0?Math.PI/2:-Math.PI/2):(inw>0?0:Math.PI),null);
+      const [c0x,c0z]=P(a,0),[c1x,c1z]=P(b,0);col(Math.min(c0x,c1x)-.2,Math.max(c0x,c1x)+.2,0,1.3,Math.min(c0z,c1z)-.2,Math.max(c0z,c1z)+.2)}}
 
 
 
@@ -49,11 +59,7 @@ export function buildWorld(scene){
   /* lamps */
   const lampPos=[];const lamp=(x,z)=>{blk(S,x-.1,x+.1,0,4.4,z-.1,z+.1,'#2c2f36',true);bx(S,x,4.45,z,.5,.12,.5,'#2c2f36');bx(LMP,x,4.3,z,.36,.2,.36,'#ffffff');lampPos.push([x,z])};
   const onRoad=(x,z)=>RD.some(q=>x>q[0]-.7&&x<q[1]+.7&&z>q[2]-.7&&z<q[3]+.7);
-  for(const q of RD){const [x0,x1,z0,z1,ax]=q;let k=0;if(ax==='x'){for(let x=x0+6;x<x1-3;x+=13){const z=(k++%2)?z1+SW*.7:z0-SW*.7;if(!onRoad(x,z))lamp(x,z)}}else{for(let z=z0+6;z<z1-3;z+=13){const x=(k++%2)?x1+SW*.7:x0-SW*.7;if(!onRoad(x,z))lamp(x,z)}}}
-  if(on('vashupur'))for(const [x,z] of [[-68,41.7],[-38,41.7],[-68,71.7],[-38,71.7]])lamp(x,z);
-  const poolTex=tex(64,64,(x)=>{const g=x.createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,64,64)});
-  const pools=new THREE.InstancedMesh(new THREE.PlaneGeometry(8,8).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({map:poolTex,color:'#ffc870',transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}),lampPos.length);
-  const mm=new THREE.Matrix4();lampPos.forEach(([x,z],i)=>{mm.makeTranslation(x,.09,z);pools.setMatrixAt(i,mm)});pools.renderOrder=2;scene.add(pools);W.pools=pools;
+  /* street lamps are placed after the landmarks so they stay out of driveways and doorways */
 
   /* ---------- buildings ---------- */
   const building=o=>{if(G.LOT&&!o.real)return makeLot(scene,{S,addPlane},Object.assign({snow:TD.snow},o));const {x0,x1,z0,z1,h}=o;blk(S,x0,x1,0,h,z0,z1,o.col);if(o.band!==false)blk(S,x0-.15,x1+.15,h-.5,h,z0-.15,z1+.15,o.trim||'#f4efe6',false);
@@ -89,6 +95,12 @@ export function buildWorld(scene){
   const outs=buildArch(scene,ctx);Object.assign(outs,buildDistricts(scene,ctx));Object.assign(outs,buildLandmarks(scene,ctx));
   if(on('delulugarh'))Object.assign(outs,buildDowntown(scene,ctx));
   TD.plots.forEach(q=>building({name:'lot',x0:q[0],x1:q[1],z0:q[2],z1:q[3],door:{side:q[4],at:(q[4]==='e'||q[4]==='w')?(q[2]+q[3])/2:(q[0]+q[1])/2}}));
+  const lampOK=(x,z)=>!G.noLamp.some(r=>x>r[0]&&x<r[1]&&z>r[2]&&z<r[3])&&!G.buildings.some(b=>b.door&&Math.hypot(b.door.x-x,b.door.z-z)<5);
+  for(const q of RD){const [x0,x1,z0,z1,ax]=q;let k=0;if(ax==='x'){for(let x=x0+6;x<x1-3;x+=13){const z=(k++%2)?z1+SW*.7:z0-SW*.7;if(!onRoad(x,z)&&lampOK(x,z))lamp(x,z)}}else{for(let z=z0+6;z<z1-3;z+=13){const x=(k++%2)?x1+SW*.7:x0-SW*.7;if(!onRoad(x,z)&&lampOK(x,z))lamp(x,z)}}}
+  if(on('vashupur'))for(const [x,z] of [[-68,41.7],[-38,41.7],[-68,71.7],[-38,71.7]])lamp(x,z);
+  const poolTex=tex(64,64,(x)=>{const g=x.createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,64,64)});
+  const pools=new THREE.InstancedMesh(new THREE.PlaneGeometry(8,8).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({map:poolTex,color:'#ffc870',transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}),lampPos.length);
+  const mm=new THREE.Matrix4();lampPos.forEach(([x,z],i)=>{mm.makeTranslation(x,.09,z);pools.setMatrixAt(i,mm)});pools.renderOrder=2;scene.add(pools);W.pools=pools;
   W.outs=outs;
 
   /* ---------- HQ roof + ladder + scooter ---------- */

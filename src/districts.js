@@ -64,8 +64,8 @@ export function buildDistricts(scene,ctx){const {S,WIN,LMP,building,addPlane,ben
    const j=prop(S,30.5,0,-28.6,PI/2);j.box(0,.9,0,1.9,1,4,'#f4f4f4');j.box(0,1.75,-.5,1.8,.8,2.2,'#f4f4f4');j.box(0,1.75,-.5,1.82,.55,2,'#26323d');j.box(0,.95,0,1.92,.22,4.02,'#1d3f8f');for(const zz of[1.3,-1.3])for(const s of[-1,1])j.wheel(s*.9,.42,zz,.42,.28);col(28.5,32.5,0,2.2,-29.6,-27.6);
    W.policeLights=[new THREE.Mesh(new THREE.BoxGeometry(.3,.16,.3),new THREE.MeshBasicMaterial({color:'#ff2d2d'})),new THREE.Mesh(new THREE.BoxGeometry(.3,.16,.3),new THREE.MeshBasicMaterial({color:'#2d6bff'}))];W.policeLights[0].position.set(30,2.25,-28.3);W.policeLights[1].position.set(30,2.25,-28.9);scene.add(...W.policeLights);
    for(const x of[20,22.2])blk(S,x-.9,x+.9,0,1,-29.2,-28.9,'#ffcc3a');BL(15,35,-47,-27)};move(cpR,[0,0],[14,16],0,[outs.police])}
-  // fire station
-  if(on('vashupur')){const cpR=mark(scene,RB);outs.fire=building({real:true,name:'Fire Station',x0:-46,x1:-30,z0:-46,z1:-30,h:8,col:'#c62828',trim:'#ffffff',door:{side:'s',at:-33},room:'fire',win:false,awn:false,doorCol:'#ffffff'});
+  // fire station (its apron stays clear of street lamps)
+  if(on('vashupur')){G.noLamp.push([-74,-50,124,141]);const cpR=mark(scene,RB);outs.fire=building({real:true,name:'Fire Station',x0:-46,x1:-30,z0:-46,z1:-30,h:8,col:'#c62828',trim:'#ffffff',door:{side:'s',at:-33},room:'fire',win:false,awn:false,doorCol:'#ffffff'});
   {
    const b={x0:-46,x1:-30,z0:-46,z1:-30},F=fac(b,'s');
    for(const u of[-42.5,-37.5]){F.box(S,u,2.3,.02,4.2,4.6,.1,'#2b2b2b');F.box(S,u,4.75,.12,4.6,.3,.25,'#ffffff');F.box(S,u,2.3,.12,.25,4.6,.2,'#ffffff')}

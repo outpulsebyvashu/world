@@ -31,7 +31,7 @@ export function groundMaterial(snow){const t=tex(512,512,(x,W,H)=>{const r=rng(1
   return m}
 
 /* ---------- swaying grass that follows the player ---------- */
-export function makeGrass(scene,mask){const mobile=matchMedia('(pointer:coarse)').matches||innerWidth<700;const N=mobile?44000:130000,SIZE=mobile?38:56;
+export function makeGrass(scene,mask){const mobile=matchMedia('(pointer:coarse)').matches||innerWidth<700;const N=mobile?44000:130000,SIZE=mobile?44:58;
   const base=new THREE.BufferGeometry();const w=.042,pos=new Float32Array([-w,0,0, w,0,0, -w*.85,.35,0, w*.85,.35,0, -w*.55,.7,0, w*.55,.7,0, 0,1,0]);
   base.setAttribute('position',new THREE.BufferAttribute(pos,3));base.setAttribute('normal',new THREE.BufferAttribute(new Float32Array([0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1]),3));
   base.setAttribute('uv',new THREE.BufferAttribute(new Float32Array([0,0,1,0,0,.35,1,.35,0,.7,1,.7,.5,1]),2));
@@ -50,7 +50,7 @@ export function makeGrass(scene,mask){const mobile=matchMedia('(pointer:coarse)'
         float gM=(mu.x<0.||mu.y<0.||mu.x>1.||mu.y>1.)?0.:smoothstep(.5,.88,texture2D(uMask,mu).r);
         float gN=fbm2(gB*.06),gN2=vnoise(gB*.9);
         float gD=distance(gB,uPlayer);
-        float gH=aOff.w*(.3+.48*gN)*gM*smoothstep(uSize*.5,uSize*.5-7.,gD);gH*=step(.08,gH);
+        float gH=aOff.w*(.3+.48*gN)*gM*smoothstep(uSize*.5,uSize*.5-13.,gD);gH*=step(.08,gH);
         vColor.rgb*=mix(vec3(.82,.9,.72),vec3(1.12,1.06,.86),gN2);
         vColor.rgb=mix(vColor.rgb,vColor.rgb*vec3(1.35,1.15,.62),smoothstep(.62,.9,fbm2(gB*.11+9.))*.7);`)
       .replace('#include <beginnormal_vertex>','vec3 objectNormal=vec3(0.,1.,0.);')
