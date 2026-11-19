@@ -336,7 +336,8 @@ export function buildLandmarks(scene,ctx){const {on}=ctx;const outs={};G.blocked
 /* =================== Vashupur map v4: National Stadium, parking, Central Jail, Meow Club =================== */
 const TIRANGA=['#ff9933','#f4f1ea','#138808'];
 function stadium(scene,ctx){const {S,WIN,LMP,addPlane,W}=ctx;const X0=-180.3,X1=-42.6,Z0=12,Z1=106.6,TR=[-166,-56.4,25.8,95.6],FD=[-159,-63.5,32.9,88.7],cx=-111.25,cz=60.8,CON='#cfcac0',DK='#2b2d31';
-  flatShape(S,boxPts(X0,X1,Z0,Z1,10),.03,'#e9e6df');flatShape(S,boxPts(...TR,13),.045,'#e2a72e');flatShape(S,boxPts(...FD,6),.06,'#4c9a3f');
+  flatShape(S,boxPts(X0,X1,Z0,Z1,10),.03,'#e9e6df');flatShape(S,boxPts(...TR,13),.045,'#e2a72e');flatShape(S,boxPts(...FD,6),.06,'#3c9a38');
+  /* mowing stripes */for(let k=1;k<17;k+=2){const w=(FD[1]-FD[0])/17;bx(S,FD[0]+(k+.5)*w,.063,cz,w,.006,FD[3]-FD[2]-.8,'#2f8a2e')}
   for(let k=1;k<6;k++){const o=k*1.18;bx(S,cx,.052,TR[2]+o,82,.01,.07,'#ffffff');bx(S,cx,.052,TR[3]-o,82,.01,.07,'#ffffff');bx(S,TR[0]+o,.052,cz,.07,.01,44,'#ffffff');bx(S,TR[1]-o,.052,cz,.07,.01,44,'#ffffff')}
   /* football pitch */
   const L=(x,z,w,d)=>bx(S,x,.068,z,w,.01,d,'#ffffff');L(cx,FD[2]+.6,FD[1]-FD[0]-1.2,.14);L(cx,FD[3]-.6,FD[1]-FD[0]-1.2,.14);L(FD[0]+.6,cz,.14,FD[3]-FD[2]-1.2);L(FD[1]-.6,cz,.14,FD[3]-FD[2]-1.2);L(cx,cz,.14,FD[3]-FD[2]-1.2);
@@ -374,7 +375,7 @@ function stadium(scene,ctx){const {S,WIN,LMP,addPlane,W}=ctx;const X0=-180.3,X1=
   addPlane(scene,19.6,9.6,tex(1024,500,(c,w,h)=>{c.fillStyle='#0d0f12';c.fillRect(0,0,w,h);c.fillStyle='#ff9933';c.font='800 64px '+FONT_D;c.textAlign='center';c.fillText('NATIONAL STADIUM',w/2,92);
     c.fillStyle='#ffffff';c.font='800 120px '+FONT_D;c.fillText('2  –  0',w/2,270);c.font='700 46px '+FONT_T;c.fillText('VASHUPUR XI',w*.25,360);c.fillText('DELULUGARH FC',w*.75,360);c.fillStyle='#c9f26b';c.font='700 40px '+FONT_T;c.fillText("89'  ·  WELCOME, VISITOR",w/2,450)}),[-178.3,12.1,cz],PI/2,null);
   G.noGrass.push([X0,X1,Z0,Z1]);G.blocked.push([X0-2,X1+2,Z0-2,Z1+2]);
-  G.mapPolys.push({pts:boxPts(X0,X1,Z0,Z1,10),col:'#ffffff'},{pts:boxPts(...TR,13),col:'#e2a72e'},{pts:boxPts(...FD,6),col:'#4c9a3f'});
+  G.mapPolys.push({pts:boxPts(X0,X1,Z0,Z1,10),col:'#ffffff'},{pts:boxPts(...TR,13),col:'#e2a72e'},{pts:boxPts(...FD,6),col:'#3c9a38'});
   G.buildings.push({name:'National Stadium',short:'Stadium',x0:X0,x1:X1,z0:Z0,z1:Z1,col:'#ffffff',door:{x:cx,z:10.6},room:null,poly:true,label:true})}
 
 function parkingLot(scene,ctx){const {S,addPlane}=ctx;const X0=-42.6,X1=-10.5,Z0=10.7,Z1=95.7;const r=rng(311);

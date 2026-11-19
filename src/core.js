@@ -125,5 +125,6 @@ export function anim(c,dt,s={}){const u=c.userData,a=Math.min(1,dt*12),t=perform
   else if(e==='pose'){alz=-.8;arz=.8;al=-.3;ar=-.3;hx=-.15}
   else if(e==='beg'){al=-1.4;ar=-1.4;alz=.2;arz=-.2;hx=.15+Math.sin(t*4)*.05}
   else if(!sp&&!s.air&&!s.sit&&!s.ride){by=Math.sin(t*2+u.ph)*.015;al=Math.sin(t*1.6+u.ph)*.04;ar=-al}
+  if(s.kick>0){const k=Math.sin(Math.min(1,s.kick)*Math.PI);lr=-1.5*k;ll=.3*k;al=.35*k;ar=-.35*k}
   T(u.legL.rotation,'x',ll,a);T(u.legR.rotation,'x',lr,a);T(u.armL.rotation,'x',al,a);T(u.armR.rotation,'x',ar,a);T(u.armL.rotation,'z',alz,a);T(u.armR.rotation,'z',arz,a);
   T(u.body.position,'y',by,a);T(u.body.rotation,'y',ty,a);T(u.head.rotation,'x',hx,a)}

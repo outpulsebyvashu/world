@@ -43,7 +43,7 @@ OW.init=async(host,el,progress=()=>{})=>{
   let fontsP;try{fontsP=Promise.race([css().then(()=>Promise.all(['800 64px "Bricolage Grotesque"','400 64px Anton','600 20px "Inter Tight"'].map(f=>document.fonts.load(f)))),new Promise(r=>setTimeout(r,2200))]).catch(()=>{})}catch(e){fontsP=Promise.resolve()}
   progress(.2);
   renderer=new THREE.WebGLRenderer({antialias:devicePixelRatio<2,powerPreference:'high-performance'});
-  renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.AgXToneMapping;renderer.toneMappingExposure=.9;
+  renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.9;
   /* a soft studio environment so characters get the satin, toy-like look */
   try{const pm=new THREE.PMREMGenerator(renderer);G.envTex=pm.fromScene(new RoomEnvironment(),.04).texture;pm.dispose()}catch(e){}
   root.prepend(renderer.domElement);renderer.domElement.className='ow-cv3';renderer.domElement.setAttribute('aria-hidden','true');
@@ -84,7 +84,7 @@ function setTime(){const h=hourNow(),a=(h-6)/12*Math.PI,alt=Math.sin(a);
   if(P.world!=='out'){const r=G.rooms[P.world];scene.background=tc.set('#141414').clone();scene.fog.color.set('#141414');scene.fog.near=34;scene.fog.far=60;hemi.color.set(r.light);hemi.groundColor.set('#8a7a6a');hemi.intensity=1.25;amb.intensity=.35;sunL.intensity=1.1;sunL.color.set('#fff4e0');sunDir.set(.3,1,.5).normalize();W.winMat.color.set('#bfe0ff');setNight(0);setFar();return}
   tc.copy(NIGHT).lerp(DAY,dayK).lerp(DUSK,dusk*.55);scene.background=sky?null:tc.clone();scene.fog.color.copy(tc);scene.fog.near=90;scene.fog.far=dayK>.3?520:260;setFar();
   const twi=alt<0?clamp((alt+.24)/.24,0,1):1;
-  if(sky){const sAlt=alt>-.24?Math.max(alt,.012):alt;const sd=new THREE.Vector3(Math.cos(a)*.85,sAlt,-.45).normalize();sky.material.uniforms.sunPosition.value.copy(sd);renderer.toneMappingExposure=((.5+.28*dayK)*(.25+.75*twi)+(1-twi)*.32)*1.12;setCharLight(.12+.3*dayK*twi)}
+  if(sky){const sAlt=alt>-.24?Math.max(alt,.012):alt;const sd=new THREE.Vector3(Math.cos(a)*.85,sAlt,-.45).normalize();sky.material.uniforms.sunPosition.value.copy(sd);renderer.toneMappingExposure=((.5+.28*dayK)*(.25+.75*twi)+(1-twi)*.32)*(1-.12*dayK);setCharLight(.12+.3*dayK*twi)}
   if(alt>-.05){sunDir.set(Math.cos(a)*.8,Math.max(alt,.18),-.45).normalize();sunL.color.copy(C('#ffc58a')).lerp(C('#fff4e2'),dayK);sunL.intensity=.8+2.1*dayK}
   else{sunDir.set(-Math.cos(a)*.6,.7,.4).normalize();sunL.color.set('#9fb6ff');sunL.intensity=.55}
   hemi.color.copy(C('#5b6fb0')).lerp(C('#d6ecff'),dayK);hemi.groundColor.copy(C('#26304a')).lerp(C('#6a8f4e'),dayK);hemi.intensity=1-.3*dayK;amb.intensity=.3-.12*dayK;
@@ -526,7 +526,7 @@ function npcTick(dt,T){const px=P.pos.x,pz=P.pos.z,now=performance.now(),FC=dron
     else if(n.kind==='cat'){continue}
     if(party&&(n.kind==='wander'||n.kind==='crowd'||n.kind==='chase')&&P.world==='out'){const pa=W.partyAt||[0,0],a=(n.ci||G.npcs.indexOf(n))*.7,tx=pa[0]+Math.cos(a)*(6+(a%3)),tz=pa[1]+Math.sin(a)*(6+(a%3)),dx=tx-p.x,dz=tz-p.z,d=Math.hypot(dx,dz);if(d>.5&&n.kind!=='crowd'){sp=5;p.x+=dx/d*sp*dt;p.z+=dz/d*sp*dt;turn(c,Math.atan2(dx,dz),dt)}else em='dance'}
     if(n.lie){c.rotation.x=-Math.PI/2;p.y=(n.ly||0)+.3}
-    if(c.userData.legL)anim(c,dt,{speed:sp,sit:n.sit&&!sp,emote:sp?null:em})}}
+    if(c.userData.legL)anim(c,dt,{speed:sp,sit:n.sit&&!sp,emote:sp?null:em,kick:n.kickT>0?1-n.kickT/.35:0})}}
 function turn(c,ty,dt){let d=ty-c.rotation.y;d=Math.atan2(Math.sin(d),Math.cos(d));c.rotation.y+=d*Math.min(1,dt*8)}
 const STOPS=[{p:[[-120,141.5]],t:'Welcome to Vashupur, the capital. This is the bus stand: buses to all five other towns leave from here.'},
   {p:[[-120,128.5],[-65,128.5]],t:'The Fire Station, right next to the bus stand. Ring the bell outside, slide down the pole inside.'},

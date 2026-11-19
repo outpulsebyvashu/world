@@ -8,7 +8,7 @@ export const ARTISTS=['Jatin Birbal','Chawanni','Dakaar','Lendrik Kumar','Raftaa
 const ALOOK={'Jatin Birbal':{shirt:'#f4f1ea',pants:'#3a4a6b',hair:'side',hairC:'#c9a25a',coat:'#d9d4c4'},'Chawanni':{shirt:'#ffcc3a',pants:'#141414',hair:'spiky',hairC:'#141414',shades:true},
   'Dakaar':{shirt:'#141414',pants:'#141414',hair:'buzz',beard:true,shades:true,coat:'#2b2b2b'},'Lendrik Kumar':{shirt:'#e94b3c',pants:'#2b2b2b',hair:'curly2',hairC:'#141414',beard:true},
   'Raftaaar':{shirt:'#2f5bff',pants:'#141414',hair:'cap',hat:'#141414',shades:true,beard:true},'SAZA':{shirt:'#c9f26b',pants:'#3a3a3a',hair:'long',hairC:'#3a2414',fem:true},'Arina Granade':{shirt:'#e9d8ff',skirt:'#e9d8ff',pants:'#e9d8ff',hair:'ponytail',hairC:'#8a5a3b',fem:true}};
-const AWAY=[['DELULUGARH FC','#a463ff'],['MEMEPURA UNITED','#ff3b8d'],['BARFII CITY','#3d7be8'],['BASTI ROVERS','#8b1e2d'],['KAAPIKUNJ BREWERS','#8b6a4a']];
+const AWAY=[['DELULUGARH FC','#a463ff'],['MEMEPURA UNITED','#ff3b8d'],['BARFII CITY','#3d7be8'],['BASTI ROVERS','#8b1e2d'],['KAAPIKUNJ BREWERS','#1d3a8a']];
 const FIGHTERS=['Iron Inder','Bullet Bablu','Thunder Tara','Rocky Rana','Toofan Tiwari','Golden Gauri','Lightning Lakhan','Kaali Aandhi'];
 const COUPLES=[['Rohan','Isha'],['Kabir','Meera'],['Aditya','Tara'],['Dev','Riya'],['Arjun','Kavya'],['Sameer','Naina']];
 const RUNNERS=[['Rocket Ravi','VASHUPUR','#ff6a3d'],['Speedy Sunita','KAAPIKUNJ','#8b6a4a'],['Zoom Zaid','MEMEPURA','#ff3b8d'],['Flash Fatima','BASTI','#8b1e2d'],['Turbo Tenzin','BARFII','#3d7be8'],['Cheetah Chetan','DELULUGARH','#a463ff']];
@@ -59,50 +59,109 @@ export function makeStadium({scene,snd,bubble,toast,P,camera}){
     return ev}
   const kick=()=>{if(P.world==='out'&&Math.hypot(P.pos.x-cx,P.pos.z-cz)<70)snd.kick()};
 
-  /* =============================== FOOTBALL =============================== */
+  /* =============================== FOOTBALL ===============================
+     Real ball physics (rolling, lofted passes, shots, bounces), players that accelerate, run onto passes,
+     press and tackle; keepers that dive; throw-ins, goal kicks and kick-offs. The score still follows the
+     shared schedule, so every visitor sees the same result: scheduled goals go in, other shots are saved or miss. */
   function football(ev){const {I,r}=ev;const teams=[{name:'VASHUPUR XI',col:'#ff6a3d',sh:'#ffffff',gk:'#ffcc3a',dir:1},{name:I.away[0],col:I.away[1],sh:'#141414',gk:'#5cc46b',dir:-1}];
     const goals=[];{let tt=12;const n=1+Math.floor(r()*4);for(let i=0;i<n;i++){tt+=22+r()*36;if(tt>222)break;goals.push({t:tt,team:r()<.56?0:1,done:false})}}
     const sc=t=>[0,1].map(k=>goals.filter(g=>g.t<=t&&g.team===k).length);
-    const L=FD[1]-FD[0],Wd=FD[3]-FD[2],GX=d=>d>0?FD[1]-.6:FD[0]+.6;
+    const L=FD[1]-FD[0],Wd=FD[3]-FD[2],GL=d=>d>0?FD[1]-.6:FD[0]+.6,BR=.32,GRAV=12;
     const FORM=[[.03,0],[.2,-.62],[.17,-.22],[.17,.22],[.2,.62],[.42,-.66],[.38,-.22],[.38,.22],[.42,.66],[.62,-.22],[.62,.22]];
     const home=(tm,f)=>[tm.dir>0?FD[0]+f[0]*L:FD[1]-f[0]*L,cz+f[1]*Wd/2*.9];
-    const PL=[];teams.forEach((tm,ti)=>FORM.forEach((f,i)=>{const [x,z]=home(tm,[Math.min(f[0],.46),f[1]]);const n=ev.person({name:(i?'#'+(i+1):'Goalkeeper')+' · '+tm.name,look:ev.look(ti*11+i,{shirt:i?tm.col:tm.gk,pants:tm.sh,shoes:'#141414',fem:false}),x,z,yaw:tm.dir*PI/2,
-      lines:i?['Eyes on the ball, not on me.','We train at the parking lot. Mind the cars.']:['I see everything. Except the ones that go in.'],barks:['Pass!','Man on!','Here!','Shoot!']});n.team=ti;n.f=f;n.gk=!i;n.sp=4.8+r()*1.4;PL.push(n)}));
-    const ref=ev.person({name:'Referee',look:{shirt:'#141414',pants:'#141414',hair:'buzz',face:'flat'},x:cx,z:cz+8,yaw:0,lines:['Play on!','That was not a foul. That was a hug.'],barks:['Play on!','Advantage!']});
-    const ball=ev.add(new THREE.Mesh(new THREE.IcosahedronGeometry(.24,1),new THREE.MeshLambertMaterial({color:'#ffffff',flatShading:true})));ball.castShadow=true;ball.position.set(cx,.24,cz);
-    let hold=null,holdT=0,fly=null,pause=3,kickTeam=0,celeb=0,forceG=null,scorer=null;
-    const near2=(a,b)=>{const p=a.c.position,q=b.c.position;return Math.hypot(p.x-q.x,p.z-q.z)};
-    const give=p=>{hold=p;holdT=.8+r()*1.5;fly=null};
-    const send=(recv,to,dur,h,then)=>{fly={from:ball.position.clone(),to:to.clone(),recv,t:0,dur,h,then};hold=null;kick()};
-    const kickoff=team=>{ball.position.set(cx,.24,cz);fly=null;hold=null;pause=3;kickTeam=team};
+    const PL=[];teams.forEach((tm,ti)=>FORM.forEach((f,i)=>{const [x,z]=home(tm,[Math.min(f[0],.46),f[1]]);const n=ev.person({name:(i?'#'+(i+1):'Goalkeeper')+' · '+tm.name,look:ev.look(ti*11+i,{shirt:i?tm.col:tm.gk,pants:tm.sh,shoes:'#141414',fem:false,long:!i,hair:['short','buzz','spiky','curly2','side'][(ti*11+i*3)%5],hat:null}),x,z,yaw:tm.dir*PI/2,
+      lines:i?['Eyes on the ball, not on me.','We train at the parking lot. Mind the cars.']:['I see everything. Except the ones that go in.'],barks:['Pass!','Man on!','Here!','Shoot!','Square it!']});n.team=ti;n.f=f;n.gk=!i;n.vx=0;n.vz=0;n.max=6.6+r()*1.2;n.cool=0;n.kickT=0;PL.push(n)}));
+    const ref=ev.person({name:'Referee',look:{shirt:'#141414',pants:'#141414',hair:'buzz',face:'flat'},x:cx,z:cz+8,yaw:0,lines:['Play on!','That was not a foul. That was a hug.'],barks:['Play on!','Advantage!']});ref.vx=ref.vz=0;ref.max=6;
+    const lines=[FD[2]-1.5,FD[3]+1.5].map((z,i)=>{const n=ev.person({name:'Assistant referee',look:{shirt:'#ffcc3a',pants:'#141414',hair:'short',face:'flat'},x:cx,z,yaw:i?PI:0,lines:['Offside? I will think about it.'],barks:['Flag!']});n.vx=n.vz=0;n.max=6;
+      const f=new THREE.Mesh(new THREE.BoxGeometry(.04,.34,.3),new THREE.MeshLambertMaterial({color:'#ffcc3a'}));f.position.set(0,-.62,.25);n.c.userData.armR.add(f);return n});
+    /* the ball: white with black patches, a soft blob shadow so you can always see where it is */
+    const bg=new THREE.IcosahedronGeometry(BR,2),pa=bg.attributes.position,cols=new Float32Array(pa.count*3),dirs=[],ip=new THREE.IcosahedronGeometry(1,0).attributes.position;
+    for(let i=0;i<ip.count;i++){const v=new THREE.Vector3().fromBufferAttribute(ip,i).normalize();if(!dirs.some(d=>d.distanceTo(v)<.01))dirs.push(v)}
+    const cv=new THREE.Vector3();for(let f=0;f<pa.count;f+=3){cv.set(0,0,0);for(let k=0;k<3;k++)cv.add(new THREE.Vector3().fromBufferAttribute(pa,f+k));cv.normalize();const blk2=dirs.some(d=>d.dot(cv)>.955),c=blk2?.06:.95;for(let k=0;k<3;k++)cols.set([c,c,c],(f+k)*3)}
+    bg.setAttribute('color',new THREE.BufferAttribute(cols,3));const ball=ev.add(new THREE.Mesh(bg,new THREE.MeshStandardMaterial({vertexColors:true,roughness:.45,flatShading:true})));ball.castShadow=true;
+    const blob=ev.add(new THREE.Mesh(new THREE.CircleGeometry(.36,20),new THREE.MeshBasicMaterial({color:'#000',transparent:true,opacity:.38,depthWrite:false})));blob.rotation.x=-PI/2;blob.renderOrder=2;
+    const B={x:cx,y:BR,z:cz,vx:0,vy:0,vz:0,own:null,last:0,recv:null,goalShot:false};
+    ev.dbg=()=>({mode,x:+B.x.toFixed(1),z:+B.z.toFixed(1),y:+B.y.toFixed(2),own:B.own?B.own.name:null});
+    let mode='kick',modeT=3,kickTeam=0,restart=null,celeb=0,scorer=null,force=null,holdT=1,whistled=false,ftDone=false;
+    const D2=(a,x,z)=>Math.hypot(a.c.position.x-x,a.c.position.z-z);
+    const whistle=()=>{if(near&&snd.whistle)snd.whistle()};
+    function strike(p,tx,tz,speed,lift){B.own=null;const dx=tx-B.x,dz=tz-B.z,d=Math.hypot(dx,dz)||1;B.vx=dx/d*speed;B.vz=dz/d*speed;B.vy=lift;B.last=p.team;p.kickT=.35;p.cool=.5;kick()}
+    function pass(p,q,lofted){const tx=q.c.position.x+q.vx*.8,tz=q.c.position.z+q.vz*.8,d=Math.hypot(tx-B.x,tz-B.z);B.recv=q;q.runTo=[tx,tz];
+      if(lofted){const vy=8.5,tf=2*vy/GRAV;strike(p,tx,tz,d*.9/tf,vy)}else strike(p,tx,tz,Math.min(24,Math.sqrt(20+8.5*d)),0)}
+    function shoot(p,goal){const tm=teams[p.team],gx=GL(tm.dir),gk=PL.find(q=>q.team!==p.team&&q.gk),side=gk.c.position.z>cz?-1:1;
+      if(goal){B.goalShot=true;gk.dive={side:-side,t:0};strike(p,gx+tm.dir*1.5,cz+side*(2.4+r()*.8),25,2.2+r()*1.2);bubble(p,'Shoot!')}
+      else if(r()<.5){B.goalShot=false;strike(p,gx+tm.dir*2,cz+(r()<.5?-1:1)*(4.6+r()*3),23,1.5+r()*3.5)}
+      else{B.goalShot=false;const gz=gk.c.position.z;gk.save=true;strike(p,gx,gz+(r()-.5)*1.4,21,1+r()*1.6)}}
+    function setMode(m,t){mode=m;modeT=t}
     ev.status=t=>{const s=sc(t);return t>=232?'FULL TIME · '+s[0]+' – '+s[1]:Math.min(90,Math.floor(t/232*90))+"' · VASHUPUR XI "+s[0]+' – '+s[1]+' '+I.away[0]};
     ev.screen=t=>{const s=sc(t);return[s[0]+'  –  '+s[1],'VASHUPUR XI  vs  '+I.away[0],t>=232?'FULL TIME':Math.min(90,Math.floor(t/232*90))+"'  ·  LIVE"]};
     ev.music={rally:true};
-    ev.tick=(dt,t)=>{
-      if(t>=232){const s=sc(t),win=s[0]===s[1]?-1:s[0]>s[1]?0:1;PL.forEach(p=>{p.spd=0;p.emote=win<0?'clap':p.team===win?'cheer':null});ref.spd=0;return}
-      if(celeb>0){celeb-=dt;if(celeb<=0)kickoff(forceG?1-forceG.team:0),forceG=null}
-      else if(pause>0){pause-=dt;if(pause<=0){const tm=PL.filter(p=>p.team===kickTeam&&!p.gk).sort((a,b)=>Math.hypot(a.c.position.x-cx,a.c.position.z-cz)-Math.hypot(b.c.position.x-cx,b.c.position.z-cz))[0];give(tm);bubble(ref,'Kick off!')}}
-      else if(!forceG){const g=goals.find(g=>!g.done&&t>=g.t-5);if(g&&t<g.t+20){forceG=g;const fw=PL.filter(p=>p.team===g.team&&!p.gk).sort((a,b)=>b.f[0]-a.f[0])[Math.floor(r()*2)];give(fw);holdT=2.6}else if(g)g.done=true}
-      if(hold&&!celeb&&pause<=0){const tm=teams[hold.team],gx=GX(tm.dir),p=hold.c.position;const tx=gx-tm.dir*(forceG?13:6),tz=cz+(p.z-cz)*.85;hold.spd=seek(hold,tx,tz,forceG?6.2:5.2,dt);
-        ball.position.set(p.x+Math.sin(hold.c.rotation.y)*.55,.24,p.z+Math.cos(hold.c.rotation.y)*.55);ball.rotation.x+=dt*hold.spd*2;holdT-=dt;
-        if(holdT<=0){const dG=Math.abs(gx-p.x);
-          if(forceG&&forceG.team===hold.team){scorer=hold;send(null,new THREE.Vector3(gx+tm.dir*1.3,1,cz+(r()-.5)*4.6),.75,.8,()=>{forceG.done=true;celeb=5;cheer=5;scorer.emote='cheer';bubble(scorer,'GOAL!');bubble(ref,'Goal!');if(near)toast('GOAL!',(forceG.team?I.away[0]:'Vashupur XI')+' score! '+sc(t+1).join(' – '))})}
-          else if(dG<28&&r()<.55){const gk=PL.find(q=>q.team!==hold.team&&q.gk);if(r()<.5)send(gk,gk.c.position,.7,1.1);else send(null,new THREE.Vector3(gx+tm.dir*2.5,.24,cz+(r()<.5?-1:1)*(6+r()*6)),.9,2.4,()=>{pause=0;give(gk);holdT=2})}
-          else{const mates=PL.filter(q=>q.team===hold.team&&q!==hold&&!q.gk),prog=q=>(q.c.position.x-p.x)*tm.dir;let cand=mates.filter(q=>{const d=near2(q,hold);return d>6&&d<34}).sort((a,b)=>prog(b)-prog(a));
-            let recv=cand[Math.floor(r()*Math.min(4,cand.length))]||mates[Math.floor(r()*mates.length)];if(!forceG&&r()<.24)recv=PL.filter(q=>q.team!==hold.team&&!q.gk).sort((a,b)=>near2(a,recv)-near2(b,recv))[0];
-            const d=near2(recv,hold);send(recv,recv.c.position,Math.max(.45,Math.min(1.6,d/17)),d>20?2.4:.25)}}}
-      if(fly){fly.t+=dt;const s=Math.min(1,fly.t/fly.dur),to=fly.recv?fly.recv.c.position:fly.to;ball.position.x=fly.from.x+(to.x-fly.from.x)*s;ball.position.z=fly.from.z+(to.z-fly.from.z)*s;ball.position.y=.24+((fly.recv?.24:fly.to.y)-.24)*s+fly.h*4*s*(1-s);ball.rotation.z+=dt*8;
-        if(s>=1){const f=fly;fly=null;if(f.recv)give(f.recv);if(f.then)f.then()}}
-      const bp=ball.position,poss=hold?hold.team:-1;
-      const press=[0,1].map(ti=>ti===poss||celeb>0||pause>0?[]:PL.filter(q=>q.team===ti&&!q.gk).sort((a,b)=>Math.hypot(a.c.position.x-bp.x,a.c.position.z-bp.z)-Math.hypot(b.c.position.x-bp.x,b.c.position.z-bp.z)).slice(0,2));
-      for(const p of PL){if(p===hold&&!celeb&&pause<=0)continue;const tm=teams[p.team];let x,z,sp=p.sp;p.emote=null;
-        if(celeb>0){if(forceG&&p.team===forceG.team){const s=scorer.c.position;x=s.x-tm.dir*1.5+(p.f[1])*2;z=s.z+p.f[0]*3;p.emote='cheer'}else[x,z]=home(tm,[Math.min(p.f[0],.46),p.f[1]]);sp=2.2}
-        else if(pause>0){[x,z]=home(tm,[Math.min(p.f[0],.46),p.f[1]]);if(p.team===kickTeam&&p.f[0]>.6){x=cx-tm.dir*(p.f[1]>0?.6:4);z=cz+p.f[1]*3}}
-        else if(p.gk){x=GX(-tm.dir)+tm.dir*1.6;z=cz+Math.max(-3,Math.min(3,(bp.z-cz)*.3))}
-        else if(press[p.team].includes(p)){x=bp.x;z=bp.z;sp=p.sp*1.1;if(hold&&!forceG&&hold.team!==p.team&&Math.hypot(p.c.position.x-bp.x,p.c.position.z-bp.z)<1&&r()<dt*.9){give(p);bubble(p,'Mine!')}}
-        else{[x,z]=home(tm,p.f);x+=(bp.x-cx)*.45+(poss===p.team?tm.dir*7:poss>=0?-tm.dir*3:0);z+=(bp.z-cz)*.3}
-        [x,z]=clampF(x,z);p.spd=seek(p,x,z,sp,dt,Math.atan2(bp.x-p.c.position.x,bp.z-p.c.position.z))}
-      ref.spd=seek(ref,Math.max(FD[0]+4,Math.min(FD[1]-4,bp.x-6)),Math.max(FD[2]+2,Math.min(FD[3]-2,bp.z+9)),5.5,dt,Math.atan2(bp.x-ref.c.position.x,bp.z-ref.c.position.z))}}
+    function move(n,x,z,sp,dt,lookX,lookZ){[x,z]=[Math.max(FD[0]-3,Math.min(FD[1]+3,x)),Math.max(FD[2]-3,Math.min(FD[3]+3,z))];const p=n.c.position,dx=x-p.x,dz=z-p.z,d=Math.hypot(dx,dz);
+      const want=d<.35?0:Math.min(sp,d*1.6),tx=d>.01?dx/d*want:0,tz=d>.01?dz/d*want:0,k=Math.min(1,dt*4.5);n.vx+=(tx-n.vx)*k;n.vz+=(tz-n.vz)*k;p.x+=n.vx*dt;p.z+=n.vz*dt;
+      const v=Math.hypot(n.vx,n.vz);if(v>.9)turnTo(n.c,Math.atan2(n.vx,n.vz),dt);else if(lookX!=null)turnTo(n.c,Math.atan2(lookX-p.x,lookZ-p.z),dt);n.spd=v;return v}
+    ev.tick=(dt,t,T)=>{
+      for(const p of PL){if(p.kickT>0)p.kickT-=dt;if(p.cool>0)p.cool-=dt;if(p.dive){const tm=teams[p.team];p.dive.t+=dt;const k=Math.min(1,p.dive.t/.25);p.c.rotation.z=-p.dive.side*1.2*k*tm.dir;p.c.position.z+=p.dive.side*dt*(p.dive.t<.4?6:0);p.c.position.y=.2*k;if(p.dive.t>1.2){p.dive=null;p.c.rotation.z=0;p.c.position.y=0}}}
+      /* ---- full time ---- */
+      if(t>=232){if(!ftDone){ftDone=true;whistle();setTimeout(whistle,400);setTimeout(whistle,800)}const s=sc(t),win=s[0]===s[1]?-1:s[0]>s[1]?0:1;PL.forEach(p=>{move(p,p.c.position.x,p.c.position.z,0,dt);p.spd=0;p.emote=win<0?'clap':p.team===win?'cheer':null});ref.spd=0;lines.forEach(l=>l.spd=0);return}
+      /* ---- scheduled goal: make sure the scoring side has the ball in the last few seconds before it ---- */
+      if(!force){const g=goals.find(g=>!g.done&&t>=g.t-9);if(g){if(t>g.t+14)g.done=true;else force=g}}
+      if(force&&t>force.t+14&&mode==='play'){force.done=true;force=null}
+      /* ---- dead-ball phases ---- */
+      if(mode==='goal'){celeb-=dt;PL.forEach(p=>{const tm=teams[p.team];if(p.team===scorer.team&&!p.gk){const s=scorer.c.position;move(p,s.x-tm.dir*(1+Math.abs(p.f[1])*2),s.z+p.f[1]*2.5,5,dt);p.emote='cheer'}else{const [x,z]=home(tm,[Math.min(p.f[0],.46),p.f[1]]);move(p,x,z,2.5,dt);p.emote=null}});
+        if(celeb<=0){kickTeam=1-scorer.team;B.own=null;Object.assign(B,{x:cx,y:BR,z:cz,vx:0,vy:0,vz:0});setMode('kick',3.5);PL.forEach(p=>p.emote=null)}}
+      else if(mode==='kick'){modeT-=dt;PL.forEach(p=>{const tm=teams[p.team];let [x,z]=home(tm,[Math.min(p.f[0],.46),p.f[1]]);if(p.team===kickTeam&&p.f[0]>.6){x=cx-tm.dir*(p.f[1]>0?.7:3);z=cz+(p.f[1]>0?0:-1.5)}move(p,x,z,4.5,dt,B.x,B.z)});
+        if(modeT<=0){const tk=PL.filter(p=>p.team===kickTeam&&!p.gk).sort((a,b)=>D2(a,cx,cz)-D2(b,cx,cz))[0];whistle();bubble(ref,'Kick off!');B.own=tk;holdT=.6;setMode('play',0)}}
+      else if(mode==='out'){modeT-=dt;const R=restart,tk=R.taker;move(tk,R.x,R.z,6.5,dt,cx,cz);
+        PL.forEach(p=>{if(p===tk)return;const tm=teams[p.team];let [x,z]=home(tm,p.f);x+=(R.x-cx)*.5;z+=(R.z-cz)*.3;move(p,x,z,4,dt,R.x,R.z)});
+        if(modeT<=0&&(D2(tk,R.x,R.z)<1.2||modeT<-4)){tk.c.position.x=R.x;tk.c.position.z=R.z;Object.assign(B,{x:R.x,z:R.z,y:R.type==='throw'?2:BR,vx:0,vy:0,vz:0});
+          const mates=PL.filter(q=>q.team===tk.team&&q!==tk&&!q.gk).sort((a,b)=>R.type==='goal'?Math.abs(D2(a,R.x,R.z)-32)-Math.abs(D2(b,R.x,R.z)-32):D2(a,R.x,R.z)-D2(b,R.x,R.z));
+          const q=mates[Math.floor(r()*Math.min(3,mates.length))];if(R.type==='throw'){tk.emote='cheer';setTimeout(()=>{tk.emote=null},400)}pass(tk,q,R.type==='goal');setMode('play',0)}}
+      else{/* ---- open play ---- */
+        const o=B.own;
+        if(o){const tm=teams[o.team],gx=GL(tm.dir),p=o.c.position;holdT-=dt;
+          const opp=PL.filter(q=>q.team!==o.team).sort((a,b)=>D2(a,p.x,p.z)-D2(b,p.x,p.z))[0];const od=D2(opp,p.x,p.z);
+          let tz=cz+(p.z-cz)*.8;if(od<4.5){tz=p.z+(p.z>opp.c.position.z?3:-3)}const forceMe=force&&force.team===o.team;
+          if(o.gk)move(o,p.x,p.z,0,dt,cx,cz);else move(o,gx-tm.dir*(forceMe?16:4),tz,forceMe?6.4:5.6,dt);
+          const fx=Math.sin(o.c.rotation.y),fz=Math.cos(o.c.rotation.y),lead=.62+.2*Math.abs(Math.sin(T*7.5));B.x+=(p.x+fx*lead-B.x)*Math.min(1,dt*14);B.z+=(p.z+fz*lead-B.z)*Math.min(1,dt*14);B.y=o.gk?1.1:BR;B.vx=o.vx;B.vz=o.vz;B.vy=0;
+          if(holdT<=0){const dG=Math.abs(gx-p.x),wide=Math.abs(p.z-cz);
+            if(forceMe&&dG<30){shoot(o,true);scorer=o}
+            else if(!forceMe&&!o.gk&&dG<25&&wide<15&&r()<.5)shoot(o,false);
+            else{const mates=PL.filter(q=>q.team===o.team&&q!==o&&!q.gk),score=q=>{const qp=q.c.position,prog=(qp.x-p.x)*tm.dir,d=Math.hypot(qp.x-p.x,qp.z-p.z),free=Math.min(8,...PL.filter(z=>z.team!==o.team).map(z=>D2(z,qp.x,qp.z)));return prog*.6+free*1.6-(d>38?30:0)-(d<5?20:0)+(r()*6)};
+              const q=mates.sort((a,b)=>score(b)-score(a))[0];if(o.gk||od<3.2||r()<.75){const d=D2(q,p.x,p.z);pass(o,q,d>27)}else holdT=.5+r()*.8}
+            holdT=.7+r()*1.6}
+          /* tackles: a presser close enough knocks it loose */
+          if(B.own&&od<1.05&&opp.cool<=0&&!opp.gk&&!(forceMe)&&r()<dt*(force&&opp.team===force.team?4:1.1)){B.own=null;const a=Math.atan2(p.x-opp.c.position.x,p.z-opp.c.position.z)+(r()-.5);B.vx=Math.sin(a)*5;B.vz=Math.cos(a)*5;B.vy=.5;B.last=opp.team;o.cool=.8;bubble(opp,'Mine!')}}
+        else{/* loose ball physics */
+          B.vy-=GRAV*dt;B.x+=B.vx*dt;B.y+=B.vy*dt;B.z+=B.vz*dt;if(B.y<BR){B.y=BR;B.vy=B.vy<-2?-B.vy*.45:0}
+          if(B.y<=BR+.02){const sp=Math.hypot(B.vx,B.vz);if(sp>0){const ns=Math.max(0,sp-(2+sp*.22)*dt);B.vx*=ns/sp;B.vz*=ns/sp}}
+          /* keepers: dive for scheduled goals (and miss), save everything else on target */
+          for(const gk of PL.filter(q=>q.gk)){const tm=teams[gk.team],own=GL(-tm.dir),toward=(B.vx*-tm.dir)>2,d=D2(gk,B.x,B.z);
+            if(!gk.dive&&toward&&!B.goalShot&&Math.abs(B.x-own)<14&&d<1.7&&B.y<2.6){B.own=gk;B.vx=B.vz=B.vy=0;holdT=1.4;gk.save=false;bubble(gk,'Saved!');cheer=Math.max(cheer,1.5)}}
+          /* who can take it */
+          if(!B.own&&B.y<1.3)for(const p of PL){if(p.cool>0||p.gk)continue;if(D2(p,B.x,B.z)<.95){const sp=Math.hypot(B.vx,B.vz);if(p===B.recv||p.team===B.last||sp<13){B.own=p;B.recv=null;holdT=.4+r()*1.2;p.runTo=null;break}}}
+          /* goal or out of play */
+          const side=B.x>cx?1:-1;
+          if(Math.abs(B.x-cx)>L/2-.6){const att=teams.findIndex(tm=>tm.dir===side),mouth=Math.abs(B.z-cz)<3.66&&B.y<2.44;
+            if(mouth&&B.goalShot&&force&&force.team===att){B.vx*=.1;B.vz*=.1;B.vy=0;B.x=GL(side)+side*1.4;force.done=true;force=null;B.goalShot=false;celeb=5;cheer=6;whistle();setMode('goal',0);scorer=scorer&&scorer.team===att?scorer:PL.find(p=>p.team===att&&!p.gk);scorer.emote='cheer';bubble(scorer,'GOAL!');
+              if(near)toast('GOAL!',(att?I.away[0]:'Vashupur XI')+' score! '+sc(t+1).join(' – '))}
+            else{const def=1-att,gk=PL.find(p=>p.team===def&&p.gk);restart={type:'goal',taker:gk,x:GL(side)-side*5.5,z:cz+(B.z>cz?3:-3)};B.goalShot=false;setMode('out',1.6);bubble(ref,'Goal kick!')}}
+          else if(B.z<FD[2]+.4||B.z>FD[3]-.4){const tm=1-B.last,z=B.z<cz?FD[2]+.3:FD[3]-.3,x=Math.max(FD[0]+3,Math.min(FD[1]-3,B.x));restart={type:'throw',taker:PL.filter(p=>p.team===tm&&!p.gk).sort((a,b)=>D2(a,x,z)-D2(b,x,z))[0],x,z};setMode('out',1.4);bubble(ref,'Throw-in!')}}
+        /* everyone else */
+        const own=B.own,poss=own?own.team:-1;
+        const chase=[0,1].map(ti=>PL.filter(q=>q.team===ti&&!q.gk&&q!==own).sort((a,b)=>D2(a,B.x,B.z)-D2(b,B.x,B.z)));
+        for(const p of PL){if(p===own)continue;const tm=teams[p.team];let x,z,sp=4;p.emote=null;
+          if(p.gk){if(p.dive)continue;const gl=GL(-tm.dir);x=gl+tm.dir*(Math.abs(B.x-gl)<25?2.6:1.4);const lead=Math.abs(B.vx)>1?(gl-B.x)/B.vx:0,pz=B.z+B.vz*Math.max(0,Math.min(1.2,lead));z=cz+Math.max(-3.3,Math.min(3.3,pz-cz));sp=7}
+          else if(p.runTo&&B.recv===p&&!own){[x,z]=p.runTo;sp=p.max;const d=D2(p,B.x,B.z);if(d<6){x=B.x+B.vx*.15;z=B.z+B.vz*.15}}
+          else if(!own&&(chase[p.team][0]===p)){x=B.x+B.vx*.35;z=B.z+B.vz*.35;sp=p.max}
+          else if(own&&poss!==p.team&&chase[p.team][0]===p){x=B.x;z=B.z;sp=p.max}
+          else if(own&&poss!==p.team&&chase[p.team][1]===p){const gl=GL(-tm.dir);x=B.x+(gl-B.x)*.25;z=B.z+(cz-B.z)*.25;sp=6}
+          else{[x,z]=home(tm,p.f);x+=(B.x-cx)*.55+(poss===p.team?tm.dir*8:poss>=0?-tm.dir*2:0);z+=(B.z-cz)*.35;if(poss===p.team&&p.f[0]>.55){const lim=GL(tm.dir)-tm.dir*9;x=B.x+tm.dir*10;if((x-lim)*tm.dir>0)x=lim}sp=Math.hypot(x-p.c.position.x,z-p.c.position.z)>8?5.5:3.4}
+          move(p,x,z,sp,dt,B.x,B.z)}}
+      /* officials */
+      move(ref,Math.max(FD[0]+5,Math.min(FD[1]-5,B.x-7)),Math.max(FD[2]+3,Math.min(FD[3]-3,B.z+(B.z>cz?-9:9))),ref.max,dt,B.x,B.z);
+      move(lines[0],Math.max(cx,Math.min(FD[1]-2,B.x)),FD[2]-1.5,6,dt,B.x,B.z);move(lines[1],Math.min(cx,Math.max(FD[0]+2,B.x)),FD[3]+1.5,6,dt,B.x,B.z);
+      /* draw the ball */
+      ball.position.set(B.x,B.y,B.z);ball.rotation.x+=B.vz*dt/BR;ball.rotation.z-=B.vx*dt/BR;blob.position.set(B.x,.075,B.z);const hs=1/(1+(B.y-BR)*.35);blob.scale.set(hs,hs,hs);blob.material.opacity=.38*hs}}
 
   /* =============================== CONCERT =============================== */
   function concert(ev){const {I,r}=ev,SX=-152,ART=I.artist;
@@ -147,6 +206,7 @@ export function makeStadium({scene,snd,bubble,toast,P,camera}){
       lines:['I trained for this. Mostly by climbing the stairs at Outpulse Residences.','After this, chai at the bus stand. My treat.'],barks:['Come on!','Is that all?']});glove(n,c);n.ly=H;return n});
     const ref=ev.person({name:'Referee',look:{shirt:'#ffffff',pants:'#141414',tie:'#141414',hair:'short',face:'flat'},x:cx,y:H,z:cz+2.4,yaw:PI,lines:['Keep it clean. Protect yourselves at all times.'],barks:['Break!','Box!']});ref.ly=H;
     ev.person({name:'Ring announcer',look:{shirt:'#141414',coat:'#141414',tie:'#e94b3c',hair:'side',face:'grin'},x:cx+5.4,z:cz-4.6,yaw:-PI/2,emote:'talk',lines:['Ladiesss and gentlemennn!'],barks:['Round '+(1)+'!']});
+    ev.batch(b=>{for(let i=0;i<3;i++){const x=cx+9.75,z=cz-2+i*2;bx(b,x,.45,z,.55,.08,.55,'#2b2b2b');bx(b,x+.26,.8,z,.06,.7,.55,'#2b2b2b');for(const dx of[-.22,.22])for(const dz of[-.22,.22])bx(b,x+dx,.21,z+dz,.05,.42,.05,'#141414')}});
     for(let i=0;i<3;i++)ev.person({name:'Judge',look:ev.look(i+20,{shirt:'#3a3a3a'}),x:cx+9.6,z:cz-2+i*2,yaw:-PI/2,sit:true,lines:['Ten–nine, red corner. So far.'],barks:['Hmm.']});
     const ko=r()<.75?{round:2+Math.floor(r()*8),at:5+r()*9,win:r()<.5?0:1}:null,points=r()<.5?0:1,RD=24,FT=18;let a=0,bell=-1,cnt=-1,cntT=0,said=false;
     const round=t=>Math.min(10,Math.floor(t/RD)+1),inR=t=>t%RD<FT,koT=ko?(ko.round-1)*RD+ko.at:1e9;
@@ -202,6 +262,7 @@ export function makeStadium({scene,snd,bubble,toast,P,camera}){
     for(const [x,z] of[[-.3,-.75],[.3,-.75],[-.3,.75],[.3,.75]])bx(hb,x,.45,z,.22,.9,.22,'#e8e2d6');bx(hb,0,1.85,0,1,.12,1.2,'#c62828');bx(hb,0,1.9,0,1.04,.1,.4,'#ffcc3a');horse.add(hb.mesh(CHM));ev.add(horse);
     const groom=ev.person({name:GR+' (groom)',look:{shirt:'#f6efe2',coat:'#f4e3c9',pants:'#f6efe2',hair:'cap',hat:'#e94b3c',sash:'#c9a227',face:'grin',kurta:'#f4e3c9'},x:-46,z:cz,yaw:-PI/2,lines:['I am so nervous. Is my turban straight?','The horse has been to more weddings than me.'],barks:['Thank you for coming!']});
     const bride=ev.person({name:BR+' (bride)',look:{shirt:'#c62828',skirt:'#c62828',pants:'#c62828',hair:'bun',hairC:'#141414',fem:true,face:'smile',sash:'#ffcc3a'},x:MX-1.5,z:cz+1.6,yaw:PI/2,lines:['He is late. The baraat is always late.','Have you tried the gulab jamun? Go. Now.'],barks:['Welcome!']});
+    ev.batch(b=>{bx(b,MX+1.2,.36,cz-1.2,.62,.24,.62,'#8a4a2a');bx(b,MX+1.2,.52,cz-1.2,.58,.08,.58,'#ff9a1f')});
     const pandit=ev.person({name:'Panditji',look:{shirt:'#ff9a1f',pants:'#ffffff',hair:'buzz',face:'calm',beard:true},x:MX+1.2,z:cz-1.2,yaw:-PI*.75,sit:true,lines:['Seven pheras, seven promises. No shortcuts.'],barks:['Om…']});
     const band=[];for(let i=0;i<5;i++)band.push(ev.person({name:['Dhol wala','Band master','Trumpet','Dhol wala','Band'][i],look:{shirt:'#c62828',pants:'#ffffff',hat:'#c62828',hair:'cap',sash:'#ffcc3a',face:'grin'},x:-40,z:cz,yaw:-PI/2,emote:'drum',lines:['Dhol baje! Nobody leaves without dancing.'],barks:['Dhin dhin dha!']}));
     const guests=[];for(let i=0;i<14;i++)guests.push(ev.person({name:['Chachaji','Bua','Cousin','Best friend','Mamaji','Neighbour aunty'][i%6],look:ev.look(i+60,{shirt:['#ff8fc1','#ffcc3a','#5cc46b','#a463ff','#ff9933','#3bd1ff'][i%6]}),x:-40,z:cz,yaw:-PI/2,emote:'dance',lines:['Beta, when is your wedding?','I have danced at 400 weddings. This is my best one.'],barks:['Nachooo!','Balle balle!']}));
