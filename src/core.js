@@ -39,7 +39,7 @@ export function signTex(text,bg,fg,w=512,h=128,font=FONT_D){return tex(w,h,(x,W,
 /* ---------- blocky characters (original designs) ---------- */
 export const CHM=new THREE.MeshLambertMaterial({vertexColors:true});
 /* characters: soft satin plastic, lit by the sky environment as well as the sun */
-export const CHAR=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.5,metalness:0,envMapIntensity:.6});
+export const CHAR=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.55,metalness:0,envMapIntensity:.4});
 const faceCache={};
 /* faces: 128px, rounded eyes with highlights, eyebrows, open smiles (drawn once per style) */
 function faceMat(style){const k=style;if(faceCache[k])return faceCache[k];
