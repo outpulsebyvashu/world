@@ -129,12 +129,6 @@ export function buildWorld(scene){
   W.steam=[];for(let i=0;i<5;i++){const m=new THREE.Mesh(new THREE.BoxGeometry(.4,.4,.4),new THREE.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:.5,depthWrite:false}));m.userData.o=i/5;scene.add(m);W.steam.push(m)}
   move(cpF,[0,0],[0,119.5]);W.steamAt=[0,119.5];const cpP=mark(scene,[S,WIN,LMP]);
   const nb=['#ff6a3d','#2f5bff','#c9f26b','#ff8fc1'];
-  [[-11,-11],[11,-11],[-11,11],[11,11]].forEach(([x,z],i)=>{blk(S,x-1.7,x+1.7,0,4.6,z-.4,z+.4,'#141414');const t=tex(512,640,(c,w,h)=>{c.fillStyle=nb[i];c.fillRect(0,0,w,h);c.fillStyle=i===1?'#fff':'#141414';c.font='800 200px '+FONT_T;c.textAlign='center';let s=200;while(c.measureText(NUMS[i][0]).width>w-40){s-=10;c.font='800 '+s+'px '+FONT_T}c.fillText(NUMS[i][0],w/2,330);c.font='600 34px '+FONT_T;wrap(c,NUMS[i][1],w-80).forEach((l,j)=>c.fillText(l,w/2,430+j*44))});
-    addPlane(scene,3.2,4,t,[x,2.4,z+.42],0,null);addPlane(scene,3.2,4,t,[x,2.4,z-.42],Math.PI,null)});
-  // phone booth
-  blk(S,12,13.6,0,2.8,11.4,13,'#e94b3c');bx(WIN,12.8,1.7,13.02,1,1.2,.05,'#ffffff');bx(S,12.8,3,12.2,1.7,.3,1.7,'#e94b3c');
-  addPlane(scene,1.4,.35,signTex('CALL VASHU','#ffffff','#e94b3c',256,64),[12.8,2.55,13.06],0,null);
-  G.triggers.push({x:12.8,z:14.2,r:1.8,label:'Call Vashu (WhatsApp)',act:()=>{G.host.egg('ow_call','You used the phone booth. Old school.');window.open(WA,'_blank','noopener')}});
   // DJ booth (party)
   const dj=new Batch();bx(dj,0,.55,0,2.6,1.1,1,'#141414');bx(dj,-.6,1.15,0,.7,.1,.6,'#333');bx(dj,.6,1.15,0,.7,.1,.6,'#333');bx(dj,-1.8,1,0,.8,2,.8,'#222');bx(dj,1.8,1,0,.8,2,.8,'#222');
   W.dj=new THREE.Mesh();W.dj=dj.mesh(CHM);W.dj.position.set(-11,0,-6);W.dj.rotation.y=Math.PI/2;W.dj.visible=false;scene.add(W.dj);
@@ -143,7 +137,13 @@ export function buildWorld(scene){
   const beamG=new THREE.ConeGeometry(2.4,9,16,1,true);beamG.translate(0,-4.5,0);const beams=[];['#ff3b8d','#3bd1ff','#c9f26b','#ffcc3a','#a463ff','#ff6a3d'].forEach((c,i)=>{const m=new THREE.Mesh(beamG,new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.18,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}));m.position.y=9;m.rotation.z=.5;m.userData.a=i/6*Math.PI*2;disco.add(m);beams.push(m)});
   const pole=new THREE.Mesh(new THREE.BoxGeometry(.2,2.6,.2),new THREE.MeshLambertMaterial({color:'#333'}));pole.position.y=10.3;disco.add(pole);disco.visible=false;scene.add(disco);W.disco={g:disco,ball:dball,beams};
   /* the fan zone and the party live on the stadium field now */
-  move(cpP,[0,0],[-111.25,60.8]);W.partyAt=[-111.25,60.8];}
+  move(cpP,[0,0],[-111.25,60.8]);W.partyAt=[-111.25,60.8];
+  /* the phone booth stands outside by the parking; the field is kept clear for stadium events */
+  // phone booth
+  blk(S,-15.4,-13.8,0,2.8,56.4,58,'#e94b3c');bx(WIN,-14.6,1.7,58.02,1,1.2,.05,'#ffffff');bx(S,-14.6,3,57.2,1.7,.3,1.7,'#e94b3c');
+  addPlane(scene,1.4,.35,signTex('CALL VASHU','#ffffff','#e94b3c',256,64),[-14.6,2.55,58.06],0,null);
+  G.triggers.push({x:-14.6,z:59.2,r:1.8,label:'Call Vashu (WhatsApp)',act:()=>{G.host.egg('ow_call','You used the phone booth. Old school.');window.open(WA,'_blank','noopener')}});
+}
 
   /* ---------- poster street ---------- */
   if(on('memepura'))PROJECTS.forEach((p,i)=>{const x=24+i*5.2;const nn=String(i+1).padStart(2,'0');blk(S,x-2.25,x+2.25,1,6.5,9.2,9.5,'#141414');blk(S,x-.15,x+.15,0,1,9.25,9.45,'#141414');

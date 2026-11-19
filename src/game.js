@@ -10,6 +10,7 @@ import {makeTraffic} from './traffic.js';
 import {OPT,LABEL,DEFAULT,clean,toChar,randomLook} from './look.js';
 import {makeNet,PHRASES} from './net.js';
 import {MALL,MOVIES} from './v5.js';
+import {makeStadium} from './stadium.js';
 
 const OW=window.OW={};
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
@@ -21,7 +22,7 @@ const cam={yaw:0,pitch:.36,dist:8.5,tdist:8.5,lastDrag:0};
 const inp={jx:0,jy:0,keys:{},target:null,pend:null,jump:false};
 let player,cupMesh,marker,timeMode=LS.get('ow_time','auto'),zoneName='',beansGot=new Set(LS.get('ow_beans',[])),unlocked=LS.get('ow_unlocked',false),party=false;
 let quest=LS.get('ow_quest',{doctor:0}),dlgState=null,tour=null,evPhase=-1,rallyI=0,rallyT=0,heard=0,concertT=0;
-G.player=P;G.snd=snd;OW._={P,G,cam,W,fire:()=>fire&&fire.start(),get fireState(){return fire&&fire.active},get traffic(){return traffic},get net(){return net},get prof(){return prof},step(n,dt=.05){OW._.simT=OW._.simT||performance.now()/1000;for(let i=0;i<n;i++){OW._.simT+=dt;update(dt,OW._.simT)}},drone:on=>setDrone(on!==false),dronePos:(x,y,z)=>{drone.pos.set(x,y,z);drone.vel.set(0,0,0)},get party(){return party},get camera(){return camera},get scene(){return scene},get grass(){return grass},get town(){return curTown},get td(){return TOWNS[curTown]},load:id=>loadTown(id),view(x,y,z,tx,ty,tz){running=false;camera.position.set(x,y,z);camera.lookAt(tx,ty,tz);setTime();renderer.render(scene,camera)},THREE};
+G.player=P;G.snd=snd;OW._={P,G,cam,W,get std(){return stadium},fire:()=>fire&&fire.start(),get fireState(){return fire&&fire.active},get traffic(){return traffic},get net(){return net},get prof(){return prof},step(n,dt=.05){OW._.simT=OW._.simT||performance.now()/1000;for(let i=0;i<n;i++){OW._.simT+=dt;update(dt,OW._.simT)}},drone:on=>setDrone(on!==false),dronePos:(x,y,z)=>{drone.pos.set(x,y,z);drone.vel.set(0,0,0)},get party(){return party},get camera(){return camera},get scene(){return scene},get grass(){return grass},get town(){return curTown},get td(){return TOWNS[curTown]},load:id=>loadTown(id),view(x,y,z,tx,ty,tz){running=false;camera.position.set(x,y,z);camera.lookAt(tx,ty,tz);setTime();renderer.render(scene,camera)},THREE};
 export const EGGS=['ow_beans','ow_roof','ow_call','ow_laptop','ow_mirror','ow_lake','ow_goal','ow_freeloader','ow_rally','ow_concert','ow_doctor','ow_party','ow_scooter','ow_dog','ow_tour','ow_fire','ow_bonfire','ow_statue','ow_firepole','ow_bus','ow_alltowns','ow_terminal','ow_snowman','ow_skydeck'];
 
 /* ================= host (standalone or inside portfolio) ================= */
@@ -161,11 +162,11 @@ function disposeTree(o){o.traverse(n=>{if(n.geometry)n.geometry.dispose();const 
 function placeAtSpawn(){const s=TOWNS[curTown].spawn;if(P.ride)dismount();P.state='walk';P.seat=null;P.climb=null;/* a little sideways so players arriving together do not stand inside each other */const j=(Math.random()-.5)*3.2;P.pos.set(s.x+Math.cos(s.yaw)*j,0,s.z-Math.sin(s.yaw)*j);P.vel.set(0,0,0);P.world='out';P.yaw=s.yaw;cam.yaw=s.yaw+Math.PI;cam.pitch=.36;inp.target=null;if(marker)marker.visible=false}
 function loadTown(id){if(!TOWNS[id])id='vashupur';
   if(townRoot){scene.remove(townRoot);disposeTree(townRoot)}
-  Object.assign(G,{colliders:[],triggers:[],pick:[],npcs:[],zones:[],buildings:[],rooms:{},beans:[],seats:[],chairs:[],blocked:[],camCols:[],cranes:[],extraNPCs:[],noGrass:[],grassPolys:[],mapPolys:[],zebras:[],noLamp:[]});
+  Object.assign(G,{colliders:[],triggers:[],pick:[],npcs:[],zones:[],buildings:[],rooms:{},beans:[],seats:[],chairs:[],blocked:[],camCols:[],cranes:[],extraNPCs:[],noGrass:[],grassPolys:[],mapPolys:[],zebras:[],noLamp:[],stands:[],patrols:[]});
   for(const k of Object.keys(W))delete W[k];
   curTown=id;G.TOWN=id;LS.set('ow_town',id);const T=TOWNS[id];party=false;evPhase=-1;tour=null;closeDlg&&$('.ow-dlg')&&closeDlg();
   townRoot=new THREE.Group();scene.add(townRoot);lazy=[];
-  if(drone.on)setDrone(false);buildWorld(townRoot);spawnTown(townRoot);fire.reset(townRoot,T,id);traffic.reset(townRoot,T,id);
+  if(drone.on)setDrone(false);buildWorld(townRoot);spawnTown(townRoot);fire.reset(townRoot,T,id);traffic.reset(townRoot,T,id);stadium=G.stands.length?makeStadium({scene:townRoot,snd,bubble,toast,P,camera}):null;
   W.ground.material=groundMaterial(!!T.snow);W.clouds.visible=false;W.sun.visible=false;
   if(T.snow){const n=1600,v=new Float32Array(n*3);for(let i=0;i<n;i++){v[i*3]=(Math.random()-.5)*70;v[i*3+1]=Math.random()*26;v[i*3+2]=(Math.random()-.5)*70}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(v,3));W.snow=new THREE.Points(g,new THREE.PointsMaterial({color:'#ffffff',size:.12,transparent:true,opacity:.85,depthWrite:false}));townRoot.add(W.snow)}
   const old=grass.U.uMask.value;grass.U.uMask.value=makeMask(T.roads.map(r=>r[4]==='x'?[r[0],r[1],r[2]-2.3,r[3]+2.3]:[r[0]-2.3,r[1]+2.3,r[2],r[3]]),T.b);if(old&&old!==grass.U.uMask.value)old.dispose();
@@ -186,7 +187,7 @@ function lazyTick(){if(!fontsOK||!lazy.length)return;const t0=performance.now();
   if(lazyT<=0){lazyT=15;const p=P.world==='out'?(drone.on?drone.focus:P.pos):(G.rooms[P.world]?_v.set(G.rooms[P.world].spawn.x,0,G.rooms[P.world].spawn.z):P.pos);for(const e of lazy)e.d=distOf(e,p);lazy.sort((a,b)=>a.d-b.d)}
   const budget=lazy[0].d<60?6:3;while(lazy.length&&performance.now()-t0<budget){const e=lazy.shift();drawTex(e.t)}}
 /* ---- drone view: free flight over the town, the player waits where they stood ---- */
-let fire=null,traffic=null;const drone={on:false,pos:new THREE.Vector3(),vel:new THREE.Vector3(),focus:new THREE.Vector3(),up:0,down:0,saved:null};
+let fire=null,traffic=null,stadium=null;const drone={on:false,pos:new THREE.Vector3(),vel:new THREE.Vector3(),focus:new THREE.Vector3(),up:0,down:0,saved:null};
 function bubbleNear(x,z,lines){const c=G.npcs.filter(n=>n.c&&n.c.visible&&!n.hidden&&n.kind!=='dog'&&n.kind!=='cat'&&Math.hypot(n.c.position.x-x,n.c.position.z-z)<36).slice(0,3);c.forEach((n,i)=>bubble(n,lines[i%lines.length]))}
 function setDrone(on){if(on&&P.world!=='out'){toast('DRONE','The drone only flies outside.');return}
   drone.on=on;root.classList.toggle('drone',on);const b=$('.ow-drone');b.setAttribute('aria-pressed',on?'true':'false');b.setAttribute('aria-label',on?'Land the drone':'Drone view');
@@ -485,7 +486,7 @@ function ambientTick(dt,T){if(W.searchlights)for(const g of W.searchlights)g.rot
 
 /* ================= NPCs ================= */
 function npcTick(dt,T){const px=P.pos.x,pz=P.pos.z,now=performance.now(),FC=drone.on?drone.focus:P.pos,FR=drone.on?95:75,FI=fire&&fire.active;
-  for(const n of G.npcs){const c=n.c,p=c.position;const far=Math.hypot(p.x-FC.x,p.z-FC.z)>FR;c.visible=!far&&!n.hidden;if(far&&!(n.panic>0))continue;
+  for(const n of G.npcs){const c=n.c,p=c.position;const far=Math.hypot(p.x-FC.x,p.z-FC.z)>(n.far||FR);c.visible=!far&&!n.hidden;if(far&&!(n.panic>0))continue;
     let sp=0,em=n.emote||null;
     if(n.panic>0){n.panic-=dt;if(FI&&!n.sit&&!n.lie&&n.kind!=='guide'){const dx=p.x-FI.x,dz=p.z-FI.z,d=Math.hypot(dx,dz)||1;if(d<44){sp=6.5;p.x+=dx/d*sp*dt;p.z+=dz/d*sp*dt;turn(c,Math.atan2(dx,dz),dt)}if(c.userData.legL)anim(c,dt,{speed:sp});continue}}
     if(n.kind==='wander'&&!party){if(n.faceT>0){n.faceT-=dt}else if(n.pause>0){n.pause-=dt}else{const t=n.path[n.pi];const dx=t[0]-p.x,dz=t[1]-p.z,d=Math.hypot(dx,dz);if(d<.4){n.pi=(n.pi+1)%n.path.length;if(Math.random()<.35)n.pause=1.5+Math.random()*3}else{sp=n.speed;p.x+=dx/d*sp*dt;p.z+=dz/d*sp*dt;turn(c,Math.atan2(dx,dz),dt)}}}
@@ -500,7 +501,7 @@ function npcTick(dt,T){const px=P.pos.x,pz=P.pos.z,now=performance.now(),FC=dron
     else if(n.kind==='dog'){const dx=px-p.x,dz=pz-p.z,d=Math.hypot(dx,dz);if(P.world==='out'&&d<14&&d>2.4){sp=Math.min(9,d*1.4);p.x+=dx/d*sp*dt;p.z+=dz/d*sp*dt;turn(c,Math.atan2(dx,dz),dt)}c.children[0].position.y=sp?Math.abs(Math.sin(T*14))*.08:0;continue}
     else if(n.kind==='cat'){continue}
     if(party&&(n.kind==='wander'||n.kind==='crowd'||n.kind==='chase')&&P.world==='out'){const pa=W.partyAt||[0,0],a=(n.ci||G.npcs.indexOf(n))*.7,tx=pa[0]+Math.cos(a)*(6+(a%3)),tz=pa[1]+Math.sin(a)*(6+(a%3)),dx=tx-p.x,dz=tz-p.z,d=Math.hypot(dx,dz);if(d>.5&&n.kind!=='crowd'){sp=5;p.x+=dx/d*sp*dt;p.z+=dz/d*sp*dt;turn(c,Math.atan2(dx,dz),dt)}else em='dance'}
-    if(n.lie){c.rotation.x=-Math.PI/2;p.y=.3}
+    if(n.lie){c.rotation.x=-Math.PI/2;p.y=(n.ly||0)+.3}
     if(c.userData.legL)anim(c,dt,{speed:sp,sit:n.sit&&!sp,emote:sp?null:em})}}
 function turn(c,ty,dt){let d=ty-c.rotation.y;d=Math.atan2(Math.sin(d),Math.cos(d));c.rotation.y+=d*Math.min(1,dt*8)}
 const STOPS=[{p:[[-120,141.5]],t:'Welcome to Vashupur, the capital. This is the bus stand: buses to all five other towns leave from here.'},
@@ -526,7 +527,7 @@ function guideTick(n,dt){const c=n.c,p=c.position;if(!tour){const dx=-120-p.x,dz
   return 0}
 
 /* ================= events: rally & concert ================= */
-function eventTick(dt,T){if(!W.event){snd.setScene({concert:0,rally:false,party:party&&P.world==='out'&&Math.hypot(P.pos.x-(W.partyAt||[0,0])[0],P.pos.z-(W.partyAt||[0,0])[1])<40,indoor:P.world!=='out'?P.world:null});return}const ph=Math.floor(Date.now()/120000)%2;if(ph!==evPhase){evPhase=ph;setPhase()}
+function eventTick(dt,T){if(!W.event){const sm=stadium?stadium.tick(dt,T):null;snd.setScene({concert:sm&&sm.concert?1:0,rally:!!(sm&&sm.rally),party:!!(sm&&sm.party)||party&&P.world==='out'&&Math.hypot(P.pos.x-(W.partyAt||[0,0])[0],P.pos.z-(W.partyAt||[0,0])[1])<40,indoor:P.world!=='out'?P.world:null});return}const ph=Math.floor(Date.now()/120000)%2;if(ph!==evPhase){evPhase=ph;setPhase()}
   const E=W.event,d=Math.hypot(P.pos.x-E.x,P.pos.z-E.z);const near=P.world==='out'&&d<24;
   W.stageLights.forEach((m,i)=>{const k=evPhase===1?(Math.sin(T*(RM?.5:2)+i)*.5+.5):.15;m.material.color.setHSL((i/5+(evPhase===1?T*.05:0))%1,.9,.3+.4*k)});
   if(evPhase===0){rallyT-=dt;if(near&&rallyT<=0){rallyT=4.6;const line=RALLY[rallyI%RALLY.length];rallyI++;sub('Shri Vaada Kumar',line);snd.gibber(line.length);W.crowd.forEach(c=>{c.emote=Math.random()<.5?'clap':null});if(P.state==='sit'&&P.seat&&P.seat.event){heard++;if(heard>=5)G.host.egg('ow_rally','You sat through a whole rally. Patience: maxed.')}}if(!near)sub(null)}
