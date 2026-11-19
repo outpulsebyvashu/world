@@ -152,7 +152,7 @@ export function makeTraffic(ctx){const {P,snd}=ctx;let root=null,TD=null,net=nul
     if(v.mode==='board'){v.mode='rev';v.reverse=true;v.i=0;v.path=[{x:b.x,z:166.4}];endBoard(v);honk(v);return}
     if(v.mode==='rev'){v.reverse=false;b.busy=false;v.bay=null;v.mode='leave';v.i=0;v.path=[{x:b.x-6,z:169.3},{x:-161.5,z:169.3},{x:-165.6,z:165},{x:-165.9,z:148},{x:-165.9,z:126.5}];return}
     if(v.mode==='leave'){v.mode=null;v.fromStop=true;v.path=[];if(!newRoute(v))v.wait=1}}
-  function honk(v){const d=Math.hypot(P.pos.x-v.p.x,P.pos.z-v.p.z);if(P.world==='out'&&d<95)snd.sample(Math.random()<.5?'sfx/horn1.mp3':'sfx/horn2.mp3',Math.max(.15,1-d/100)*.8,pan(v.p.x,v.p.z))}
+  function honk(v){const k=standNear(),d=Math.hypot(P.pos.x-v.p.x,P.pos.z-v.p.z);if(k>0)snd.sample(Math.random()<.5?'sfx/horn1.mp3':'sfx/horn2.mp3',k*Math.max(.3,1-d/90)*.8,pan(v.p.x,v.p.z))}
   function pan(x,z){const c=ctx.camera;if(!c)return 0;const dx=x-c.position.x,dz=z-c.position.z,d=Math.hypot(dx,dz)||1;const rx=Math.cos(-c.rotation.y),rz=Math.sin(-c.rotation.y);return Math.max(-.8,Math.min(.8,(dx*rx+dz*rz)/d))}
   /* passengers walk from the concourse to the door; the conductor waves them in */
   function board(v){const b=v.bay,door={x:b.x-1.7,z:155.2};const cd=makeChar(Object.assign({seed:77},CONDUCTOR));cd.position.set(b.x-2.3,0,154.2);cd.rotation.y=Math.PI*.75;root.add(cd);v.cond=cd;
@@ -163,9 +163,11 @@ export function makeTraffic(ctx){const {P,snd}=ctx;let root=null,TD=null,net=nul
     riders=riders.filter(r=>{if(r.delay>0){r.delay-=dt;anim(r.c,dt,{});return true}const c=r.c,dx=r.to.x-c.position.x,dz=r.to.z-c.position.z,d=Math.hypot(dx,dz);
       if(d<.35){root.remove(c);return false}const st=Math.min(d,r.sp*dt);c.position.x+=dx/d*st;c.position.z+=dz/d*st;c.rotation.y=Math.atan2(dx,dz);anim(c,dt,{speed:r.sp});return true});
     /* the stand is loud: crowd underneath, vendors calling out at random */
-    const dc=Math.hypot(P.pos.x-stand.c.x,P.pos.z-stand.c.z),near=P.world==='out'?Math.max(0,Math.min(1,1-(dc-25)/70)):0;snd.bed('sfx/crowd.mp3',near*.55);
+    /* only inside the stand (fades out within a few metres of its edge) */
+    const near=standNear();snd.bed('sfx/crowd.mp3',near*.55);
     stand.vT-=dt;if(stand.vT<=0){stand.vT=2.2+Math.random()*4;if(near>0){const vend=[[-141,134.6,[1,2,3]],[-111,134.6,[4,5,6]],[-152,141,[1,2,3,4,5,6]]][Math.floor(Math.random()*3)];
-      const k=vend[2][Math.floor(Math.random()*vend[2].length)],dv=Math.hypot(P.pos.x-vend[0],P.pos.z-vend[1]);if(dv<70)snd.sample('sfx/vendor'+k+'.mp3',Math.max(.12,1-dv/70)*.75,pan(vend[0],vend[1]))}}}
+      const k=vend[2][Math.floor(Math.random()*vend[2].length)],dv=Math.hypot(P.pos.x-vend[0],P.pos.z-vend[1]);snd.sample('sfx/vendor'+k+'.mp3',near*Math.max(.35,1-dv/90)*.75,pan(vend[0],vend[1]))}}}
+  function standNear(){if(P.world!=='out')return 0;const x=P.pos.x,z=P.pos.z,o=Math.max(0,-169.6-x,x+84,130-z,z-174.4);return Math.max(0,Math.min(1,1-o/7))}
   function tick(dt,T,w){if(!root)return;W=w;if(stand)standTick(dt,T);
     peds=[];if(P.world==='out')peds.push({x:P.pos.x,z:P.pos.z,player:true});for(const n of G.npcs){if(!n.c||!n.c.visible||n.hidden||n.kind==='static')continue;const p=n.c.position;if(onRoad(p.x,p.z))peds.push({x:p.x,z:p.z})}
     for(const v of V)vehTick(v,dt,T);for(const v of V){place(v,dt,T);pushPlayer(v)}

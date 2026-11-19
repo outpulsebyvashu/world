@@ -49,12 +49,7 @@ export function buildDistricts(scene,ctx){const {S,WIN,LMP,building,addPlane,ben
   if(on('vashupur')){const cpR=mark(scene,RB);const p=prop(S,14.2,0,-20.6);p.box(0,.2,0,2.6,.4,2.6,'#e6e1d6');p.box(0,.55,0,2,.3,2,'#e6e1d6');p.box(0,5.7,0,1,10,1,'#f4efe6');p.box(0,1.6,0,1.3,1.8,1.3,'#f4efe6');
    p.box(0,9.2,0,1.08,.5,1.08,'#ff9933');p.box(0,8.7,0,1.08,.5,1.08,'#ffffff');p.box(0,8.2,0,1.08,.5,1.08,'#138808');p.box(0,10.9,0,1.4,.3,1.4,'#e6e1d6');p.cone(0,11.6,0,.7,1.2,'#e6e1d6',4);
    col(12.9,15.5,0,11,-21.9,-19.3);addPlane(scene,1.25,.5,signTex('JAI STAMBH CHOWK','#141414','#ffcc3a',512,128),[14.2,1.7,-19.94],0,null);move(cpR,[0,0],[2.8,3.6],0,[])}
-  if(on('vashupur')){const cpR=mark(scene,RB);if(G.LOT)building({name:'Spreewalk',x0:-22,x1:-16,z0:-30.5,z1:-26.5,h:3,door:{side:'s',at:-19}});else{const k=prop(S,-19,0,-28.6);k.box(0,1.5,0,4,3,3,'#e94b3c');k.box(0,3.1,0,4.6,.25,3.6,'#ffffff');k.box(0,1.1,1.6,3.6,.12,.6,'#ffffff');k.box(0,1.9,1.52,3,1.3,.06,'#3a1a10');
-   k.cyl(0,4.1,0,1.3,1.3,.4,'#d9963b',18);k.cyl(0,3.8,0,1.35,1.35,.2,'#6b3e22',18);k.cyl(0,3.62,0,1.45,1.45,.12,'#ffcc3a',18);k.cyl(0,3.5,0,1.4,1.4,.12,'#4caf50',18);k.cyl(0,3.32,0,1.3,1.3,.24,'#d9963b',18);
-   col(-21,-17,0,3.3,-30.1,-27.1);for(const x of[-20.2,-17.8])cyl(S,x,.38,-26.2,.24,.2,.06,'#e94b3c',12);addPlane(scene,3.6,.6,signTex('SPREEWALK · COMING SOON','#ffffff','#e94b3c',512,90),[-19,2.75,-27.04],0,null);
-   info(-19,-25.8,0,1.6,'Spreewalk (coming soon)',{n:'Spreewalk',tag:'Future venture',st:'Planned',d:'A burger kiosk planned for Marine Drive, Raipur. Smash patties, quick lines, lakefront vibes.',href:'',color:'#e94b3c'});}
-   blk(S,-28,-11,0,.06,-34.6,-31.4,'#3fa7e0',false);rails(S,-28,-11,-31.3,-31.3,0,1,'#9aa3ad',.8);col(-28,-11,0,1.1,-31.5,-31.2);for(let x=-27;x<-11;x+=4)lantern(S,WARM,x,1.4,-31.3);
-   addPlane(scene,3.4,.6,signTex('MARINE DRIVE','#1f7a4c','#ffffff',512,90),[-13.4,1.6,-31.1],0,null);BL(-29,-10,-35,-26);move(cpR,[-19.5,-30.5],[145.6,155.1],2,[])}
+  /* Spreewalk moved to its kiosk at Choupati; Marine Drive is gone from the map */
   // police station
   if(on('vashupur')){const cpR=mark(scene,RB);outs.police=building({real:true,name:'City Kotwali',short:'City Kotwali',x0:16,x1:34,z0:-46,z1:-31,h:7,col:'#f4f1ea',trim:'#1d3f8f',door:{side:'s',at:25},room:'police',win:false,awn:false,doorCol:'#1d3f8f'});
   {const b={x0:16,x1:34,z0:-46,z1:-31},F=fac(b,'s');F.box(S,25,3.6,.05,18,.35,.12,'#1d3f8f');F.box(S,25,3.95,.05,18,.2,.12,'#c62828');

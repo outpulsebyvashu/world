@@ -7,6 +7,7 @@ import {TOWNS} from './towns.js';
 import {mark,move} from './relocate.js';
 import {inst,flushInst} from './inst.js';
 import {buildLandmarks,extraRooms} from './landmarks.js';
+import {mallRooms,spawnPatrols} from './v5.js';
 import {buildDowntown} from './downtown.js';
 export const W={};
 const PJ=n=>PROJECTS.find(p=>p.n===n)||{n,tag:'',st:'',d:'',href:'',color:'#f4efe6'};
@@ -238,7 +239,7 @@ if(on('memepura')){bench(52,46,0);bench(78,56,-Math.PI/2);bench(64,80,Math.PI)}i
 /* =================== interiors =================== */
 function buildRooms(scene,S,RW,WIN,outs){
   let RX=600;
-  const LIVE={vashupur:['police','fire','cafe','home','labs','boring','resA','resB','resFloor','resFlat','jail','meow'],kaapikunj:['kunj'],delulugarh:['nth','nthlab']};
+  const LIVE={vashupur:['police','fire','labs','boring','resA','resB','resFloor','resFlat','jail','meow','museum','mallG','mall1','mall2','mall3'],kaapikunj:['kunj'],delulugarh:['nth','nthlab']};
   const LMAT=new THREE.MeshLambertMaterial({vertexColors:true}),BMAT=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.BackSide});
   /* rooms are registered now but only built the first time someone walks in */
   const room=(id,o,fill)=>{if(G.LOT&&!(LIVE[G.TOWN]||[]).includes(id))return null;const cx=RX;RX+=80;const w=o.w,d=o.d,h=o.h||5.5,x0=cx-w/2,x1=cx+w/2,z0=-d/2,z1=d/2;
@@ -339,6 +340,7 @@ function buildRooms(scene,S,RW,WIN,outs){
     R.npc({name:'EV Advisor Rohan',x:cx+3,z:2.2,yaw:Math.PI,look:{shirt:'#d7263d',pants:'#141414',hair:'short',face:'grin',logo:'#ffffff'},emote:'talk',lines:['Range anxiety? Never heard of her.','600W belt drive. Silent. Smooth. Zero petrol bills.','Test ride? Find all 8 beans and the one parked outside HQ is yours.'],barks:['Zero emissions!','Test ride?']})});
 
   extraRooms(room,{scene,addPlane,posterTex,npc,W,outs});
+  if((G.TOWN||'vashupur')==='vashupur')mallRooms(room,{scene,addPlane,posterTex,npc,W,outs});
 }
 function model(b,n,c){
   if(n==='OS-NEKO'){bx(b,0,.45,0,.8,.55,.9,'#16224a');bx(b,0,.85,.1,.6,.35,.5,'#f4efe6');for(const s of[-1,1]){bx(b,s*.18,1.1,.1,.12,.18,.08,'#16224a');for(const z of[-.3,.3]){const g=new THREE.CylinderGeometry(.14,.14,.1,10);g.rotateZ(Math.PI/2);g.translate(s*.42,.16,z);b.add(g,'#1d1d1d')}}bx(b,-.12,.88,.36,.08,.08,.02,'#3bd1ff');bx(b,.12,.88,.36,.08,.08,.02,'#3bd1ff')}
@@ -352,7 +354,7 @@ export function npc(scene,cfg){const c=makeChar(Object.assign({seed:Math.floor(M
   const n=Object.assign({c,kind:'static',speed:0,pi:0,pause:0,emote:cfg.emote||null},cfg);if(cfg.sit){c.position.y+=.18}
   c.traverse(o=>{if(o.isMesh)o.userData.npc=n});c.userData.tap=()=>G.talk(n);c.userData.reach=4;G.pick.push(c);G.npcs.push(n);return n}
 export function spawnTown(scene){const T=G.TOWN||'vashupur',on=(...a)=>a.includes(T);
-  (G.extraNPCs||[]).forEach(c=>npc(scene,c));
+  (G.extraNPCs||[]).forEach(c=>npc(scene,c));spawnPatrols(scene,npc);
   const LOOPS={vashupur:[[[-160,28.5],[-62,28.5],[-62,93],[-160,93]],[[12,9],[165,9],[165,-9],[12,-9]],[[-12,9],[-178,9],[-178,-9],[-12,-9]]],
     memepura:[[[18,6],[96,6],[96,-6],[18,-6]],[[48,48],[80,48],[82,80],[48,82]],[[20,6],[60,6],[60,25],[20,25]]],
     kaapikunj:[[[-18,6],[-72,6],[-72,-6],[-18,-6]]],basti:[[[6,18],[6,90],[-6,90],[-6,18]]],barfii:[[[-34,6],[-70,6],[-70,-6],[-34,-6]]],

@@ -3,13 +3,13 @@
 const PI=Math.PI;
 export const ORDER=['vashupur','kaapikunj','memepura','basti','barfii','delulugarh'];
 export const TOWNS={
-  vashupur:{ready:true,name:'Vashupur',tag:'The capital. Outpulse Labs, TOKI, the National Stadium, Central Jail, Meow Club and the bus stand.',color:'#ff6a3d',
+  vashupur:{ready:true,name:'Vashupur',tag:'The capital. Lolu Mall, PM House, Choupati, the Outpulse Museum, the National Stadium and the bus stand.',color:'#ff6a3d',
     b:[-186,172,-111,176],scale:1.89,
     roads:[[-186,172,-7.5,7.5,'x'],[-7.5,7.5,-111,97.1,'z'],[-7.5,7.5,141.5,176,'z'],[-186,-22.2,112,127,'x'],[22.2,172,112,127,'x']],road:{w:15,side:3},
     round:{x:0,z:119.5,r0:14.1,r1:22.2},busStand:true,
     bus:{x:-127,z:140},spawn:{x:-121,z:128.8,yaw:0},scooter:[-100,133,Math.PI/2],
     plots:[],
-    zones:[['Signal Chowk',-18,18,-18,18],['Roundabout',-28,28,92,147],['Outpulse Residential Towers',-186,-10.5,-111,-10.5],['Central Jail',106,171,-110,-12.7],['National Stadium',-180.3,-42.6,12,106.6],['Stadium Parking',-42.6,-10.5,10.7,95.7],['Outpulse Labs',10.7,110,10.6,109],['TOKI',110,172,10.6,59.6],['The Boring Wear',110,172,59.6,109],['Bus Stand',-172,-84,127,176],['Fire Station',-84,-46.5,129,176],['City Kotwali',-46.5,-10.5,129,176],['Meow Club',10.5,61,129,176],['Marine Drive',130,160,148,162]],
+    zones:[['Signal Chowk',-18,18,-18,18],['Roundabout',-28,28,92,147],['Outpulse Residential Towers',-186,-10.5,-111,-10.5],['Lolu Mall',10.5,106,-111,-10.5],['Central Jail',106,171,-110,-12.7],['National Stadium',-180.3,-42.6,12,106.6],['Stadium Parking',-42.6,-10.5,10.7,95.7],['Outpulse Labs',10.7,110,10.6,109],['PM House',110,172,10.6,59.6],['The Boring Wear',110,172,59.6,109],['Bus Stand',-172,-84,127,176],['Fire Station',-84,-46.5,129,176],['City Kotwali',-46.5,-10.5,129,176],['Meow Club',10.5,61,129,176],['Choupati',61,111.7,129,176],['Outpulse Museum',111.7,172,129,176]],
     trees:70,flora:'mix'},
   kaapikunj:{ready:true,name:'Kaapikunj',tag:'Coffee town. The café strip, the coffee estate and Vedshree Kunj.',color:'#8b6a4a',
     b:[-78,-8,-52,26],
@@ -54,7 +54,7 @@ export const BEANS=[
   {t:'vashupur',p:[0,1.95,119.5]},
   {t:'vashupur',p:['meow',7.6,1.75,-5.2]},
   {t:'kaapikunj',p:[-31,.9,-24.5]},
-  {t:'vashupur',p:['home',-5.6,1.3,-4.4]},
+  {t:'vashupur',p:['mall2',13.9,1.0,6.9]},
   {t:'memepura',p:[64,.9,57.4]},
   {t:'basti',p:[-28,1.7,61.5]},
   {t:'barfii',p:[-88,.9,17]},

@@ -4,6 +4,7 @@ import {TOWNS,ORDER} from './towns.js';
 import {mark,move} from './relocate.js';
 import {COOKING} from './lots.js';
 import {STORY,NUMS,ROLES,SKILLS} from './data.js';
+import {pmHouse,loluMall,choupati,museumGrounds} from './v5.js';
 const PI=Math.PI;
 const rot=(b,lx,lz)=>{const c=Math.cos(b.ry),s=Math.sin(b.ry);return[b.x+lx*c+lz*s,b.z-lx*s+lz*c]};
 const aabb=(x,z,w,d,ry)=>{const sw=Math.abs(Math.sin(ry))>.5;const hw=(sw?d:w)/2,hd=(sw?w:d)/2;return[x-hw,x+hw,z-hd,z+hd]};
@@ -45,7 +46,7 @@ function museum(scene,ctx){const {S,WIN,LMP,addPlane,W}=ctx;const st='#efe4cc',d
   for(const x of[-5.2,-2,2,5.2]){cyl(S,x,3.6,-28.8,.36,.42,6,'#f6eedc',14);col(x-.42,x+.42,0,6.6,-29.2,-28.4);bx(S,x,6.7,-28.8,1,.3,1,dk)}
   blk(S,-6.4,6.4,6.6,7.5,-31,-28.1,st,false);bx(S,0,7.6,-28.2,12.8,.2,.25,rd);
   const sh=new THREE.Shape([new THREE.Vector2(-6.4,0),new THREE.Vector2(6.4,0),new THREE.Vector2(0,1.7)]);const pg=new THREE.ExtrudeGeometry(sh,{depth:2.9,bevelEnabled:false});pg.translate(0,7.5,-31);S.add(pg,st);
-  addPlane(scene,8.2,.82,signTex('VASHU MUSEUM','#efe4cc','#5a3b1e',1024,104),[0,7.05,-28.06],0,null);
+  addPlane(scene,8.2,.82,signTex('OUTPULSE MUSEUM','#efe4cc','#5a3b1e',1024,104),[0,7.05,-28.06],0,null);
   // central dome on a drum + four chhatris
   cyl(S,0,10.6,-37.5,4.3,4.3,2.6,st,28);for(let a=0;a<PI*2;a+=PI/8)bx(WIN,Math.cos(a)*4.32,10.6,-37.5+Math.sin(a)*4.32,.5,1.2,.5,'#ffffff',-a);
   const dg=new THREE.SphereGeometry(4.5,28,14,0,PI*2,0,PI/2);dg.scale(1,1.15,1);dg.translate(0,11.9,-37.5);S.add(dg,'#f3ead6');cyl(S,0,11.9,-37.5,4.6,4.6,.3,dk,28);
@@ -56,8 +57,8 @@ function museum(scene,ctx){const {S,WIN,LMP,addPlane,W}=ctx;const st='#efe4cc',d
   for(const s of[-1,1]){blk(S,s*7,s*11.5,0,.06,-28,-24.5,'#6dbb5c',false);pot(S,s*6.6,-25.6,'#9c4a2f','#3f9b4a',.7)}
   for(const s of[-1,1]){const x=s*8.6;blk(S,x-.08,x+.08,0,5,-25.4,-25.2,'#3a2a1a');const bn=new THREE.Mesh(new THREE.PlaneGeometry(1.1,2.4),new THREE.MeshLambertMaterial({map:signTex('MUSEUM','#9c4a2f','#efe4cc',128,280),side:THREE.DoubleSide}));bn.position.set(x+s*.6,3.6,-25.3);scene.add(bn)}
   col(-11,11,0,18,-44,-31);
-  G.triggers.push({x:0,z:-29.2,y:.6,r:2.2,label:'Enter the Vashu Museum',act:()=>G.enter('museum')});
-  G.buildings.push({name:'Vashu Museum',short:'Museum',x0:-11,x1:11,z0:-44,z1:-28,col:'#efe4cc',door:{x:0,z:-24.6},room:'museum'});
+  G.triggers.push({x:0,z:-29.2,y:.6,r:2.2,label:'Enter the Outpulse Museum',act:()=>G.enter('museum')});
+  G.buildings.push({name:'Outpulse Museum',short:'Museum',x0:-11,x1:11,z0:-44,z1:-28,col:'#efe4cc',door:{x:0,z:-24.6},room:'museum'});
   G.blocked.push([-13,13,-47,-23]);
   return{x:0,z:-24.8,fx:0,fz:1}}
 
@@ -326,7 +327,10 @@ export function buildLandmarks(scene,ctx){const {on}=ctx;const outs={};G.blocked
   if(on('vashupur')){Object.assign(outs,residences(scene,ctx));stadium(scene,ctx);parkingLot(scene,ctx);outs.jail=centralJail(scene,ctx);outs.meow=meowClub(scene,ctx);
     /* paved forecourt in front of City Kotwali */
     blk(ctx.S,-44,-12,0,.05,130,141.4,'#d6d2c8',false);G.noGrass.push([-46,-10.5,129.5,141.6]);
-    vashupurStreets(scene,ctx);outs.labs=outpulseLabs(scene,ctx);outs.boring=boringWear(scene,ctx)}
+    vashupurStreets(scene,ctx);outs.labs=outpulseLabs(scene,ctx);outs.boring=boringWear(scene,ctx);
+    /* final map: PM House, Lolu Mall, Choupati, Outpulse Museum */
+    pmHouse(scene,ctx);outs.mallG=loluMall(scene,ctx);choupati(scene,ctx);museumGrounds(scene,ctx);
+    {const cpM=mark(scene,[ctx.S,ctx.WIN,ctx.LMP]);outs.museum=museum(scene,ctx);move(cpM,[0,-36],[141,152],2,[outs.museum])}}
   return outs}
 
 /* =================== Vashupur map v4: National Stadium, parking, Central Jail, Meow Club =================== */
@@ -447,11 +451,11 @@ export function extraRooms(room,env){const {scene,addPlane,posterTex,npc,outs}=e
   const model=(fn)=>{const b=new Batch();fn(b);const m=b.mesh(CHM);m.castShadow=true;return m};
 
   /* ---------- Vashu Museum ---------- */
-  room('museum',{name:'Vashu Museum',w:28,d:22,h:9,wall:'#f2ead9',floor:'#d8cdb8',trim:'#9c4a2f',light:'#fff6e6'},R=>{const {cx,x0,x1,z0,z1,S,WIN}=R;
+  room('museum',{name:'Outpulse Museum',w:28,d:22,h:9,wall:'#f2ead9',floor:'#d8cdb8',trim:'#9c4a2f',light:'#fff6e6'},R=>{const {cx,x0,x1,z0,z1,S,WIN}=R;
     for(let i=0;i<7;i++)for(let j=0;j<6;j++)blk(S,x0+i*4,x0+i*4+4,0,.015,z0+j*(22/6),z0+(j+1)*(22/6),(i+j)%2?'#efe7d8':'#d6cab3',false);
     for(const x of[cx-9.5,cx+9.5])for(const z of[-6,0,6]){cyl(S,x,4.5,z,.45,.5,9,'#f6eedc',14);bx(S,x,.2,z,1.2,.4,1.2,'#cdbb95');bx(S,x,8.8,z,1.2,.4,1.2,'#cdbb95');col(x-.5,x+.5,0,9,z-.5,z+.5)}
     for(let x=x0+2;x<x1-1;x+=4)bx(WIN,x,8.9,0,.6,.06,.6,'#ffffff');
-    R.back(0,6.9,11,1.7,signTex('VASHU MUSEUM · EST. 2023','#9c4a2f','#efe4cc',1024,158),null);
+    R.back(0,6.9,11,1.7,signTex('OUTPULSE MUSEUM','#9c4a2f','#efe4cc',1024,158),null);
     R.back(0,3.6,7.2,3.1,posterTex({w:768,h:330,bg:'#2b2118',fg:'#f3e9d2',kicker:'The story',title:'Cup first, then the numbers.',big:44,body:STORY,bs:17}),()=>G.card({n:'The story',tag:'Vashudev Sharma',st:'',d:STORY,href:'',color:'#2b2118'}),{reach:9});
     // rotunda: gold statue on a plinth, velvet ropes
     cyl(S,cx,.45,-1.5,2.3,2.5,.9,'#cdbb95',28);cyl(S,cx,.92,-1.5,2.2,2.2,.06,'#9c4a2f',28);col(cx-2.3,cx+2.3,0,.9,-3.8,.8);

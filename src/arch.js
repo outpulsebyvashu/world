@@ -76,35 +76,6 @@ export function buildArch(scene,ctx){const {S,WIN,LMP,building,addPlane,bench,mo
    const holo2=new THREE.Mesh(new THREE.TorusGeometry(2.3,.12,8,40),holo.material);holo2.position.copy(holo.position);scene.add(holo2);ctx.W.holo=[holo,holo2];cyl(S,-6,15.4,-41,1.2,1.4,.8,'#dfe3e8',16);
    addPlane(scene,18,3,signTex('OUTPULSE LABS','#141414','#3bd1ff',1024,170),[0,12.6,-23.86],0,null)}
 
-  /* ===== TOKI — Japanese-minimal specialty coffee + studio above ===== */
-  if(on('vashupur')){const cpT=mark(scene,[S,WIN,LMP,WARM,NEON,GL]);outs.cafe=building({real:true,name:'TOKI',short:'TOKI',x0:-40,x1:-22,z0:-22,z1:-8,h:4.2,col:'#f3eee6',trim:'#8b6a4a',door:{side:'s',at:-31},room:'cafe',roof:'none',win:false,awn:false,band:false,doorCol:'#5a3f2a'});
-  {const b={x0:-40,x1:-22,z0:-22,z1:-8},F=fac(b,'s');
-   for(let u=-39.7;u<-22.2;u+=.32){if(Math.abs(u+31)<1.3)continue;if(u>-37.6&&u<-32.6)continue;if(u>-29.4&&u<-24.4)continue;F.box(S,u,2.1,.08,.14,4.2,.12,'#c89b6d')}
-   for(const u0 of[-35.1,-26.9]){F.box(WIN,u0,1.9,.04,4.8,2.9,.08,'#ffffff');F.box(S,u0,.25,.12,5,.5,.25,'#8b6a4a');F.box(S,u0,3.4,.12,5,.14,.2,'#5a3f2a');F.box(S,u0,1.9,.12,.1,2.9,.12,'#5a3f2a')}
-   blk(S,-40.4,-21.6,4.05,4.25,-22.4,-7.4,'#3b3f46',false);bx(S,-31,4.0,-7.45,18.8,.18,.12,'#5a3f2a');
-   const nr=F.plane(scene,-31,2.1,.22,1.9,.95,norenTex());nr.material.side=THREE.DoubleSide;F.box(S,-31,2.62,.22,2.2,.06,.06,'#5a3f2a');
-   for(const u of[-33.2,-28.8])lantern(S,WARM,F.pt(u,2.6,.5)[0],2.6,-7.4);
-   blk(S,-39.6,-33,0,.08,-7.9,-6.6,'#d8d2c4',false);for(let i=0;i<9;i++)bx(S,-39.2+i*.72,.1,-7.3+(i%2)*.4,.3,.12,.22,'#9aa3ad');bx(S,-37.6,.25,-7.2,.6,.4,.5,'#7a7f86');bx(S,-35.1,.18,-7,.4,.28,.4,'#8a8f96');
-   const mp=prop(S,-24.8,0,-6.9);mp.cyl(0,1.1,0,.12,.16,2.2,'#5a3f2a',8);mp.box(0,2.5,0,1.8,1,1.6,'#d94b3b',0,0,.4);mp.box(.3,3.1,.2,1.2,.7,1.1,'#e8634f',0,0,.9);col(-25,-24.6,0,2,-7.1,-6.7);
-   const bn=prop(S,-29,0,-7.3);bn.box(0,.45,0,2,.1,.5,'#c89b6d');bn.box(-.8,.22,0,.1,.44,.4,'#5a3f2a');bn.box(.8,.22,0,.1,.44,.4,'#5a3f2a');col(-30,-28,0,.5,-7.55,-7.05);G.seats.push({x:-29,z:-7.3,y:.5,yaw:0,label:'Sit outside TOKI'});
-   const art=fac(b,'w');art.plane(scene,-15,2.2,.05,10,3.8,wallArt.waves());
-   blk(S,-38,-24,4.2,7.8,-22,-12,'#f3eee6');
-   const U=fac({x0:-38,x1:-24,z0:-22,z1:-12},'s');for(let u=-37.7;u<-24.2;u+=.32){if(Math.abs(u+31)<1)continue;if(u>-36.4&&u<-33.4)continue;if(u>-28.6&&u<-25.6)continue;U.box(S,u,6,.07,.12,3.6,.1,'#c89b6d')}
-   for(const u of[-34.9,-27.1]){U.box(WARM,u,6.1,.03,2.8,1.8,.06,'#ffffff');U.box(S,u,6.1,.08,.08,1.8,.1,'#5a3f2a');U.box(S,u,5.15,.1,3,.1,.2,'#5a3f2a')}
-   U.box(S,-31,5.4,.04,1.3,2.4,.08,'#5a3f2a');
-   gable(S,-31,-17,7.8,14,10,1.7,'#3b3f46','x',.9,'#f3eee6');
-   rails(S,-40,-22,-8.1,-8.1,4.2,1,'#5a3f2a',.45);rails(S,-39.9,-39.9,-22,-8,4.2,1,'#5a3f2a',.45);rails(S,-40,-22,-21.9,-21.9,4.2,1,'#5a3f2a',.45);rails(S,-22.1,-22.1,-12,-8,4.2,1,'#5a3f2a',.45);
-   col(-40,-22,4.2,5.25,-8.2,-8);col(-40,-39.8,4.2,5.25,-22,-8);col(-40,-22,4.2,5.25,-22,-21.8);col(-22.2,-22,4.2,5.25,-12,-8);
-   stringLights(LMP,[-39.8,5.3,-8.1],[-31,5.3,-8.1],12,.45,['#ffffff']);stringLights(LMP,[-31,5.3,-8.1],[-22.2,5.3,-8.1],12,.45,['#ffffff']);
-   for(const x of[-38.8,-36.5,-25.4,-23.2])pot({add:(g,c)=>S.add(g.translate(0,4.2,0),c)},x,-9,'#8b6a4a','#3f9b4a',.5);
-   const ch=prop(S,-29.5,4.2,-9.8);ch.box(0,.45,0,.6,.08,.6,'#c89b6d');ch.box(0,.75,-.27,.6,.55,.06,'#c89b6d');for(const a of[-.25,.25])for(const c2 of[-.25,.25])ch.box(a,.22,c2,.05,.44,.05,'#5a3f2a');G.seats.push({x:-29.5,z:-9.75,y:4.68,yaw:0,label:'Sit on the balcony'});
-   for(let i=0;i<12;i++){const y=(i+1)*.35,z0=-7-(i+1)*.67,z1=-7-i*.67;blk(S,-21.8,-20.2,0,y,z0,z1,i%2?'#c89b6d':'#b8895c')}
-   blk(S,-22.4,-20.2,0,4.2,-17.4,-15.04,'#b8895c');rails(S,-20.15,-20.15,-15.04,-7,0,1,'#5a3f2a',.67);for(let i=0;i<12;i++){}
-   col(-20.2,-20.05,0,5.4,-17.4,-7);
-   G.triggers.push({x:-31,z:-10.3,y:4.2,r:1.6,label:'Enter my studio',act:()=>G.enter('home')});
-   outs.home={x:-31,y:4.2,z:-10.6,fx:0,fz:1};G.buildings.push({name:"Vashu's studio (above TOKI)",short:'My studio',x0:-38,x1:-24,z0:-22,z1:-12,col:'#c89b6d',door:{x:-21,z:-6.4},room:'home',upper:true});
-   BL(-41,-19,-23,-5)}
-   move(cpT,[-31,-14.5],[140,31.5],2,[outs.cafe,outs.home])}
 
   /* ===== GOTHIC — dark gothic boutique ===== */
   if(on('memepura'))outs.gothic=building({name:'Gothic Bakehouse',short:'Gothic',x0:22,x1:36,z0:-22,z1:-8,h:7,col:'#2e2a2d',trim:'#1d1a1c',door:{side:'s',at:29},room:'gothic',win:false,awn:false,doorCol:'#1d1a1c'});

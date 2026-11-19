@@ -62,6 +62,7 @@ export const HUD=`
 export const CSS=`
 .ow{position:fixed;inset:0;overflow:hidden;background:#8fd0ff;touch-action:none;-webkit-user-select:none;user-select:none;font-family:"Inter Tight",system-ui,sans-serif;color:#141414;-webkit-tap-highlight-color:transparent}
 .ow-cv3{position:absolute;inset:0;width:100%;height:100%;display:block}
+.ow-yt{position:absolute;inset:0;overflow:hidden;pointer-events:none}.ow-yt iframe{position:absolute;left:0;top:0;width:1280px;height:544px;border:0;background:#000;transform-origin:0 0;pointer-events:none}
 .ow button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .ow :focus-visible{outline:3px solid #ffcc3a;outline-offset:2px}
 .ow-hud{position:absolute;inset:0;pointer-events:none}
