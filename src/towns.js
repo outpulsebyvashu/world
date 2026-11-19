@@ -3,16 +3,13 @@
 const PI=Math.PI;
 export const ORDER=['vashupur','kaapikunj','memepura','basti','barfii','delulugarh'];
 export const TOWNS={
-  vashupur:{ready:true,name:'Vashupur',tag:'The capital. Outpulse Labs, TOKI, The Boring Wear, the residential towers and the bus stand.',color:'#ff6a3d',
+  vashupur:{ready:true,name:'Vashupur',tag:'The capital. Outpulse Labs, TOKI, the National Stadium, Central Jail, Meow Club and the bus stand.',color:'#ff6a3d',
     b:[-186,172,-111,176],scale:1.89,
     roads:[[-186,172,-7.5,7.5,'x'],[-7.5,7.5,-111,97.1,'z'],[-7.5,7.5,141.5,176,'z'],[-186,-22.2,112,127,'x'],[22.2,172,112,127,'x']],road:{w:15,side:3},
     round:{x:0,z:119.5,r0:14.1,r1:22.2},busStand:true,
     bus:{x:-127,z:140},spawn:{x:-121,z:128.8,yaw:0},scooter:[-100,133,Math.PI/2],
-    plots:[[54,82,-38,-16,'s'],[118,140,-38,-16,'s'],[146,168,-38,-16,'s'],
-      ...[[14,38],[44,68],[74,98],[104,128],[134,166]].flatMap(([a,b])=>[[a,b,-104,-80,'s'],[a,b,-74,-50,'s']]),
-      ...[[-180,-158],[-154,-132],[-128,-106],[-102,-80]].flatMap(([a,b])=>[[a,b,14,38,'n'],[a,b,46,70,'s'],[a,b,78,104,'s']]),
-      [-32,-14,44,68,'e'],[-32,-14,74,96,'e'],[-48,-30,136,170,'n'],[26,50,136,168,'n'],[58,82,136,168,'n'],[90,114,136,168,'n']],
-    zones:[['Signal Chowk',-18,18,-18,18],['Roundabout',-28,28,92,147],['Town Square',-72,-34,38,76],['Outpulse Residential Towers',-186,-10.5,-111,-10.5],['Police Station',26,52,-34,-10],['Vashu Museum',84,116,-40,-10],['Outpulse Labs',10.7,110,10.6,109],['TOKI',110,172,10.6,59.6],['The Boring Wear',110,172,59.6,109],['Bus Stand',-172,-82,127,176],['Fire Station',-74,-50,130,160],['Marine Drive',130,160,148,162]],
+    plots:[],
+    zones:[['Signal Chowk',-18,18,-18,18],['Roundabout',-28,28,92,147],['Outpulse Residential Towers',-186,-10.5,-111,-10.5],['Central Jail',106,171,-110,-12.7],['National Stadium',-180.3,-42.6,12,106.6],['Stadium Parking',-42.6,-10.5,10.7,95.7],['Outpulse Labs',10.7,110,10.6,109],['TOKI',110,172,10.6,59.6],['The Boring Wear',110,172,59.6,109],['Bus Stand',-172,-84,127,176],['Fire Station',-84,-46.5,129,176],['City Kotwali',-46.5,-10.5,129,176],['Meow Club',10.5,61,129,176],['Marine Drive',130,160,148,162]],
     trees:70,flora:'mix'},
   kaapikunj:{ready:true,name:'Kaapikunj',tag:'Coffee town. The café strip, the coffee estate and Vedshree Kunj.',color:'#8b6a4a',
     b:[-78,-8,-52,26],
@@ -55,7 +52,7 @@ export const TOWNS={
 /* 8 beans across the towns. A string first item means "inside that room" (offset from room centre). */
 export const BEANS=[
   {t:'vashupur',p:[0,1.95,119.5]},
-  {t:'vashupur',p:['museum',10.6,1.6,-6.6]},
+  {t:'vashupur',p:['meow',7.6,1.75,-5.2]},
   {t:'kaapikunj',p:[-31,.9,-24.5]},
   {t:'vashupur',p:['home',-5.6,1.3,-4.4]},
   {t:'memepura',p:[64,.9,57.4]},

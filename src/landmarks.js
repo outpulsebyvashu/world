@@ -323,9 +323,114 @@ export function buildLandmarks(scene,ctx){const {on}=ctx;const outs={};G.blocked
   if(on('memepura')){memepura(scene,ctx);welcomeArch(scene,ctx,33,'MEMEPURA · VERY ONLINE','WELCOME TO MEMEPURA','#ff3b8d')}
   if(on('basti')){basti(scene,ctx);welcomeArchZ(scene,ctx,32,'WELCOME TO POLITICAL BASTI','POLITICAL BASTI · VOTE WISELY','#8b1e2d')}
   if(on('barfii')){barfii(scene,ctx);welcomeArch(scene,ctx,-44,'WELCOME TO BARFII TOWN','BARFII TOWN · SNOW & SWEETS','#3d6b8f')}
-  if(on('vashupur')){const cpM=mark(scene,[ctx.S,ctx.WIN,ctx.LMP]);outs.museum=museum(scene,ctx);G.noGrass.push([-11.5,11.5,-31,-24.6]);move(cpM,[0,0],[100,9],0,[outs.museum]);Object.assign(outs,residences(scene,ctx));
+  if(on('vashupur')){Object.assign(outs,residences(scene,ctx));stadium(scene,ctx);parkingLot(scene,ctx);outs.jail=centralJail(scene,ctx);outs.meow=meowClub(scene,ctx);
+    /* paved forecourt in front of City Kotwali */
+    blk(ctx.S,-44,-12,0,.05,130,141.4,'#d6d2c8',false);G.noGrass.push([-46,-10.5,129.5,141.6]);
     vashupurStreets(scene,ctx);outs.labs=outpulseLabs(scene,ctx);outs.boring=boringWear(scene,ctx)}
   return outs}
+
+/* =================== Vashupur map v4: National Stadium, parking, Central Jail, Meow Club =================== */
+const TIRANGA=['#ff9933','#f4f1ea','#138808'];
+function stadium(scene,ctx){const {S,WIN,LMP,addPlane}=ctx;const X0=-180.3,X1=-42.6,Z0=12,Z1=106.6,TR=[-166,-56.4,25.8,95.6],FD=[-159,-63.5,32.9,88.7],cx=-111.25,cz=60.8,CON='#cfcac0',DK='#2b2d31';
+  flatShape(S,boxPts(X0,X1,Z0,Z1,10),.03,'#e9e6df');flatShape(S,boxPts(...TR,13),.045,'#e2a72e');flatShape(S,boxPts(...FD,6),.06,'#4c9a3f');
+  for(let k=1;k<6;k++){const o=k*1.18;bx(S,cx,.052,TR[2]+o,82,.01,.07,'#ffffff');bx(S,cx,.052,TR[3]-o,82,.01,.07,'#ffffff');bx(S,TR[0]+o,.052,cz,.07,.01,44,'#ffffff');bx(S,TR[1]-o,.052,cz,.07,.01,44,'#ffffff')}
+  /* football pitch */
+  const L=(x,z,w,d)=>bx(S,x,.068,z,w,.01,d,'#ffffff');L(cx,FD[2]+.6,FD[1]-FD[0]-1.2,.14);L(cx,FD[3]-.6,FD[1]-FD[0]-1.2,.14);L(FD[0]+.6,cz,.14,FD[3]-FD[2]-1.2);L(FD[1]-.6,cz,.14,FD[3]-FD[2]-1.2);L(cx,cz,.14,FD[3]-FD[2]-1.2);
+  {const g=new THREE.RingGeometry(9.05,9.25,48);g.rotateX(-PI/2);g.translate(cx,.068,cz);S.add(g,'#ffffff')}
+  for(const s of[-1,1]){const gx=s<0?FD[0]+.6:FD[1]-.6,px=gx-s*16.5;L(px,cz,.14,40.3);L((gx+px)/2,cz-20.15,16.5,.14);L((gx+px)/2,cz+20.15,16.5,.14);
+    for(const z of[cz-3.66,cz+3.66]){cyl(S,gx,1.22,z,.07,.07,2.44,'#ffffff',8);col(gx-.1,gx+.1,0,2.44,z-.1,z+.1)}bx(S,gx,2.44,cz,.14,.14,7.46,'#ffffff');
+    for(const z of[cz-3.66,cz+3.66])bx(S,gx+s*1.1,1.2,z,2.2,.05,.05,'#d0d0d0');bx(S,gx+s*2.2,1.22,cz,.05,2.44,7.32,'#e9e9e9')}
+  /* stands: tiers rise away from the track, seats in the colours of the flag */
+  const stand=(along,a0,a1,inner,outer,n)=>{const dep=(outer-inner)/n;let lo=Math.min(inner,outer),hi=Math.max(inner,outer);
+    for(let k=0;k<n;k++){const p0=inner+dep*k,p1=inner+dep*(k+1),h=.75*(k+1),q0=Math.min(p0,p1),q1=Math.max(p0,p1),sc=TIRANGA[k%3],sp=p0+dep*.62;
+      if(along==='x'){blk(S,a0,a1,0,h,q0,q1,CON);bx(S,(a0+a1)/2,h+.2,sp,a1-a0-.3,.4,.5,sc)}else{blk(S,q0,q1,0,h,a0,a1,CON);bx(S,sp,h+.2,(a0+a1)/2,.5,.4,a1-a0-.3,sc)}}
+    const top=n*.75+1.5;if(along==='x'){blk(S,a0,a1,0,top,outer-(dep>0?.4:-0)-(dep>0?0:0),outer+(dep>0?0:.4),'#dcd8d0');col(a0,a1,0,top,lo,hi)}else{blk(S,outer-(dep>0?.4:0),outer+(dep>0?0:.4),0,top,a0,a1,'#dcd8d0');col(lo,hi,0,top,a0,a1)}
+    return top};
+  stand('x',-152,-115,24.6,14.6,6);stand('x',-107.5,-70,24.6,14.6,6);stand('x',-152,-115,96.8,104.4,4);stand('x',-107.5,-70,96.8,104.4,4);
+  stand('z',39,82.6,-167.2,-177.8,6);stand('z',39,56.8,-55.2,-45,6);stand('z',64.8,82.6,-55.2,-45,6);
+  /* gates: lintels over the gaps */
+  blk(S,-115,-107.5,4.4,6,14.2,24.6,CON);blk(S,-115,-107.5,3.6,4.4,97.6,104.4,CON);blk(S,-55.2,-45,4.4,6,56.8,64.8,CON);
+  addPlane(scene,30,2.6,signTex('NATIONAL STADIUM','#141414','#ff9933',1024,90),[cx,7.3,14.05],PI,null);blk(S,cx-15.4,cx+15.4,5.9,8.7,14.2,14.6,DK,false);
+  addPlane(scene,5.2,1,signTex('GATE 2 · PARKING','#141414','#ffffff',512,100),[-44.9,5.2,cz],PI/2,null);
+  /* outer wall, the dark ring on the map */
+  const wall=(x0,x1,z0,z1)=>{blk(S,x0,x1,0,2.6,z0,z1,DK);col(x0,x1,0,2.6,z0,z1)};
+  wall(-170,-115,12,12.8);wall(-107.5,-52.6,12,12.8);wall(-170,-115,105.8,106.6);wall(-107.5,-52.6,105.8,106.6);wall(X0,X0+.8,22,96.6);wall(X1-.8,X1,22,56.8);wall(X1-.8,X1,64.8,96.6);
+  /* floodlights and the scoreboard */
+  for(const [x,z] of[[-172.5,19.5],[-50.5,19.5],[-172.5,99.5],[-50.5,99.5]]){cyl(S,x,15,z,.45,.7,30,'#9aa3ad',8);col(x-.7,x+.7,0,30,z-.7,z+.7);const a=Math.atan2(cx-x,cz-z);
+    bx(S,x,30.6,z,5.2,3.2,.7,DK,a);bx(LMP,x+Math.sin(a)*.4,30.6,z+Math.cos(a)*.4,4.8,2.8,.1,'#fff6d8',a)}
+  blk(S,-179.6,-178.4,7,17.2,50.6,71,DK);
+  addPlane(scene,19.6,9.6,tex(1024,500,(c,w,h)=>{c.fillStyle='#0d0f12';c.fillRect(0,0,w,h);c.fillStyle='#ff9933';c.font='800 64px '+FONT_D;c.textAlign='center';c.fillText('NATIONAL STADIUM',w/2,92);
+    c.fillStyle='#ffffff';c.font='800 120px '+FONT_D;c.fillText('2  –  0',w/2,270);c.font='700 46px '+FONT_T;c.fillText('VASHUPUR XI',w*.25,360);c.fillText('DELULUGARH FC',w*.75,360);c.fillStyle='#c9f26b';c.font='700 40px '+FONT_T;c.fillText("89'  ·  WELCOME, VISITOR",w/2,450)}),[-178.3,12.1,cz],PI/2,null);
+  G.noGrass.push([X0,X1,Z0,Z1]);G.blocked.push([X0-2,X1+2,Z0-2,Z1+2]);
+  G.mapPolys.push({pts:boxPts(X0,X1,Z0,Z1,10),col:'#ffffff'},{pts:boxPts(...TR,13),col:'#e2a72e'},{pts:boxPts(...FD,6),col:'#4c9a3f'});
+  G.buildings.push({name:'National Stadium',short:'Stadium',x0:X0,x1:X1,z0:Z0,z1:Z1,col:'#ffffff',door:{x:cx,z:10.6},room:null,poly:true,label:true})}
+
+function parkingLot(scene,ctx){const {S,addPlane}=ctx;const X0=-42.6,X1=-10.5,Z0=10.7,Z1=95.7;const r=rng(311);
+  blk(S,X0,X1,0,.055,Z0,Z1,'#4a4c51',false);
+  const rows=[[-42.1,-36.6,1],[-29.6,-24.1,-1],[-24.1,-18.6,1]],cols=['#e53935','#f4f4f2','#2b5fa8','#141414','#9aa3ad','#ffcc3a','#3e7c59','#8a5534','#f4f4f2','#c9ccd1'];
+  for(const [a,b,dir] of rows){for(let k=0;k<=29;k++)bx(S,(a+b)/2,.062,14+k*2.7,b-a,.01,.1,'#ffffff');
+    for(let k=0;k<29;k++){if(r()<.42)continue;const z=15.35+k*2.7,x=(a+b)/2,c=cols[Math.floor(r()*cols.length)];
+      bx(S,x,.55,z,4.2,.7,1.75,c);bx(S,x-dir*.25,1.1,z,2.2,.5,1.6,'#26323d');bx(S,x-dir*.25,1.38,z,2.1,.06,1.62,c);for(const ax of[-1.3,1.3])for(const az of[-.8,.8])bx(S,x+ax,.33,z+az,.66,.66,.24,'#1b1b1b');
+      bx(S,x+dir*2.1,.62,z,.04,.18,1.3,'#fff6d8');col(x-2.1,x+2.1,0,1.4,z-.9,z+.9)}}
+  bx(S,-24.1,.062,53.2,.1,.01,79,'#ffffff');
+  const bo=prop(S,-33,0,13.2);bo.box(0,1.2,0,2,2.4,2,'#f4f1ea');bo.box(0,2.5,0,2.4,.2,2.4,'#2f5bff');
+  cyl(S,-26.4,1.4,11.6,.08,.08,2.8,'#9aa3ad',8);addPlane(scene,2.6,1,signTex('P  PARKING','#2f5bff','#ffffff',384,148),[-26.4,2.9,11.55],PI,null);
+  G.noGrass.push([X0,X1,Z0,Z1]);G.blocked.push([X0,X1,Z0,Z1]);G.mapPolys.push({pts:[[X0,Z0],[X1,Z0],[X1,Z1],[X0,Z1]],col:'#55575c'});
+  G.buildings.push({name:'Stadium Parking',short:'Parking',x0:X0,x1:X1,z0:Z0,z1:Z1,col:'#55575c',room:null,poly:true,label:true})}
+
+function centralJail(scene,ctx){const {S,WIN,LMP,addPlane,W}=ctx;const O=[106.3,170.3,-109.4,-12.7],I=[113.3,163,-102.3,-19.6],H=9,WL='#e9e6df',gx=138.2;
+  flatShape(S,boxPts(...O,8),.05,'#2f3238');blk(S,gx-3.5,gx+3.5,0,.055,-12.7,-7.4,'#2f3238',false);flatShape(S,boxPts(...I,.5),.06,'#cbc7bf');
+  const wall=(x0,x1,z0,z1,h=H)=>{blk(S,x0,x1,0,h,z0,z1,WL);blk(S,x0-.05,x1+.05,h-.4,h,z0-.05,z1+.05,'#9a958b',false);col(x0,x1,0,h,z0,z1)};
+  wall(I[0],I[1],I[2],I[2]+.8);wall(I[0],I[0]+.8,I[2],I[3]);wall(I[1]-.8,I[1],I[2],I[3]);wall(I[0],gx-6,I[3]-.8,I[3]);wall(gx+6,I[1],I[3]-.8,I[3]);
+  /* razor wire on top */
+  for(const [x0,x1,z0,z1] of[[I[0],I[1],I[2]+.4,I[2]+.4],[I[0]+.4,I[0]+.4,I[2],I[3]],[I[1]-.4,I[1]-.4,I[2],I[3]],[I[0],gx-6,I[3]-.4,I[3]-.4],[gx+6,I[1],I[3]-.4,I[3]-.4]]){const ax=x1-x0>z1-z0,len=ax?x1-x0:z1-z0;
+    for(const y of[H+.45,H+.9])bx(S,(x0+x1)/2,y,(z0+z1)/2,ax?len:.05,.05,ax?.05:len,'#3a3d44');for(let u=0;u<=len;u+=3)bx(S,ax?x0+u:x0,H+.6,ax?z0:z0+u,.08,1.2,.08,'#3a3d44')}
+  /* gatehouse and the main gate */
+  blk(S,gx-6,gx-3.5,0,11.5,I[3]-2,I[3]+.6,'#d7d2c8');blk(S,gx+3.5,gx+6,0,11.5,I[3]-2,I[3]+.6,'#d7d2c8');blk(S,gx-6,gx+6,8.4,11.5,I[3]-1.6,I[3]+.4,'#d7d2c8');col(gx-6,gx-3.5,0,11.5,I[3]-2,I[3]+.6);col(gx+3.5,gx+6,0,11.5,I[3]-2,I[3]+.6);
+  blk(S,gx-3.5,gx+3.5,0,8.4,I[3]-.45,I[3]-.15,'#3a3d44');for(let x=gx-3.2;x<gx+3.3;x+=.7)bx(S,x,4.2,I[3]-.12,.12,8.2,.06,'#2b2d31');bx(S,gx,4.2,I[3]-.12,.06,8.2,.08,'#141414');col(gx-3.5,gx+3.5,0,8.4,I[3]-.5,I[3]-.1);
+  addPlane(scene,11,1.6,signTex('CENTRAL JAIL','#1d1d1d','#ffcc3a',768,112),[gx,10,I[3]+.43],0,null);
+  for(const s of[-1,1])bx(LMP,gx+s*4.75,7.6,I[3]+.66,.5,.5,.12,'#fff6d8');
+  const booth=prop(S,gx+8.6,0,I[3]+2.6);booth.box(0,1.3,0,2.2,2.6,2.2,'#f4f1ea');booth.box(0,2.7,0,2.6,.2,2.6,'#c62828');col(gx+7.5,gx+9.7,0,2.6,I[3]+1.5,I[3]+3.7);
+  /* the cell block you can see over the wall, and a yard */
+  blk(S,119,157,0,15,-96,-38,'#a9adb2');blk(S,118.8,157.2,14.6,15.2,-96.2,-37.8,'#7d8188',false);
+  for(const y of[2.6,5.8,9,12.2]){for(let x=121;x<156;x+=2.4){bx(S,x,y,-37.96,.9,1.1,.08,'#3a3f47');bx(S,x,y,-96.04,.9,1.1,.08,'#3a3f47')}for(let z=-94;z<-39;z+=2.4){bx(S,118.96,y,z,.08,1.1,.9,'#3a3f47');bx(S,157.04,y,z,.08,1.1,.9,'#3a3f47')}}
+  col(119,157,0,15,-96,-38);
+  cyl(S,127,1.6,-30,.09,.09,3.2,'#9aa3ad',8);bx(S,127,3.3,-30.4,1.6,1,.1,'#ffffff');for(const x of[146,150])blk(S,x-1,x+1,0,.45,-25,-24.4,'#9a958b');
+  /* watchtowers with sweeping searchlights */
+  W.searchlights=[];for(const [x,z,a0] of[[I[0]+1.6,I[2]+1.6,.8],[I[1]-1.6,I[2]+1.6,2.3],[I[0]+1.6,I[3]-1.6,-.8],[I[1]-1.6,I[3]-1.6,-2.3]]){
+    for(const dx of[-1.2,1.2])for(const dz of[-1.2,1.2])blk(S,x+dx-.18,x+dx+.18,0,11,z+dz-.18,z+dz+.18,'#7d8188');
+    blk(S,x-2,x+2,11,13.6,z-2,z+2,'#d7d2c8');bx(WIN,x,12.5,z,4.06,.9,4.06,'#ffffff');blk(S,x-2.4,x+2.4,13.6,14,z-2.4,z+2.4,'#3a3d44');col(x-1.5,x+1.5,0,14,z-1.5,z+1.5);
+    const g=new THREE.Group();g.position.set(x,13,z);const cone=new THREE.Mesh(new THREE.ConeGeometry(3.2,24,16,1,true),new THREE.MeshBasicMaterial({color:'#fff3c4',transparent:true,opacity:.09,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide}));
+    cone.geometry.translate(0,-12,0);cone.rotation.x=-1.05;g.add(cone);g.rotation.y=a0;g.userData.a0=a0;scene.add(g);W.searchlights.push(g)}
+  G.extraNPCs.push({name:'Jail guard Tomar',look:{shirt:'#c9b48a',pants:'#c9b48a',hair:'short',hat:'#1d3f2a',mustache:true,face:'flat',long:true},x:gx-4.6,z:I[3]+1.6,yaw:0,lines:['Central Jail. One hundred and twelve cells.','There is one prisoner in high security. Do not go near her cell.','Visiting hours are always. Leaving hours are never.'],barks:['No photography.','Stay alert.']},
+    {name:'Jail guard Pinto',look:{shirt:'#c9b48a',pants:'#c9b48a',hair:'cap',hat:'#1d3f2a',face:'smug',long:true},x:gx+4.6,z:I[3]+1.6,yaw:0,lines:['You want to see Jiya? Everyone does. Few come back with their heart.','Ten stars. I have never seen ten stars before.'],barks:['Ten stars, boss.','Keep moving.']});
+  G.triggers.push({x:gx,z:I[3]+1.2,r:2.4,label:'Enter Central Jail',act:()=>G.enter('jail')});
+  G.noGrass.push([O[0],O[1],O[2],O[3]],[gx-3.5,gx+3.5,-13,-7]);G.blocked.push([O[0]-2,O[1]+2,O[2]-2,O[3]+2]);G.noLamp.push([gx-5,gx+5,-15,-6]);
+  G.mapPolys.push({pts:boxPts(...O,8),col:'#2f3238'});
+  G.buildings.push({name:'Central Jail',short:'Central Jail',x0:I[0],x1:I[1],z0:I[2],z1:I[3],col:'#ffffff',door:{x:gx,z:I[3]+2.4},room:'jail'});
+  return{x:gx,z:I[3]+2.6,fx:0,fz:1}}
+
+function catModel(B,x,y,z,col,dir=0,pose='sit'){const r=[[1,0,0,1],[0,1,-1,0],[-1,0,0,-1],[0,-1,1,0]][dir&3],sw=dir%2;const at=(dx,dz)=>[x+dx*r[0]+dz*r[1],z+dx*r[2]+dz*r[3]];
+  const box=(dx,dy,dz,w,h,d,c=col)=>{const [px,pz]=at(dx,dz);bx(B,px,y+dy,pz,sw?d:w,h,sw?w:d,c)};
+  if(pose==='loaf'){box(0,.16,0,.36,.3,.62);box(0,.32,.36,.3,.28,.28);box(-.09,.5,.4,.08,.1,.06);box(.09,.5,.4,.08,.1,.06);box(0,.1,-.44,.08,.08,.32);box(-.07,.34,.505,.05,.05,.01,'#c9f26b');box(.07,.34,.505,.05,.05,.01,'#c9f26b')}
+  else{box(0,.26,0,.32,.5,.36);box(0,.62,.06,.3,.28,.28);box(-.09,.8,.08,.08,.1,.06);box(.09,.8,.08,.08,.1,.06);box(0,.08,-.3,.1,.08,.34);box(-.07,.64,.205,.05,.05,.01,'#c9f26b');box(.07,.64,.205,.05,.05,.01,'#c9f26b')}}
+
+function meowClub(scene,ctx){const {S,WIN,LMP,addPlane}=ctx;const x0=16,x1=56,z0=137,z1=170,H=7.5,cx=36,LI='#e2a8f0',PU='#7a3f8f';
+  blk(S,x0,x1,0,H,z0,z1,LI);blk(S,x0-.2,x1+.2,H-.5,H,z0-.2,z1+.2,'#ffffff',false);blk(S,x0-.1,x1+.1,0,.5,z0-.1,z1+.1,PU,false);
+  for(const s of[-1,1]){const e=new THREE.ConeGeometry(2.6,3.6,4);e.rotateY(PI/4);e.translate(cx+s*9,H+1.8,z0+2.2);S.add(e,LI);const i=new THREE.ConeGeometry(1.4,2.3,4);i.rotateY(PI/4);i.translate(cx+s*9,H+1.4,z0+1.15);S.add(i,'#ff8fc1')}
+  const F=fac({x0,x1,z0,z1},'n');F.box(WIN,cx-11,2.7,.04,12,3.2,.1,'#ffffff');F.box(WIN,cx+11,2.7,.04,12,3.2,.1,'#ffffff');F.box(S,cx,1.5,.06,2.4,3,.12,PU);F.box(S,cx,3.15,.06,3,.3,.14,'#ffffff');
+  for(const u of[cx-11,cx+11])for(const k of[-4,0,4])F.box(S,u+k,2.7,.1,.14,3.2,.16,'#ffffff');
+  addPlane(scene,17,2,signTex('MEOW CLUB · CAT CAFE',PU,'#ffffff',1024,120),[cx,H-1.55,z0-.12],PI,null);
+  blk(S,cx-5,cx+5,3.5,3.7,z0-2.2,z0,'#ff8fc1');blk(S,cx-5,cx+5,3.3,3.5,z0-2.2,z0-2,'#ffffff');
+  blk(S,x0,x1,0,.07,z0-6.2,z0,'#f1e3d3',false);
+  for(const [x,c] of[[21,'#ff8fc1'],[27,'#ffffff'],[45,'#ff8fc1'],[51,'#ffffff']]){const z=z0-3.6;cyl(S,x,.38,z,.5,.5,.06,'#ffffff',12);cyl(S,x,.2,z,.06,.06,.4,'#9a9a9a',6);cyl(S,x,1.3,z,.05,.05,2.6,'#9a9a9a',6);
+    const u=new THREE.ConeGeometry(1.7,.7,8);u.translate(x,2.75,z);S.add(u,c);for(const dx of[-.9,.9])blk(S,x+dx-.22,x+dx+.22,0,.45,z-.22,z+.22,PU);col(x-.5,x+.5,0,.8,z-.5,z+.5)}
+  catModel(S,24,.07,z0-1.1,'#f0a24a',2,'sit');catModel(S,48,.07,z0-1.4,'#2b2b2b',2,'loaf');catModel(S,x1-4,H,z0+3,'#ffffff',2,'loaf');
+  col(x0,x1,0,H,z0,z1);
+  G.triggers.push({x:cx,z:z0-1.6,r:2.2,label:'Enter Meow Club',act:()=>G.enter('meow')});
+  G.buildings.push({name:'Meow Club',short:'Meow Club',x0,x1,z0,z1,col:LI,door:{x:cx,z:z0-2.4},room:'meow'});
+  G.noGrass.push([x0-1,x1+1,z0-7,z1+1]);G.blocked.push([10.5,61,129,176]);
+  return{x:cx,z:z0-2.4,fx:0,fz:-1}}
 
 /* =================== interiors for the real buildings =================== */
 export function extraRooms(room,env){const {scene,addPlane,posterTex,npc,outs}=env;
@@ -450,6 +555,76 @@ export function extraRooms(room,env){const {scene,addPlane,posterTex,npc,outs}=e
   });
 
   /* ---------- Outpulse Labs ---------- */
+  /* ---------- Central Jail: 112 cells on four tiers, and one high-security cell ---------- */
+  room('jail',{name:'Central Jail',w:26,d:70,h:14.5,wall:'#c9cdd2',floor:'#8f949a',trim:'#c62828',light:'#eef3ff'},R=>{const {cx,x0,x1,z0,z1,S,WIN}=R;const W_=env.W;
+    const n=14,cw=2.6,zA=21,zB=zA-n*cw,TIERS=4,TH=3.2,CD=3;
+    const bars=tex(256,256,(c,w,h)=>{c.clearRect(0,0,w,h);c.fillStyle='#3a3f47';c.fillRect(0,0,w,14);c.fillRect(0,h-14,w,14);c.fillRect(0,h*.52,w,10);c.fillRect(0,0,12,h);c.fillRect(w-12,0,12,h);for(let i=1;i<9;i++)c.fillRect(i*w/9-4,0,8,h);c.fillStyle='#ffcc3a';c.fillRect(w*.42,h*.62,w*.16,12)});
+    bars.wrapS=THREE.RepeatWrapping;bars.repeat.set(n,1);const barMat=new THREE.MeshLambertMaterial({map:bars,transparent:true,alphaTest:.5,side:THREE.DoubleSide});
+    for(const s of[-1,1]){const back=s<0?x0:x1,front=back-s*CD,inw=-s;
+      for(let k=0;k<=n;k++){const z=zA-k*cw;blk(S,Math.min(back,front),Math.max(back,front),0,TIERS*TH,z-.09,z+.09,'#b9bec4')}
+      for(let t=0;t<TIERS;t++){const y=t*TH;
+        if(t>0){blk(S,Math.min(back,front+inw*1.3),Math.max(back,front+inw*1.3),y-.16,y,zB,zA,'#9aa0a7');const rx=front+inw*1.25;bx(S,rx,y+1.05,(zA+zB)/2,.07,.07,zA-zB,'#c62828');for(let k=0;k<=n;k++)bx(S,rx,y+.52,zA-k*cw,.06,1.04,.06,'#c62828')}
+        const m=new THREE.Mesh(new THREE.PlaneGeometry(zA-zB,TH-.2),barMat);m.position.set(front,y+(TH-.2)/2,(zA+zB)/2);m.rotation.y=s<0?PI/2:-PI/2;scene.add(m);
+        const nums=tex(2048,64,(c,w,h)=>{c.fillStyle='#1d2027';c.fillRect(0,0,w,h);c.fillStyle='#ffffff';c.font='700 34px '+FONT_T;c.textAlign='center';c.textBaseline='middle';
+          for(let k=0;k<n;k++){const id=(s<0?'A':'B')+'-'+(t+1)+String(k+1).padStart(2,'0');const u=s<0?k:n-1-k;c.fillText(id,(u+.5)*w/n,h/2+2)}});
+        const np=new THREE.Mesh(new THREE.PlaneGeometry(zA-zB,.34),new THREE.MeshBasicMaterial({map:nums}));np.position.set(front+inw*.03,y+TH-.02,(zA+zB)/2);np.rotation.y=s<0?PI/2:-PI/2;scene.add(np);
+        for(let k=0;k<n;k++){const zc=zA-(k+.5)*cw;bx(S,back+inw*.5,y+.42,zc-.3,.9,.3,1.9,'#7d8188');bx(S,back+inw*.5,y+.6,zc-.3,.86,.08,1.8,['#e8692e','#9aa3ad','#e8692e','#5b6370'][(k+t)%4]);bx(S,front-inw*.45,y+.25,zc+.85,.5,.5,.5,'#e9e9e9')}}
+      col(Math.min(back,front)-.1,Math.max(back,front)+.1,0,TH,zB,zA)}
+    /* lights, signs, a warden at the door */
+    for(let z=zB;z<=zA;z+=6)bx(WIN,cx,R.h-.4,z,4,.12,.8,'#ffffff');
+    addPlane(scene,12,1.5,signTex('CELL BLOCK A & B · 112 CELLS','#1d1d1d','#ffcc3a',1024,128),[cx,6.5,zA+.6],0,null);
+    blk(S,cx+5,cx+9,0,1.1,26,27.4,'#5a5f66');bx(S,cx+7,1.12,26.7,4.1,.06,1.5,'#7d8188');for(const s2 of[-1,1])blk(S,cx+s2*1.3-.15,cx+s2*1.3+.15,0,2.6,24.4,24.8,'#9aa3ad');blk(S,cx-1.45,cx+1.45,2.5,2.8,24.4,24.8,'#9aa3ad');
+    col(cx+5,cx+9,0,1.1,26,27.4);
+    R.npc({name:'Jailer Saab',x:cx+7,z:28.4,yaw:PI,look:{shirt:'#c9b48a',pants:'#c9b48a',hair:'grey',hat:'#1d3f2a',mustache:true,long:true,face:'flat'},lines:['Welcome to Central Jail. Cell blocks A and B, four tiers, one hundred and twelve cells.','At the far end is the high-security cell. Prisoner: Jiya. Danger level: ten stars.','Rule number one: stay behind the yellow line. Rule number two: see rule number one.'],barks:['Stay behind the yellow line.','Ten stars. Ten!']});
+    /* inmates with very serious crimes */
+    const INM=[['Biryani Bandit','Put pineapple in a biryani. Unforgivable.'],['Reply-All Rahul','Replied all to a company-wide email. Twice.'],['Filter-Coffee Hater','Said filter coffee is overrated. In Mysuru.'],['Spoiler Sunil','Told everyone the ending of a web series.'],
+      ['"K" Kartik','Replied "k" to a long message.'],['Queue Jumper Jai','Cut the line at the chai stall.'],['Seen-Zone Sameer','Left forty people on read.'],['Silent-Mode Simran','Kept the phone on silent forever. Missed a wedding.']];
+    INM.forEach(([nm,cr],i)=>{const s=i%2?1:-1,k=1+i*3%(n-1),t=0;R.npc({name:nm+' (inmate)',x:s<0?x0+1.7:x1-1.7,z:zA-(k+.5)*cw,yaw:s<0?PI/2:-PI/2,look:{shirt:'#e8692e',pants:'#e8692e',hair:['short','curly','cap','long','buzz','spiky','short','bun'][i],hat:'#e8692e',face:['smug','flat','grin','smug','flat','grin','calm','flat'][i],seed:200+i},lines:['Crime: '+cr,'Sentence: until I say sorry. I will not say sorry.'],barks:['I am innocent!','Not guilty!','Lawyer!']})});
+    for(let i=0;i<10;i++){const s=i%2?1:-1,t=1+(i%3),k=(i*5)%n;R.npc({name:'Inmate',x:s<0?x0+1.7:x1-1.7,y:t*TH,z:zA-(k+.5)*cw,yaw:s<0?PI/2:-PI/2,look:{shirt:'#e8692e',pants:'#e8692e',hair:['short','curly','buzz','bun','spiky'][i%5],seed:300+i},lines:['Shh. The ten-star one is listening.'],barks:['Hey!','Psst!']})}
+    /* high-security cell at the far end */
+    const zF=-24,c0=cx-7,c1=cx+7;
+    blk(S,c0-.6,c0,0,6.2,z0,zF+.3,'#5a5f66');blk(S,c1,c1+.6,0,6.2,z0,zF+.3,'#5a5f66');blk(S,c0-.6,c1+.6,6,6.6,z0,zF+.3,'#5a5f66');
+    blk(S,c0,c1,5.3,6,zF-.25,zF+.25,'#2b2d31');blk(S,c0,c1,0,.35,zF-.25,zF+.25,'#2b2d31');bx(S,cx,2.7,zF,14,.16,.36,'#2b2d31');
+    for(let x=c0+.25;x<c1;x+=.34)cyl(S,x,2.7,zF,.055,.055,5,'#b71c1c',6);col(c0,c1,0,6,zF-.3,zF+.3);
+    blk(S,c0-.6,c0,0,6.2,zF+.3,zF+.31,'#2b2d31',false);
+    for(let x=c0,k=0;x<c1;x+=1,k++)bx(S,x+.5,.02,zF+.65,1,.02,.7,k%2?'#141414':'#ffcc3a');
+    const lineZ=zF+2.5;bx(S,cx,.025,lineZ,18,.02,.2,'#ffcc3a');
+    const dnc=new THREE.Mesh(new THREE.PlaneGeometry(8,.9),new THREE.MeshBasicMaterial({map:signTex('DO NOT CROSS','#ffcc3a','#141414',512,58),transparent:true}));dnc.rotation.x=-PI/2;dnc.position.set(cx,.03,lineZ+.8);scene.add(dnc);
+    const lasers=[];for(const y of[.35,.8,1.25]){const m=new THREE.Mesh(new THREE.BoxGeometry(14,.035,.035),new THREE.MeshBasicMaterial({color:'#ff1f1f',transparent:true,opacity:.85}));m.position.set(cx,y,zF+2.1);scene.add(m);lasers.push(m)}
+    for(const x of[c0-.2,c1+.2])blk(S,x-.2,x+.2,0,1.6,zF+1.9,zF+2.3,'#2b2d31');
+    addPlane(scene,13,1.3,signTex('HIGH SECURITY CELL','#b71c1c','#ffffff',1024,100),[cx,7.4,zF+.33],0,null);
+    const star=(c,x,y,r)=>{c.beginPath();for(let i=0;i<10;i++){const a=-PI/2+i*PI/5,rr=i%2?r*.45:r;c.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr)}c.closePath();c.fill()};
+    addPlane(scene,13,1.6,tex(1024,128,(c,w,h)=>{c.fillStyle='#141414';c.fillRect(0,0,w,h);c.fillStyle='#ffffff';c.font='700 40px '+FONT_T;c.textBaseline='middle';c.fillText('DANGER',24,h/2+2);c.fillStyle='#ffcc3a';for(let i=0;i<10;i++)star(c,250+i*76,h/2,32)}),[cx,8.9,zF+.33],0,null);
+    R.left(-19,2.6,5.4,4.2,tex(540,420,(c,w,h)=>{c.fillStyle='#f4f1ea';c.fillRect(0,0,w,h);c.fillStyle='#b71c1c';c.fillRect(0,0,w,64);c.fillStyle='#ffffff';c.font='800 36px '+FONT_T;c.fillText('PRISONER CARD',22,44);
+      const rows=[['Prisoner','Jiya'],['Crime',"Stole Vashu's heart"],['Sentence','Life'],['Danger level','Life threatening']];c.font='700 24px '+FONT_T;rows.forEach(([a,b],i)=>{c.fillStyle='#6a6a6a';c.fillText(a.toUpperCase(),22,108+i*64);c.fillStyle='#141414';c.font='800 32px '+FONT_T;c.fillText(b,22,140+i*64);c.font='700 24px '+FONT_T});
+      c.fillStyle='#ffb300';for(let i=0;i<10;i++)star(c,40+i*50,h-34,20)}));
+    /* her cell: plants everywhere */
+    blk(S,c0,c1,0,.03,z0,zF-.3,'#6fae4f',false);
+    const pot=(x,z,s,lc)=>{cyl(S,x,.3*s,z,.32*s,.24*s,.6*s,'#b5552e',10);bx(S,x,(.75+.2)*s,z,.6*s,.6*s,.6*s,lc,.4);bx(S,x,(1.15)*s,z,.42*s,.42*s,.42*s,lc,1.1)};
+    [[c0+.8,z0+.9,1.2,'#3e8f3e'],[c0+2.2,z0+.8,1,'#5cbf5f'],[c1-.8,z0+.9,1.3,'#2f7a3a'],[c1-2.4,z0+.8,.9,'#6fcf6a'],[c0+.8,zF-2,1,'#4fae55'],[c1-.8,zF-2.4,1.1,'#3e8f3e'],[cx+3.4,z0+.8,.8,'#5cbf5f']].forEach(([x,z,s,c])=>pot(x,z,s,c));
+    cyl(S,cx-4.2,.4,z0+3.2,.9,.8,.8,'#8a5534',10);cyl(S,cx-4.2,1.7,z0+3.2,.14,.18,2.4,'#6b4a35',8);for(const [dx,dy,dz,sz] of[[0,3.1,0,1.4],[.6,2.7,.3,1],[-.6,2.8,-.2,1.1],[.1,3.6,.2,.9]])bx(S,cx-4.2+dx,dy,z0+3.2+dz,sz,sz,sz,'#3e8f3e',dx);
+    bx(S,cx-3.9,3.5,z0+3.6,.22,.18,.32,'#3d7be8');bx(S,cx-3.8,3.52,z0+3.78,.08,.06,.12,'#ffcc3a');
+    for(let i=0;i<8;i++)bx(S,c0+1+i*1.6,.28,z0+.35,.3,.3,.3,['#ff5fa2','#ffcc3a','#ffffff','#a463ff'][i%4]);blk(S,c0+.5,c1-.5,0,.18,z0+.1,z0+.6,'#8a5534');
+    blk(S,cx+2.2,cx+5.4,0,.55,z0+1.6,z0+3.8,'#6b4a35');bx(S,cx+3.8,.62,z0+2.7,3.1,.14,2.1,'#5cbf5f');bx(S,cx+3.8,.7,z0+1.95,1.1,.16,.6,'#ffffff');
+    cyl(S,cx+1.6,.18,zF-1.3,.16,.16,.36,'#3d7be8',10);bx(S,cx+1.9,.3,zF-1.3,.4,.06,.06,'#3d7be8');
+    R.back(-2,3,4.2,2.4,posterTex({w:420,h:240,bg:'#5cbf5f',kicker:'Cell rules',title:'Water the plants.',body:'Be kind to trees. Hearts are another matter.'}));
+    /* guards and the prisoner */
+    for(const s2 of[-1,1])R.npc({name:s2<0?'Guard Kale':'Guard Rathore',x:cx+s2*9.6,z:zF+3.6,yaw:0,look:{shirt:'#2f3a46',pants:'#2f3a46',hair:'cap',hat:'#141414',face:'flat',long:true,shades:true},lines:['Stay behind the yellow line. She took one heart already.','Do not make eye contact. Do not accept plants.','Ten stars. Life sentence. Life-threatening. Any questions? No? Good.'],barks:['Behind the line!','Do not go closer.','Eyes forward.']});
+    const J=R.npc({id:'jiya',name:'Jiya',x:cx,z:-28.2,yaw:0,look:{fem:true,hair:'long',hairC:'#0d0d0d',skin:'#e0b48f',shirt:'#2b6fd8',pants:'#141414',shoes:'#f5f5f5',face:'cute'},
+      lines:['Hi. Come a little closer?','I only take hearts. Vashu\'s was the first.','My plants are the only ones who visit me. Water them for me? Just come closer.'],barks:['Come closer…','Closer…','My plants need water.','Hi, stranger.']});
+    W_.jiya=J;W_.jiyaCell={cx,zF,c0,c1,lineZ,home:{x:cx,z:-28.2},lasers}});
+
+  /* ---------- Meow Club: a cat cafe ---------- */
+  room('meow',{name:'Meow Club',w:20,d:14,h:5,wall:'#f6e6fb',floor:'#e8d3c0',trim:'#b56fd1',light:'#fff3fb'},R=>{const {cx,x0,x1,z0,z1,S,WIN}=R;
+    blk(S,x0+.5,x0+7,0,1.1,z0+.6,z0+1.6,'#7a3f8f');bx(S,x0+3.7,1.13,z0+1.1,6.6,.06,1.1,'#ffffff');bx(S,x0+2,1.45,z0+1.05,.6,.6,.5,'#2b2b2b');cyl(S,x0+4.4,1.25,z0+1.1,.12,.1,.24,'#ffffff',10);col(x0+.5,x0+7,0,1.1,z0+.6,z0+1.6);
+    R.back(-3.3,3.1,6,1.4,signTex('MEOW CLUB · CAT CAFE','#7a3f8f','#ffffff',768,180));
+    R.npc({name:'Meera (cat barista)',x:x0+3.7,z:z0+.2,yaw:0,look:{shirt:'#ff8fc1',pants:'#26323d',hair:'bun',apron:'#7a3f8f',fem:true},lines:['Welcome to Meow Club! Coffee for you, treats for them.','Rule one: the cats choose you. Rule two: no picking up Biscuit.','Seven cats live here. One of them is guarding something shiny on the cat tower.'],barks:['Meow!','Coffee or cuddles?']});
+    for(const [x,z,c] of[[cx-3,-1,'#ffffff'],[cx+1,1.5,'#ff8fc1'],[cx-6,3,'#3d7be8'],[cx+4,-2,'#ffcc3a']]){cyl(S,x,.14,z,.7,.7,.28,c,12);cyl(S,x,.31,z,.62,.62,.06,'#ffffff',12)}
+    for(const [x,z] of[[cx-1,4.6],[cx+3.5,4.6]]){cyl(S,x,.38,z,.6,.6,.06,'#ffffff',12);cyl(S,x,.2,z,.06,.06,.4,'#9a9a9a',6);col(x-.6,x+.6,0,.8,z-.6,z+.6)}
+    const tower=(x,z,top)=>{cyl(S,x,top/2,z,.12,.12,top,'#d9b48a',8);for(const [y,s] of[[.6,1.1],[top*.6,.9],[top,1.2]])bx(S,x,y,z,s,.12,s,'#b56fd1');col(x-.6,x+.6,0,top,z-.6,z+.6)};tower(x1-2.4,-5.2,1.6);tower(x0+2,4.2,1.2);
+    const CATS=[[cx-3,.28,-1,'#f0a24a',0,'loaf'],[cx+1,.28,1.5,'#2b2b2b',1,'sit'],[cx-6,.28,3,'#ffffff',2,'loaf'],[x1-2.4,1.66,-5.2,'#9aa3ad',3,'sit'],[cx+4,.28,-2,'#c48a4a',0,'sit'],[x0+2,1.26,4.2,'#f4f1ea',1,'loaf'],[cx-1,.44,4.6,'#2b2b2b',2,'loaf']];
+    for(const [x,y,z,c,d,p] of CATS)catModel(S,x,y,z,c,d,p);
+    R.left(-1,2.6,3,2,posterTex({w:300,h:200,bg:'#ff8fc1',kicker:'Meet the cats',title:'Biscuit, Mango, Kaju & 4 more',body:'All rescued. All judging you.'}))});
   room('labs',{name:'Outpulse Labs',w:24,d:16,h:6,wall:'#f2f4f7',floor:'#d9dde3',trim:'#3bd1ff',light:'#f4fbff'},R=>{const {cx,x0,x1,z0,z1,S,WIN}=R;
     R.back(0,3.7,12,3.4,tex(1200,340,(c,W_,H_)=>{c.fillStyle='#141414';c.fillRect(0,0,W_,H_);c.fillStyle='#ff6a3d';c.font='400 150px '+FONT_D;c.textAlign='center';c.fillText('WE BUILD IDENTITY',W_/2,190);c.font='600 34px '+FONT_T;c.fillStyle='#f4efe6';c.fillText('OUTPULSE LABS · BRANDS · WEBSITES · APPS',W_/2,268)}),null);
     bx(WIN,cx,5.55,z0+.08,12.4,.08,.08,'#ffffff');for(let x=x0+3;x<x1-2;x+=5)bx(WIN,x,5.9,0,.8,.06,.8,'#ffffff');

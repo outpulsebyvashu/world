@@ -26,6 +26,7 @@ export const HUD=`
   <div class="ow-emotes" hidden><button type="button" data-e="wave">Wave</button><button type="button" data-e="dance">Dance</button><button type="button" data-e="sip">Sip coffee</button><button type="button" data-e="sixseven">Six-seven</button></div>
   <div class="ow-dlg" hidden role="dialog" aria-live="polite"><b class="ow-dn"></b><p class="ow-dt"></p><div class="ow-dc"></div><button type="button" class="ow-dx" data-close aria-label="Close dialog">×</button></div>
   <div class="ow-toast" role="status" aria-live="polite"></div>
+  <div class="ow-wasted" hidden role="alert"><div class="band"><b>wasted</b><span></span></div></div>
   <div class="ow-fade"></div>
 </div>
 <div class="ow-ov ow-card" hidden role="dialog" aria-modal="true" aria-label="Project"><div class="ow-pan"><div class="sw"></div><p class="k"></p><h2></h2><p class="d"></p><div class="ow-pa"><a class="ow-btn p" target="_blank" rel="noopener">Open ↗</a><button type="button" class="ow-btn" data-close>Back to town</button></div></div></div>
@@ -133,6 +134,12 @@ export const CSS=`
 .ow-toast.on{opacity:1;transform:translate(-50%,0)}
 .ow-toast b{display:block;color:#ffcc3a;font:800 12px "Inter Tight",sans-serif;letter-spacing:.08em}
 .ow-toast span{font:500 14px/1.35 "Inter Tight",sans-serif}
+.ow-wasted{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;z-index:7}.ow-wasted[hidden]{display:none}
+.ow-wasted .band{width:100%;background:rgba(0,0,0,.55);padding:18px 0 14px;text-align:center;animation:owW .9s ease-out both}
+.ow-wasted b{display:block;font:400 clamp(64px,18vw,128px)/1 Anton,Impact,sans-serif;color:#c8102e;letter-spacing:.02em;text-shadow:0 3px 0 #000,0 0 18px rgba(0,0,0,.6);-webkit-text-stroke:2px #1a0006}
+.ow-wasted span{display:block;margin-top:6px;font:700 15px "Inter Tight",sans-serif;color:#fff;opacity:.9}
+@keyframes owW{from{opacity:0;transform:scale(1.25)}to{opacity:1;transform:none}}
+.ow.wasted canvas{filter:grayscale(1) contrast(1.15) brightness(.82);transition:filter .6s}.ow.wasted .ow-hud>:not(.ow-wasted):not(.ow-fade){opacity:0;transition:opacity .4s}
 .ow-fade{position:absolute;inset:0;background:#141414;opacity:0;transition:opacity .25s;pointer-events:none}
 .ow-fade.on{opacity:1}
 .ow-ov{position:absolute;inset:0;background:rgba(10,10,10,.55);display:grid;place-items:center;padding:16px;z-index:5}

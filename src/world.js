@@ -55,7 +55,6 @@ export function buildWorld(scene){
 
 
   /* plaza */
-  if(on('vashupur'))for(let i=0;i<8;i++)for(let j=0;j<8;j++)blk(S,-69+i*4,-65+i*4,0,.06,40.7+j*4,44.7+j*4,(i+j)%2?'#e9dfca':'#ddd0b4',false);
   /* lamps */
   const lampPos=[];const lamp=(x,z)=>{blk(S,x-.1,x+.1,0,4.4,z-.1,z+.1,'#2c2f36',true);bx(S,x,4.45,z,.5,.12,.5,'#2c2f36');bx(LMP,x,4.3,z,.36,.2,.36,'#ffffff');lampPos.push([x,z])};
   const onRoad=(x,z)=>RD.some(q=>x>q[0]-.7&&x<q[1]+.7&&z>q[2]-.7&&z<q[3]+.7);
@@ -97,7 +96,6 @@ export function buildWorld(scene){
   TD.plots.forEach(q=>building({name:'lot',x0:q[0],x1:q[1],z0:q[2],z1:q[3],door:{side:q[4],at:(q[4]==='e'||q[4]==='w')?(q[2]+q[3])/2:(q[0]+q[1])/2}}));
   const lampOK=(x,z)=>!G.noLamp.some(r=>x>r[0]&&x<r[1]&&z>r[2]&&z<r[3])&&!G.buildings.some(b=>b.door&&Math.hypot(b.door.x-x,b.door.z-z)<5);
   for(const q of RD){const [x0,x1,z0,z1,ax]=q;let k=0;if(ax==='x'){for(let x=x0+6;x<x1-3;x+=13){const z=(k++%2)?z1+SW*.7:z0-SW*.7;if(!onRoad(x,z)&&lampOK(x,z))lamp(x,z)}}else{for(let z=z0+6;z<z1-3;z+=13){const x=(k++%2)?x1+SW*.7:x0-SW*.7;if(!onRoad(x,z)&&lampOK(x,z))lamp(x,z)}}}
-  if(on('vashupur'))for(const [x,z] of [[-68,41.7],[-38,41.7],[-68,71.7],[-38,71.7]])lamp(x,z);
   const poolTex=tex(64,64,(x)=>{const g=x.createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,64,64)});
   const pools=new THREE.InstancedMesh(new THREE.PlaneGeometry(8,8).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({map:poolTex,color:'#ffc870',transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}),lampPos.length);
   const mm=new THREE.Matrix4();lampPos.forEach(([x,z],i)=>{mm.makeTranslation(x,.09,z);pools.setMatrixAt(i,mm)});pools.renderOrder=2;scene.add(pools);W.pools=pools;
@@ -143,7 +141,8 @@ export function buildWorld(scene){
   const disco=new THREE.Group();const dball=new THREE.Mesh(new THREE.IcosahedronGeometry(1,1),new THREE.MeshLambertMaterial({color:'#e8e8f0',flatShading:true,emissive:'#333'}));dball.position.y=9;disco.add(dball);
   const beamG=new THREE.ConeGeometry(2.4,9,16,1,true);beamG.translate(0,-4.5,0);const beams=[];['#ff3b8d','#3bd1ff','#c9f26b','#ffcc3a','#a463ff','#ff6a3d'].forEach((c,i)=>{const m=new THREE.Mesh(beamG,new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.18,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}));m.position.y=9;m.rotation.z=.5;m.userData.a=i/6*Math.PI*2;disco.add(m);beams.push(m)});
   const pole=new THREE.Mesh(new THREE.BoxGeometry(.2,2.6,.2),new THREE.MeshLambertMaterial({color:'#333'}));pole.position.y=10.3;disco.add(pole);disco.visible=false;scene.add(disco);W.disco={g:disco,ball:dball,beams};
-  move(cpP,[0,0],[-53,56.7]);W.partyAt=[-53,56.7];}
+  /* the fan zone and the party live on the stadium field now */
+  move(cpP,[0,0],[-111.25,60.8]);W.partyAt=[-111.25,60.8];}
 
   /* ---------- poster street ---------- */
   if(on('memepura'))PROJECTS.forEach((p,i)=>{const x=24+i*5.2;const nn=String(i+1).padStart(2,'0');blk(S,x-2.25,x+2.25,1,6.5,9.2,9.5,'#141414');blk(S,x-.15,x+.15,0,1,9.25,9.45,'#141414');
@@ -179,7 +178,7 @@ export function buildWorld(scene){
   // low wall (bean spot)
   if(on('memepura'))blk(S,96,97,0,1.2,20,88,'#c9c2b4');
   // benches
-  if(on('vashupur')){bench(-69.8,56.7,Math.PI/2);bench(-36.2,56.7,-Math.PI/2)}if(on('memepura')){bench(52,46,0);bench(78,56,-Math.PI/2);bench(64,80,Math.PI)}if(on('basti'))bench(10,28,-Math.PI/2);
+if(on('memepura')){bench(52,46,0);bench(78,56,-Math.PI/2);bench(64,80,Math.PI)}if(on('basti'))bench(10,28,-Math.PI/2);
 
   /* ---------- event ground ---------- */
   if(on('basti')){
@@ -198,7 +197,7 @@ export function buildWorld(scene){
   /* ---------- trees, flowers, hills, bounds ---------- */
   const R=rng(42+TN.length*7);const [bx0,bx1,bz0,bz1]=TD.b;
   const blocked=RD.map(q=>[q[0]-2.5,q[1]+2.5,q[2]-2.5,q[3]+2.5]);
-  if(on('vashupur'))blocked.push([-71,-35,39,75],[-62,-44,92,99],[-27,27,92,147],[10,172,10,109],[85,115,-40,-10],[128,160,148,163],[-81,-75,163,169],[-186,-10,-111,-10],[-172,-82,127,176],[-27,-21,21,27],[-17,-13,15,19]);
+  if(on('vashupur'))blocked.push([-27,27,92,147],[10,172,10,109],[128,160,148,163],[-81,-75,163,169],[-186,-10,-111,-10],[-172,-82,127,176],[-27,-21,21,27],[-17,-13,15,19],[-84,-10.5,128,176]);
   if(on('memepura'))blocked.push([18,46,24,46],[49,79,49,79],[15,98,8,11],[95,99,18,90],[14,22,6,10]);
   if(on('basti'))blocked.push([-47,-9,25,69],[2,12,18,32]);
   if(on('kaapikunj'))blocked.push([-76,-62,6,25],[-16,-9,6,10]);
@@ -239,7 +238,7 @@ export function buildWorld(scene){
 /* =================== interiors =================== */
 function buildRooms(scene,S,RW,WIN,outs){
   let RX=600;
-  const LIVE={vashupur:['museum','police','fire','cafe','home','labs','boring','resA','resB','resFloor','resFlat'],kaapikunj:['kunj'],delulugarh:['nth','nthlab']};
+  const LIVE={vashupur:['police','fire','cafe','home','labs','boring','resA','resB','resFloor','resFlat','jail','meow'],kaapikunj:['kunj'],delulugarh:['nth','nthlab']};
   const LMAT=new THREE.MeshLambertMaterial({vertexColors:true}),BMAT=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.BackSide});
   /* rooms are registered now but only built the first time someone walks in */
   const room=(id,o,fill)=>{if(G.LOT&&!(LIVE[G.TOWN]||[]).includes(id))return null;const cx=RX;RX+=80;const w=o.w,d=o.d,h=o.h||5.5,x0=cx-w/2,x1=cx+w/2,z0=-d/2,z1=d/2;
@@ -321,7 +320,7 @@ function buildRooms(scene,S,RW,WIN,outs){
     bx(R.S,cx+3.5,.4,z0+4,1.4,.8,1.4,'#a463ff');
     R.back(-4,3.6,2.2,2.6,posterTex({w:400,h:472,bg:'#c9f26b',kicker:'Streak',title:'412 days',body:'Sleep: optional.',big:60}),null);
     R.npc({name:'Meera (CS student)',x:cx,z:z0+2.4,yaw:Math.PI,look:{shirt:'#a463ff',pants:'#141414',hair:'long',glasses:true,headset:true,face:'calm'},sit:true,lines:['3 AM. 4 monitors. 1 bug. It\'s a semicolon. It\'s always a semicolon.','Vashu builds apps from his PHONE. I have 3 monitors and I\'m still stuck.','If you see Skill-Issue Sid, tell him I beat his score.'],barks:['Compiling…','One more bug.']})});
-  shop('police','Police Station',{w:16,d:12,wall:'#dfe7f2',floor:'#9aa3ad',trim:'#1d3f8f',light:'#eef4ff'},R=>{const {cx,x0,x1,z0}=R;blk(R.S,cx-4,cx+1,0,1.1,z0+2,z0+3,'#1d3f8f');bx(R.S,cx-1.5,1.13,z0+2.5,5.2,.06,1.2,'#f4f4f4');
+  shop('police','City Kotwali',{w:16,d:12,wall:'#dfe7f2',floor:'#9aa3ad',trim:'#1d3f8f',light:'#eef4ff'},R=>{const {cx,x0,x1,z0}=R;blk(R.S,cx-4,cx+1,0,1.1,z0+2,z0+3,'#1d3f8f');bx(R.S,cx-1.5,1.13,z0+2.5,5.2,.06,1.2,'#f4f4f4');
     for(let u=0;u<=4;u+=.4)blk(R.S,cx+3+u-.04,cx+3+u+.04,0,3.2,z0+4.5,z0+4.58,'#555',false);col(cx+3,cx+7.6,0,3.2,z0+4.4,z0+4.7);col(cx+2.9,cx+3.1,0,3.2,z0,z0+4.7);bx(R.S,cx+5,3.2,z0+2.3,4.2,.1,4.6,'#555');bx(R.S,cx+5.5,.4,z0+1,2.6,.3,1,'#8a5a3b');
     R.back(-5.5,3.4,1.8,2.3,posterTex({w:300,h:384,bg:'#f4e6c8',fg:'#3a2a1a',kicker:'Wanted',title:'Unpaid Invoice',big:44,body:'Last seen: "next week, pakka".',bs:20}),null);
     R.back(-2.8,3.4,1.8,2.3,posterTex({w:300,h:384,bg:'#f4e6c8',fg:'#3a2a1a',kicker:'Wanted',title:'"Make it pop"',big:44,body:'Armed with vague feedback.',bs:20}),null);
@@ -354,7 +353,7 @@ export function npc(scene,cfg){const c=makeChar(Object.assign({seed:Math.floor(M
   c.traverse(o=>{if(o.isMesh)o.userData.npc=n});c.userData.tap=()=>G.talk(n);c.userData.reach=4;G.pick.push(c);G.npcs.push(n);return n}
 export function spawnTown(scene){const T=G.TOWN||'vashupur',on=(...a)=>a.includes(T);
   (G.extraNPCs||[]).forEach(c=>npc(scene,c));
-  const LOOPS={vashupur:[[[-70,40],[-36,40],[-36,73],[-70,73]],[[12,9],[165,9],[165,-9],[12,-9]],[[-12,9],[-178,9],[-178,-9],[-12,-9]]],
+  const LOOPS={vashupur:[[[-160,28.5],[-62,28.5],[-62,93],[-160,93]],[[12,9],[165,9],[165,-9],[12,-9]],[[-12,9],[-178,9],[-178,-9],[-12,-9]]],
     memepura:[[[18,6],[96,6],[96,-6],[18,-6]],[[48,48],[80,48],[82,80],[48,82]],[[20,6],[60,6],[60,25],[20,25]]],
     kaapikunj:[[[-18,6],[-72,6],[-72,-6],[-18,-6]]],basti:[[[6,18],[6,90],[-6,90],[-6,18]]],barfii:[[[-34,6],[-70,6],[-70,-6],[-34,-6]]],
     delulugarh:[[[-39,17],[39,17],[39,-15],[-39,-15]],[[-50,28],[50,28],[50,15],[-50,15]]]};
@@ -362,12 +361,12 @@ export function spawnTown(scene){const T=G.TOWN||'vashupur',on=(...a)=>a.include
   const lp=LOOPS[T]||[];let li=0;
   MEMERS.forEach((m,i)=>{if(HOME[m.name]!==T)return;const base={name:m.name,look:m.look,lines:m.lines,barks:m.barks,emote:m.emote||null};
     if(m.lie)return npc(scene,Object.assign(base,{x:32,z:48.5,yaw:0,lie:true}));
-    if(m.name.startsWith('Aura'))return npc(scene,Object.assign(base,{x:-53,z:48,yaw:0,emote:'pose'}));
+    if(m.name.startsWith('Aura'))return npc(scene,Object.assign(base,{x:-111.25,z:48,yaw:0,emote:'pose'}));
     const path=lp[li++%lp.length];npc(scene,Object.assign(base,{x:path[0][0],z:path[0][1],kind:'wander',path,pi:(i*2)%path.length,speed:2.2+((i*37)%10)/10}))});
   if(on('vashupur')){FREELOADERS.forEach((m,i)=>npc(scene,{name:m.name+' (freeloader client)',look:m.look,lines:m.lines,barks:m.barks,x:i?60:-40,z:9,kind:'chase',home:[i?60:-40,9],emote:'beg',free:true}));
     npc(scene,{id:'guide',name:'Mini-Vashu (guide)',look:{shirt:'#141414',pants:'#8a7f5a',cargo:'#7a6f4c',hair:'curly',glasses:true,hat:null,sash:'#ff6a3d',face:'grin',seed:3},x:-120,z:141.5,yaw:Math.PI,kind:'guide',lines:[],barks:['Tap me for a tour!','Lost? I\'m the guide.']})}
   if(on('kaapikunj')){npc(scene,{id:'farmer',name:'Kaveri (coffee farmer)',look:{shirt:'#5cc46b',pants:'#6b5a3a',hair:'long',hat:'#c9a26b',face:'smile'},x:-70,z:7.3,yaw:Math.PI,lines:[],barks:['My beans!','Have you seen my beans?']})}
-  if(on('vashupur')){npc(scene,{id:'doctor',name:'Dr. Rao',look:{shirt:'#cfe3f7',pants:'#2b2b2b',hair:'grey',coat:'#ffffff',glasses:true,face:'flat'},x:-53,z:36,yaw:Math.PI,lines:[],barks:['Coffee, anyone?','Doctor\'s orders: caffeine.']})}
+  if(on('vashupur')){npc(scene,{id:'doctor',name:'Dr. Rao',look:{shirt:'#cfe3f7',pants:'#2b2b2b',hair:'grey',coat:'#ffffff',glasses:true,face:'flat'},x:-38.6,z:66,yaw:-Math.PI/2,lines:[],barks:['Coffee, anyone?','Doctor\'s orders: caffeine.']})}
   if(on('basti')){
     W.politician=npc(scene,{name:'Shri Vaada Kumar',look:{shirt:'#ffffff',pants:'#ffffff',hair:'bald',mustache:true,face:'grin',long:true,vest:'#ff6a3d'},x:-28,y:1.2,z:59.8,yaw:Math.PI,emote:'talk',lines:['Brother! Sister! Vote Kettle!','I promise… everything. Details later.'],barks:['Vote Kettle!']});
     W.band=[['guitar','#c9f26b','play'],['bass','#3bd1ff','play'],['drums','#ff3b8d','drum'],['keys','#ffcc3a','play']].map(([r,cl,e],i)=>npc(scene,{name:'The Crema Boys ('+r+')',look:{shirt:cl,pants:'#141414',hair:['curly2','long','cap','short'][i],hat:'#141414',shades:i%2===0,face:'grin'},x:-34+i*4,y:1.2,z:60,yaw:Math.PI,emote:e,lines:['We only know one song. It\'s about coffee.','Next song: "Extraction Ballad (Part 2)".'],barks:['Rock on!']}));

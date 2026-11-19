@@ -39,7 +39,9 @@ const faceCache={};
 function faceMat(style,skin){const k=style;if(faceCache[k])return faceCache[k];
   const t=texNow(64,64,(x)=>{x.clearRect(0,0,64,64);x.fillStyle='#1a1410';
     const eye=(cx)=>{if(style==='calm'){x.fillRect(cx-5,27,10,3)}else{x.fillRect(cx-4,22,8,10);x.fillStyle='#fff';x.fillRect(cx-2,23,3,3);x.fillStyle='#1a1410'}};
-    if(style==='cry'){eye(20);eye(44);x.fillStyle='#4aa8ff';x.fillRect(16,32,4,14);x.fillRect(44,32,4,14);x.fillStyle='#1a1410';x.fillRect(24,48,16,3);x.fillRect(22,51,3,3);x.fillRect(39,51,3,3)}
+    if(style==='cute'){x.fillStyle='#1a1410';for(const cx of[20,44]){x.fillRect(cx-5,20,10,13);x.fillStyle='#fff';x.fillRect(cx-3,21,4,4);x.fillRect(cx+1,28,2,2);x.fillStyle='#1a1410';x.fillRect(cx-6,18,3,2);x.fillRect(cx+3,18,3,2)}
+      x.fillStyle='rgba(255,120,150,.75)';x.fillRect(8,36,9,5);x.fillRect(47,36,9,5);x.lineWidth=3;x.strokeStyle='#1a1410';x.beginPath();x.moveTo(27,43);x.quadraticCurveTo(32,49,37,43);x.stroke()}
+    else if(style==='cry'){eye(20);eye(44);x.fillStyle='#4aa8ff';x.fillRect(16,32,4,14);x.fillRect(44,32,4,14);x.fillStyle='#1a1410';x.fillRect(24,48,16,3);x.fillRect(22,51,3,3);x.fillRect(39,51,3,3)}
     else{eye(20);eye(44);x.lineWidth=4;x.strokeStyle='#1a1410';x.beginPath();
       if(style==='grin'){x.fillStyle='#1a1410';x.fillRect(20,42,24,10);x.fillStyle='#fff';x.fillRect(22,43,20,4)}
       else if(style==='smug'){x.moveTo(22,46);x.quadraticCurveTo(36,52,44,42);x.stroke()}

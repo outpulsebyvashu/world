@@ -21,7 +21,8 @@ export function buildDistricts(scene,ctx){const {S,WIN,LMP,building,addPlane,ben
     const m=new THREE.Mesh(new THREE.PlaneGeometry(3.2,.8),new THREE.MeshLambertMaterial({map:t,side:THREE.DoubleSide}));m.position.set(x,3.2,z);m.rotation.y=ry;scene.add(m);if(Math.abs(Math.sin(ry))>.5)col(x-.15,x+.15,0,3.6,z-1.5,z+1.5);else col(x-1.5,x+1.5,0,3.6,z-.15,z+.15)};
 
   /* ================= MUMBAI — centre ================= */
-  if(on('vashupur')){const cpR=mark(scene,RB);const sand='#d9b77e',dk='#c49a5a';
+  /* the old gateway arch is gone: the stadium stands there now */
+  if(false){const cpR=mark(scene,RB);const sand='#d9b77e',dk='#c49a5a';
    blk(S,-7.2,-2.4,0,8,15.8,18.4,sand);blk(S,2.4,7.2,0,8,15.8,18.4,sand);blk(S,-2.4,2.4,5.6,8,15.8,18.4,sand,false);
    for(const s of[-1,1]){bx(S,s*2.05,5.1,17.1,.7,1,2.6,sand);bx(S,s*1.45,5.42,17.1,.6,.4,2.6,sand);bx(S,s*.8,5.5,17.1,.8,.2,2.6,sand)}
    for(const x of[-6.4,-4.6,4.6,6.4]){cyl(S,x,9,15.9,.5,.55,2,sand,10);cyl(S,x,9,18.3,.5,.55,2,sand,10);const g=new THREE.SphereGeometry(.55,10,6,0,PI*2,0,PI/2);g.translate(x,10,15.9);S.add(g,dk);const g2=g.clone();g2.translate(0,0,2.4);S.add(g2,dk)}
@@ -40,7 +41,7 @@ export function buildDistricts(scene,ctx){const {S,WIN,LMP,building,addPlane,ben
    p.box(0,2.4,0,2.2,.08,1.4,'#e94b3c');for(const s of[-1,1])p.box(s*1,1.7,-.5,.05,1.4,.05,'#555');col(-13.7,-11.5,0,1.2,11.5,13.7);
    G.triggers.push({x:-11.3,z:11.3,r:1.6,label:'Grab a vada pav',act:()=>G.host.toast('VADA PAV','Mumbai\'s burger. ₹20, with dry garlic chutney.')});
    const s2=new THREE.Mesh(new THREE.PlaneGeometry(1.8,.45),new THREE.MeshLambertMaterial({map:signTex('VADA PAV ₹20','#ffcc3a','#e94b3c',512,120),side:THREE.DoubleSide}));s2.position.set(-12.6,2.05,12.6);s2.rotation.y=PI*.75;scene.add(s2);move(cpR,[0,0],[-11.2,11.2],0,[])}
-  if(on('vashupur')){const cpR=mark(scene,RB);const p=prop(S,-8,0,9);p.box(0,1.8,0,.16,3.6,.16,'#5a3f2a');const arms=[['VASHU MUSEUM',PI/2,3.3,'#8a6a3a'],['BUS · 5 TOWNS',-PI/2,2.9,'#2f5bff'],['POLICE STN',0,2.5,'#1d3f8f'],['FIRE STN',PI,2.1,'#c62828']];
+  if(on('vashupur')){const cpR=mark(scene,RB);const p=prop(S,-8,0,9);p.box(0,1.8,0,.16,3.6,.16,'#5a3f2a');const arms=[['CENTRAL JAIL',PI/2,3.3,'#1d1d1d'],['BUS · 5 TOWNS',-PI/2,2.9,'#2f5bff'],['STADIUM',0,2.5,'#138808'],['FIRE STN',PI,2.1,'#c62828']];
    for(const [t,a,y,c] of arms){const m=new THREE.Mesh(new THREE.PlaneGeometry(1.8,.38),new THREE.MeshLambertMaterial({map:signTex(t,c,'#ffffff',512,110),side:THREE.DoubleSide}));m.position.set(-8+Math.cos(a)*.95,y,9-Math.sin(a)*.95);m.rotation.y=a;scene.add(m)}col(-8.15,-7.85,0,3.6,8.85,9.15);move(cpR,[0,0],[-7.1,8],0,[])}
   BL(-14,-11,11,14);BL(16,28,0,5);
 
@@ -55,15 +56,16 @@ export function buildDistricts(scene,ctx){const {S,WIN,LMP,building,addPlane,ben
    blk(S,-28,-11,0,.06,-34.6,-31.4,'#3fa7e0',false);rails(S,-28,-11,-31.3,-31.3,0,1,'#9aa3ad',.8);col(-28,-11,0,1.1,-31.5,-31.2);for(let x=-27;x<-11;x+=4)lantern(S,WARM,x,1.4,-31.3);
    addPlane(scene,3.4,.6,signTex('MARINE DRIVE','#1f7a4c','#ffffff',512,90),[-13.4,1.6,-31.1],0,null);BL(-29,-10,-35,-26);move(cpR,[-19.5,-30.5],[145.6,155.1],2,[])}
   // police station
-  if(on('vashupur')){const cpR=mark(scene,RB);outs.police=building({real:true,name:'Police Station',x0:16,x1:34,z0:-46,z1:-31,h:7,col:'#f4f1ea',trim:'#1d3f8f',door:{side:'s',at:25},room:'police',win:false,awn:false,doorCol:'#1d3f8f'});
+  if(on('vashupur')){const cpR=mark(scene,RB);outs.police=building({real:true,name:'City Kotwali',short:'City Kotwali',x0:16,x1:34,z0:-46,z1:-31,h:7,col:'#f4f1ea',trim:'#1d3f8f',door:{side:'s',at:25},room:'police',win:false,awn:false,doorCol:'#1d3f8f'});
   {const b={x0:16,x1:34,z0:-46,z1:-31},F=fac(b,'s');F.box(S,25,3.6,.05,18,.35,.12,'#1d3f8f');F.box(S,25,3.95,.05,18,.2,.12,'#c62828');
    for(const y of[1.9,5.3])for(const u of[18.4,21,29,31.6])F.box(WIN,u,y,.04,1.6,1.6,.08,'#ffffff');
-   addPlane(scene,8,1.2,signTex('VASHUPUR POLICE STATION','#1d3f8f','#ffffff',1024,150),[25,6.1,-30.86],0,null);
+   addPlane(scene,8,1.2,signTex('CITY KOTWALI','#1d3f8f','#ffffff',1024,150),[25,6.1,-30.86],0,null);
    blk(S,23,27,0,.25,-31,-28.6,'#d6d2c8',true);
    const fp=prop(S,17.5,0,-29.5);fp.cyl(0,4,0,.07,.07,8,'#c9ccd1',8);fp.box(0,.2,0,1,.4,1,'#d6d2c8');const fl=new THREE.Mesh(new THREE.PlaneGeometry(1.8,1.2),new THREE.MeshLambertMaterial({map:tex(96,64,(x)=>{x.fillStyle='#ff9933';x.fillRect(0,0,96,22);x.fillStyle='#fff';x.fillRect(0,21,96,22);x.fillStyle='#138808';x.fillRect(0,42,96,22);x.strokeStyle='#000080';x.lineWidth=2;x.beginPath();x.arc(48,32,8,0,7);x.stroke()}),side:THREE.DoubleSide}));fl.position.set(18.4,7.3,-29.5);scene.add(fl);W.flag=fl;col(17.3,17.7,0,8,-29.7,-29.3);
    const j=prop(S,30.5,0,-28.6,PI/2);j.box(0,.9,0,1.9,1,4,'#f4f4f4');j.box(0,1.75,-.5,1.8,.8,2.2,'#f4f4f4');j.box(0,1.75,-.5,1.82,.55,2,'#26323d');j.box(0,.95,0,1.92,.22,4.02,'#1d3f8f');for(const zz of[1.3,-1.3])for(const s of[-1,1])j.wheel(s*.9,.42,zz,.42,.28);col(28.5,32.5,0,2.2,-29.6,-27.6);
    W.policeLights=[new THREE.Mesh(new THREE.BoxGeometry(.3,.16,.3),new THREE.MeshBasicMaterial({color:'#ff2d2d'})),new THREE.Mesh(new THREE.BoxGeometry(.3,.16,.3),new THREE.MeshBasicMaterial({color:'#2d6bff'}))];W.policeLights[0].position.set(30,2.25,-28.3);W.policeLights[1].position.set(30,2.25,-28.9);scene.add(...W.policeLights);
-   for(const x of[20,22.2])blk(S,x-.9,x+.9,0,1,-29.2,-28.9,'#ffcc3a');BL(15,35,-47,-27)};move(cpR,[0,0],[14,16],0,[outs.police])}
+   for(const x of[20,22.2])blk(S,x-.9,x+.9,0,1,-29.2,-28.9,'#ffcc3a');BL(15,35,-47,-27)};/* City Kotwali sits beside the fire station, facing the bus-stand road */
+   move(cpR,[25,-38.5],[-28,149],2,[outs.police])}
   // fire station (its apron stays clear of street lamps)
   if(on('vashupur')){G.noLamp.push([-74,-50,124,141]);const cpR=mark(scene,RB);outs.fire=building({real:true,name:'Fire Station',x0:-46,x1:-30,z0:-46,z1:-30,h:8,col:'#c62828',trim:'#ffffff',door:{side:'s',at:-33},room:'fire',win:false,awn:false,doorCol:'#ffffff'});
   {

@@ -53,6 +53,9 @@ export const snd={get muted(){return muted},
     o.connect(f).connect(g).connect(sfxG);o.start(t);o.stop(t+1)},
   whistle(){if(!ac||muted)return;const t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain(),l=ac.createOscillator(),lg=ac.createGain();o.frequency.value=2600;l.frequency.value=28;lg.gain.value=180;l.connect(lg).connect(o.frequency);
     g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.05,t+.03);g.gain.setValueAtTime(.05,t+.55);g.gain.linearRampToValueAtTime(0,t+.65);o.connect(g).connect(sfxG);o.start(t);l.start(t);o.stop(t+.7);l.stop(t+.7)},
+  /* jail: an alarm blip when you cross the line, a deep hit when you are wasted */
+  alarm(){if(!ac||muted)return;const t=ac.currentTime;for(let i=0;i<2;i++){const o=ac.createOscillator(),g=ac.createGain();o.type='square';o.frequency.value=880;g.gain.setValueAtTime(0,t+i*.22);g.gain.linearRampToValueAtTime(.05,t+i*.22+.02);g.gain.linearRampToValueAtTime(0,t+i*.22+.16);o.connect(g).connect(sfxG);o.start(t+i*.22);o.stop(t+i*.22+.18)}},
+  boom(){if(!ac||muted)return;const t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.setValueAtTime(110,t);o.frequency.exponentialRampToValueAtTime(32,t+1.6);g.gain.setValueAtTime(.32,t);g.gain.exponentialRampToValueAtTime(.001,t+2);o.connect(g).connect(sfxG);o.start(t);o.stop(t+2.1)},
   /* fire-truck siren: a slow two-tone wail, k = loudness 0..1 */
   siren(k){if(!ac)return;if(!sirO){if(!k)return;sirO=ac.createOscillator();sirO.type='triangle';sirO.frequency.value=760;const lfo=ac.createOscillator(),lg=ac.createGain();lfo.type='triangle';lfo.frequency.value=.45;lg.gain.value=260;lfo.connect(lg).connect(sirO.frequency);lfo.start();
       sirG=ac.createGain();sirG.gain.value=0;sirO.connect(sirG).connect(sfxG);sirO.start()}sirG.gain.setTargetAtTime(k*k*.09,ac.currentTime,.15)},

@@ -264,6 +264,27 @@ function bindPlayers(){
   const ph=$('.ow-phrases');PHRASES.forEach((t,i)=>{const b=document.createElement('button');b.type='button';b.textContent=t;b.onclick=()=>{ph.hidden=true;bubble({c:player,name:prof.name},t);if(net)net.say(i);snd.click()};ph.appendChild(b)});
   $('.ow-chat').onclick=()=>{$('.ow-emotes').hidden=true;ph.hidden=!ph.hidden;snd.click()};
   addEventListener('keydown',e=>{if(e.key==='Escape'&&dressing)closeChar()})}
+/* ---- Central Jail: cross the yellow line and Jiya takes your heart ---- */
+let dead=null,lineWarn=0;
+function heartMesh(){const s=new THREE.Shape();s.moveTo(0,-.35);s.bezierCurveTo(-.05,-.25,-.42,-.05,-.42,.15);s.bezierCurveTo(-.42,.36,-.2,.44,0,.28);s.bezierCurveTo(.2,.44,.42,.36,.42,.15);s.bezierCurveTo(.42,-.05,.05,-.25,0,-.35);
+  const g=new THREE.ExtrudeGeometry(s,{depth:.16,bevelEnabled:true,bevelSize:.04,bevelThickness:.04,bevelSegments:2});g.center();const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({color:'#e0102a',emissive:'#5a0010'}));m.scale.setScalar(.55);return m}
+function jailTick(dt,T){const C=W.jiyaCell,J=W.jiya;if(!C||!J||!J.c)return;
+  for(const m of C.lasers)m.material.opacity=.5+.45*Math.abs(Math.sin(T*9+m.position.y*4));
+  if(dead)return deadTick(dt);
+  if(P.world!=='jail')return;const c=J.c;
+  const dx=P.pos.x-c.position.x,dz=P.pos.z-c.position.z,d=Math.hypot(dx,dz);if(d<16){let a=Math.atan2(dx,dz)-c.rotation.y;a=Math.atan2(Math.sin(a),Math.cos(a));c.rotation.y+=a*Math.min(1,dt*3)}
+  lineWarn-=dt;if(P.pos.z<C.lineZ+3&&lineWarn<=0&&P.pos.x>C.c0-3&&P.pos.x<C.c1+3){lineWarn=6;const g=G.npcs.find(n=>n.name==='Guard Kale');if(g)bubble(g,'Behind the line!');bubble(J,'Come closer…')}
+  if(P.pos.z<C.lineZ-.2&&P.pos.x>C.c0-1.2&&P.pos.x<C.c1+1.2)wasted()}
+function wasted(){const C=W.jiyaCell;dead={t:0,x:clamp(P.pos.x,C.c0+.8,C.c1-.8),shown:false,back:false};P.dead=true;P.fall=0;P.vel.set(0,0,0);inp.target=null;closeAll();
+  if(!W.heart)W.heart=heartMesh();if(W.heart.parent)W.heart.parent.remove(W.heart);W.heart.visible=false;scene.add(W.heart);snd.alarm&&snd.alarm()}
+function deadTick(dt){const D=dead,C=W.jiyaCell,c=W.jiya.c,t=(D.t+=dt);
+  c.position.x+=(D.x-c.position.x)*Math.min(1,dt*14);c.position.z+=((C.zF-.55)-c.position.z)*Math.min(1,dt*14);c.rotation.y=0;
+  const arm=c.userData.armR;arm.rotation.x=-1.6;arm.rotation.z=0;c.updateMatrixWorld(true);const hand=arm.localToWorld(new THREE.Vector3(0,-.7,.05));
+  const h=W.heart;if(t>.22){h.visible=true;const k=Math.min(1,(t-.22)/.45),e=k*k*(3-2*k);h.position.set(P.pos.x+(hand.x-P.pos.x)*e,1.25+(hand.y-1.25)*e+Math.sin(e*Math.PI)*.6,P.pos.z+(hand.z-P.pos.z)*e);h.rotation.y+=dt*4;h.scale.setScalar(.55*(1+.12*Math.sin(t*16)))}
+  P.fall=-1.45*Math.min(1,Math.max(0,(t-.35)/.5));
+  if(t>.6&&!D.shown){D.shown=true;root.classList.add('wasted');const o=$('.ow-wasted');o.querySelector('span').textContent='Jiya took your heart.';o.hidden=false;snd.boom&&snd.boom()}
+  if(t>4.6&&!D.back){D.back=true;fade(()=>{const r=G.rooms.jail;P.dead=false;P.fall=0;P.pos.set(r.spawn.x,0,r.spawn.z);P.yaw=Math.PI;cam.yaw=0;snapCam();root.classList.remove('wasted');$('.ow-wasted').hidden=true;
+    c.position.set(C.home.x,0,C.home.z);arm.rotation.x=0;h.scale.setScalar(.45);h.position.set(0,-.72,.12);h.rotation.set(0,0,0);arm.add(h);dead=null;toast('RESPAWNED','Your heart grew back. Stay behind the yellow line.')})}}
 function updQuestSafe(){try{updQuest()}catch(e){}}
 function beanHint(){const left=ORDER.filter(t=>BEANS.some((b,i)=>b.t===t&&!beansGot.has(i))).map(t=>TOWNS[t].name);return left.length?' Still missing some in: '+left.join(', ')+'.':''}
 function openBus(){const o=$('.ow-bus');const l=o.querySelector('.ow-towns');l.innerHTML='';
@@ -297,7 +318,7 @@ function update(dt,T){
     if(d<.35||(inp.pend&&pd<=inp.pend.reach)){const p=inp.pend;inp.target=null;inp.pend=null;marker.visible=false;if(p)p.fn()}else{mx=dx/d;mz=dz/d;mag=d>10?1:Math.min(1,d/1.2+.4)}}
   else mag=0;
   if(drone.on){droneTick(dt,mx,mz,mag,sprint);mag=0;inp.jump=false}
-  if(dressing){mag=0;inp.jump=false;inp.target=null}
+  if(dressing||P.dead){mag=0;inp.jump=false;inp.target=null}
   if(P.state==='sit'){if(mag>.5||inp.jump){stand();inp.jump=false}else{mag=0}}
   if(P.climb){climbStep(dt);mag=0}
   /* --- velocity --- */
@@ -315,7 +336,7 @@ function update(dt,T){
   const hs=Math.hypot(P.vel.x,P.vel.z);
   if(hs>.4&&P.state!=='sit'){const ty=Math.atan2(P.vel.x,P.vel.z);let d=ty-P.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));P.yaw+=d*Math.min(1,dt*(P.ride?5:12))}
   if(P.emote){P.emoteT-=dt;if(P.emoteT<=0||hs>1){P.emote=null;if(!P.cup)cupMesh.visible=false}}
-  player.position.copy(P.pos);if(P.ride)player.position.y+=.42;player.rotation.y=P.yaw;
+  player.position.copy(P.pos);if(P.ride)player.position.y+=.42;player.rotation.order='YXZ';player.rotation.y=P.yaw;player.rotation.x=P.fall||0;
   anim(player,dt,{speed:P.ride?0:hs,air:!P.grounded&&!P.climb&&!P.ride,sit:P.state==='sit',ride:P.ride,emote:P.emote||(P.cup&&!hs?'sip':null)});
   if(P.climb){player.userData.legL.rotation.x=Math.sin(T*8)*.6;player.userData.legR.rotation.x=-Math.sin(T*8)*.6;player.userData.armL.rotation.x=-2.6+Math.sin(T*8)*.3;player.userData.armR.rotation.x=-2.6-Math.sin(T*8)*.3}
   if(P.ride){W.scooter.position.set(P.pos.x,P.pos.y,P.pos.z);W.scooter.rotation.y=P.yaw;W.scooter.rotation.z=clamp(-(P.vel.x*Math.cos(P.yaw)-P.vel.z*Math.sin(P.yaw))*.01,-.25,.25)}
@@ -324,7 +345,7 @@ function update(dt,T){
   if(marker.visible){marker.rotation.y+=dt*2;marker.material.opacity=.5+.4*Math.sin(T*6)}
   /* --- world systems --- */
   const FC=drone.on?drone.focus:P.pos;if(grass&&P.world==='out')grass.update(dt,T,FC.x,FC.z);if(sky){sky.position.copy(camera.position);if(sky.material.uniforms.time)sky.material.uniforms.time.value=T}
-  beansTick(dt,T);npcTick(dt,T);eventTick(dt,T);fire.tick(dt,T);traffic.tick(dt,T,W);if(net){net.tick(dt);net.send(dt,P,P.ride?1:P.state==='sit'?2:0)}ballTick(dt);ambientTick(dt,T);
+  beansTick(dt,T);npcTick(dt,T);jailTick(dt,T);eventTick(dt,T);fire.tick(dt,T);traffic.tick(dt,T,W);if(net){net.tick(dt);net.send(dt,P,P.ride?1:P.state==='sit'?2:0)}ballTick(dt);ambientTick(dt,T);
   if(P.world==='out')lakeCheck();
   /* --- action button --- */
   actT-=dt;if(actT<=0){actT=.12;if(drone.on){curAct=null;$('.ow-act').hidden=true}else pickAction()}
@@ -367,7 +388,7 @@ function dismount(){P.ride=false;W.scooter.rotation.z=0;P.pos.x+=Math.cos(P.yaw)
 function climb(up){P.climb={up,t:0};P.vel.set(0,0,0);P.yaw=up?-Math.PI/2:Math.PI/2}
 function climbStep(dt){const c=P.climb;c.t+=dt/2.2;const k=Math.min(1,c.t);if(c.up){P.pos.set(12.75-(k>.92?(k-.92)/.08*2:0),k*15,-36)}else{P.pos.set(12.75,(1-k)*15,-36)}
   if(k>=1){P.climb=null;if(c.up){P.pos.set(10.6,15,-36);G.host.egg('ow_roof','Rooftop reached. Respect.')}else P.pos.set(13.2,0,-36);P.grounded=true}}
-function brew(){P.cup=true;cupMesh.visible=true;emote('sip');snd.brew();if(quest.doctor===1){toast('COFFEE READY','Now take it to Dr. Rao. He\'s by the town square.')}else toast('FRESHLY PULLED','A cappuccino. Cup first, then the numbers.')}
+function brew(){P.cup=true;cupMesh.visible=true;emote('sip');snd.brew();if(quest.doctor===1){toast('COFFEE READY','Now take it to Dr. Rao. He\'s at the stadium parking, by Gate 2.')}else toast('FRESHLY PULLED','A cappuccino. Cup first, then the numbers.')}
 function toggleParty(){if(!W.disco)return;party=!party;W.disco.g.visible=party;if(party)G.host.egg('ow_party','Party mode! The whole town is dancing.');snd.mode()}
 
 /* ================= dialog ================= */
@@ -416,7 +437,7 @@ function ballTick(dt){const b=W.ball;if(!b)return;const m=b.m;if(P.world==='out'
   const pt=W.pitch;if(m.position.z>pt.gz0&&m.position.z<pt.gz1&&m.position.y<2.1&&((m.position.x<pt.x0+.3&&m.position.x>pt.x0-1.5)||(m.position.x>pt.x1-.3&&m.position.x<pt.x1+1.5))){G.host.egg('ow_goal','GOAL! The crowd (two pigeons) goes wild.');snd.fanfare();m.position.set(32,.42,35);b.v.set(0,0,0)}
   if(Math.abs(m.position.x)>99||m.position.z>91||m.position.z<-52){m.position.set(32,.42,35);b.v.set(0,0,0)}}
 function lakeCheck(){const L=W.lake;if(!L)return;if(Math.hypot(P.pos.x-L.x,P.pos.z-L.z)<L.r-.6&&P.pos.y<.3&&!P.ride){snd.splash();G.host.egg('ow_lake','Splash! You can\'t swim in a portfolio.');fade(()=>{P.pos.set(64,0,45);P.vel.set(0,0,0);snapCam()})}}
-function ambientTick(dt,T){if(G.cranes)for(const c of G.cranes){c.g.rotation.y+=c.sp*dt;}if(G.cranes&&G.cranes[0])G.cranes[0].red.material.color.set(Math.sin(T*3)>.4?'#ff2d2d':'#5a1010');
+function ambientTick(dt,T){if(W.searchlights)for(const g of W.searchlights)g.rotation.y=g.userData.a0+Math.sin(T*.35+g.userData.a0*2)*.75;if(G.cranes)for(const c of G.cranes){c.g.rotation.y+=c.sp*dt;}if(G.cranes&&G.cranes[0])G.cranes[0].red.material.color.set(Math.sin(T*3)>.4?'#ff2d2d':'#5a1010');
   if(W.snow){const a=W.snow.geometry.attributes.position,v=a.array;for(let i=0;i<v.length;i+=3){v[i+1]-=dt*(1.2+(i%7)*.12);v[i]+=Math.sin(T+i)*dt*.3;if(v[i+1]<0)v[i+1]+=26}a.needsUpdate=true;W.snow.position.set(P.pos.x,P.pos.y,P.pos.z)}
   if(W.signals){const t=T%16;for(const L of W.signals){const ns=L.axis==='ns';const ph=ns?(t<6.5?'g':t<8?'a':'r'):(t<8?'r':t<14.5?'g':'a');L.r.material.color.set(ph==='r'?'#ff2d2d':'#3a0d0d');L.a.material.color.set(ph==='a'?'#ffb300':'#3a2a05');L.g.material.color.set(ph==='g'?'#2ee66b':'#0b3a1a')}}
   if(W.booms)for(const b of W.booms){const near=P.world==='out'&&Math.abs(P.pos.x-b.x)<(b.w||5)+5&&P.pos.z>b.z-14&&P.pos.z<b.z+12;b.open+=((near?1:0)-b.open)*Math.min(1,dt*3);b.g.rotation.z=b.open*1.35}
@@ -452,7 +473,16 @@ function npcTick(dt,T){const px=P.pos.x,pz=P.pos.z,now=performance.now(),FC=dron
     if(n.lie){c.rotation.x=-Math.PI/2;p.y=.3}
     if(c.userData.legL)anim(c,dt,{speed:sp,sit:n.sit&&!sp,emote:sp?null:em})}}
 function turn(c,ty,dt){let d=ty-c.rotation.y;d=Math.atan2(Math.sin(d),Math.cos(d));c.rotation.y+=d*Math.min(1,dt*8)}
-const STOPS=[{p:[[-120,141.5]],t:'Welcome to Vashupur, the capital. This is the bus stand: buses to all five other towns leave from here.'},{p:[[-120,128.5],[-62,128.5]],t:'The Fire Station, right next to the bus stand. Ring the bell outside, slide down the pole inside.'},{p:[[-26,128.5],[-26,110.5],[26,110.5],[140,110.5]],t:'The Boring Wear. Plain clothes, done properly. Walk in and have a look.'},{p:[[26,110.5],[9,96],[9,60]],t:'Outpulse Labs, my company. We build identity. The front door is right here.'},{p:[[9,9],[140,9]],t:'TOKI. Specialty coffee downstairs, my studio upstairs. Brew yourself a cup.'},{p:[[9,9],[-9,-9],[-141,-9]],t:'Outpulse Residential Towers. Two towers, thirteen floors of flats, lifts that actually work. Entry gate here, exit gate further on.'},{p:[[-9,-9],[39,-9]],t:'The Police Station. They arrested Scope Creep this morning.'},{p:[[100,-9]],t:'The Vashu Museum. My whole journey under one dome. Entry is free.'},{p:[[9,-9],[-9,9],[-53,30]],t:'The town square: my results in giant numbers, a phone booth and a DJ booth. Tour done, thanks for walking with me!'}];
+const STOPS=[{p:[[-120,141.5]],t:'Welcome to Vashupur, the capital. This is the bus stand: buses to all five other towns leave from here.'},
+  {p:[[-120,128.5],[-65,128.5]],t:'The Fire Station, right next to the bus stand. Ring the bell outside, slide down the pole inside.'},
+  {p:[[-28,128.5]],t:'City Kotwali, our police station. They arrested Scope Creep this morning.'},
+  {p:[[-24,129],[-17,143.4],[17,143.4],[30,131]],t:'Meow Club, a cat cafe. Seven rescued cats, all of them judging you. Coffee inside.'},
+  {p:[[24,131],[24,110.5],[140,110.5]],t:'The Boring Wear. Plain clothes, done properly. Walk in and have a look.'},
+  {p:[[26,110.5],[9,96],[9,60]],t:'Outpulse Labs, my company. We build identity. The front door is right here.'},
+  {p:[[9,9],[140,9]],t:'TOKI. Specialty coffee downstairs, my studio upstairs. Brew yourself a cup.'},
+  {p:[[138,9],[138,-9],[138.2,-15.6]],t:'Central Jail. One hundred and twelve cells and one prisoner with ten stars. Whatever you do, stay behind the yellow line.'},
+  {p:[[120,-9],[9,-9],[-141,-9]],t:'Outpulse Residential Towers. Two towers, thirteen floors of flats, lifts that actually work. Entry gate here, exit gate further on.'},
+  {p:[[-111,-9],[-111,9],[-111,11.5]],t:'The National Stadium. Run a lap, take a penalty, and if there is a party, it is on the field. Tour done, thanks for walking with me!'}];
 function guideTick(n,dt){const c=n.c,p=c.position;if(!tour){const dx=-120-p.x,dz=141.5-p.z,d=Math.hypot(dx,dz);if(d>.5){p.x+=dx/d*5*dt;p.z+=dz/d*5*dt;turn(c,Math.atan2(dx,dz),dt);return 5}turn(c,Math.atan2(P.pos.x-p.x,P.pos.z-p.z),dt);return 0}
   const st=STOPS[tour.i];const wp=st.p[tour.w||0];const dx=wp[0]-p.x,dz=wp[1]-p.z,d=Math.hypot(dx,dz);const pd=Math.hypot(P.pos.x-p.x,P.pos.z-p.z);
   if(P.world!=='out'){return 0}
@@ -486,7 +516,7 @@ let zt;function zone(name,force){if(name===zoneName&&!force)return;zoneName=name
 let MX0=-100,MZ0=-56,MW=200,MH=150;const MS=3;let bg;
 function mapBG(){const T=TOWNS[curTown];bg=document.createElement('canvas');bg.width=MW*MS;bg.height=MH*MS;const x=bg.getContext('2d');const R=(x0,x1,z0,z1,c)=>{x.fillStyle=c;x.fillRect((x0-MX0)*MS,(z0-MZ0)*MS,(x1-x0)*MS,(z1-z0)*MS)};
   R(MX0,MX0+MW,MZ0,MZ0+MH,T.snow?'#e6edf2':'#79c267');for(const r of T.roads){if(r[4]==='x')R(r[0],r[1],r[2]-2,r[3]+2,'#cfc7b6');else R(r[0]-2,r[1]+2,r[2],r[3],'#cfc7b6')}for(const r of T.roads)R(r[0],r[1],r[2],r[3],'#545861');
-  if(curTown==='vashupur'){R(-69,-37,40.7,72.7,'#e9dfca');const rd=T.round;x.fillStyle='#545861';x.beginPath();x.arc((rd.x-MX0)*MS,(rd.z-MZ0)*MS,rd.r1*MS,0,7);x.fill();x.fillStyle='#cfe3c0';x.beginPath();x.arc((rd.x-MX0)*MS,(rd.z-MZ0)*MS,rd.r0*MS,0,7);x.fill()}
+  if(curTown==='vashupur'){const rd=T.round;x.fillStyle='#545861';x.beginPath();x.arc((rd.x-MX0)*MS,(rd.z-MZ0)*MS,rd.r1*MS,0,7);x.fill();x.fillStyle='#cfe3c0';x.beginPath();x.arc((rd.x-MX0)*MS,(rd.z-MZ0)*MS,rd.r0*MS,0,7);x.fill()}
   if(curTown==='memepura'){R(20,44,26,44,'#6dbb5c');x.fillStyle='#3fa7e0';x.beginPath();x.arc((64-MX0)*MS,(64-MZ0)*MS,13*MS,0,7);x.fill();R(22,94,9,9.6,'#141414')}
   if(curTown==='basti'){R(-46,-10,26,68,'#8fd07a');R(-40,-16,58,64,'#2b2b2b')}
   for(const p of(G.mapPolys||[])){x.fillStyle=p.col;x.beginPath();p.pts.forEach(([px,pz],i)=>{const X=(px-MX0)*MS,Y=(pz-MZ0)*MS;i?x.lineTo(X,Y):x.moveTo(X,Y)});x.closePath();x.fill()}
@@ -503,8 +533,7 @@ function drawMini(){const c=$('.ow-map canvas'),x=c.getContext('2d'),W_=c.width,
   x.save();x.translate(W_/2,W_/2);x.rotate(drone.on?-cam.yaw:-P.yaw+Math.PI);x.fillStyle=drone.on?'#3fa7e0':'#ffffff';x.strokeStyle='#141414';x.lineWidth=2.5;x.beginPath();x.moveTo(0,-10);x.lineTo(7,8);x.lineTo(0,4);x.lineTo(-7,8);x.closePath();x.fill();x.stroke();x.restore()}
 function openMap(){const o=$('.ow-bigmap');o.hidden=false;const c=o.querySelector('canvas');const ar=MH/MW,w=Math.min(innerWidth-24,820,(innerHeight-130)/ar);c.width=w*2;c.height=w*2*ar;c.style.width=w+'px';c.style.height=w*ar+'px';o.querySelector('.k').textContent=TOWNS[curTown].name+' map · tap a building to walk there';const x=c.getContext('2d');x.drawImage(bg,0,0,c.width,c.height);const k=c.width/bg.width;
   x.font='800 '+Math.round(22*k/1.5)+'px "Bricolage Grotesque",sans-serif';x.textAlign='center';
-  for(const b of G.buildings){if(!b.room)continue;const cx=((b.x0+b.x1)/2-MX0)*MS*k,cy=((b.z0+b.z1)/2-MZ0)*MS*k;x.lineWidth=6;x.strokeStyle='#141414';x.strokeText(b.short,cx,cy);x.fillStyle='#ffffff';x.fillText(b.short,cx,cy)}
-  for(const [n,X,Z] of[['Event Ground',-28,48],['Lakeside Park',64,64],['Poster Street',58,3],['Town Square',0,-4]]){const cx=(X-MX0)*MS*k,cy=(Z-MZ0)*MS*k;x.lineWidth=6;x.strokeStyle='#141414';x.strokeText(n,cx,cy);x.fillStyle='#ffcc3a';x.fillText(n,cx,cy)}
+  for(const b of G.buildings){if(!b.room&&!b.label)continue;const cx=((b.x0+b.x1)/2-MX0)*MS*k,cy=((b.z0+b.z1)/2-MZ0)*MS*k;x.lineWidth=6;x.strokeStyle='#141414';x.strokeText(b.short,cx,cy);x.fillStyle='#ffffff';x.fillText(b.short,cx,cy)}
   if(P.world==='out'){const cx=(P.pos.x-MX0)*MS*k,cy=(P.pos.z-MZ0)*MS*k;x.fillStyle='#ff3b3b';x.beginPath();x.arc(cx,cy,10,0,7);x.fill();x.lineWidth=4;x.strokeStyle='#fff';x.stroke()}}
 function bigMapTap(e){if(P.world!=='out')return;const c=e.currentTarget,r=c.getBoundingClientRect();const wx=(e.clientX-r.left)/r.width*MW+MX0,wz=(e.clientY-r.top)/r.height*MH+MZ0;
   const b=G.buildings.find(b=>b.room&&wx>b.x0-2&&wx<b.x1+2&&wz>b.z0-2&&wz<b.z1+2);$('.ow-bigmap').hidden=true;
