@@ -120,7 +120,7 @@ export function anim(c,dt,s={}){const u=c.userData,a=Math.min(1,dt*12),t=perform
   else if(e==='talk'){ar=-.9+Math.sin(t*5)*.4;al=-.3+Math.sin(t*4)*.2;arz=.2}
   else if(e==='play'){al=-1.1;ar=-1.2+Math.sin(t*16)*.2;arz=.4}
   else if(e==='drum'){al=-1.3+Math.max(0,Math.sin(t*14))*.4;ar=-1.3+Math.max(0,Math.sin(t*14+3))*.4}
-  else if(e==='box'){const k=t*4.2+u.ph,jl=Math.pow(Math.max(0,Math.sin(k)),10),jr=Math.pow(Math.max(0,Math.sin(k+2.2)),10);al=-1.15-jl*.5;ar=-1.15-jr*.5;alz=.45-jl*.3;arz=-.45+jr*.3;by=Math.abs(Math.sin(t*5+u.ph))*.05}
+  else if(e==='box'){const k=t*4.2+u.ph,pl=u.pl||0,pr=u.pr||0,jl=Math.pow(Math.max(0,Math.sin(k)),10)*.4+pl,jr=Math.pow(Math.max(0,Math.sin(k+2.2)),10)*.4+pr,hit=u.hit||0;al=-1.15-jl*.6;ar=-1.15-jr*.6;alz=.45-jl*.35;arz=-.45+jr*.35;ty=(pr-pl)*.5;hx=-hit*.55;by=Math.abs(Math.sin(t*5+u.ph))*.05+hit*.04}
   else if(e==='sing'){ar=-2.25;arz=-.45;al=-1.1+Math.sin(t*3)*.7;alz=.35;hx=-.12;by=Math.abs(Math.sin(t*4))*.05}
   else if(e==='pose'){alz=-.8;arz=.8;al=-.3;ar=-.3;hx=-.15}
   else if(e==='beg'){al=-1.4;ar=-1.4;alz=.2;arz=-.2;hx=.15+Math.sin(t*4)*.05}

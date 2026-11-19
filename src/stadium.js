@@ -4,10 +4,12 @@
 import {THREE,G,Batch,bx,cyl,col,tex,FONT_T,FONT_D,rng,CHM} from './core.js';
 import {npc} from './world.js';
 const PI=Math.PI,cx=-111.25,cz=60.8,FD=[-159,-63.5,32.9,88.7],TR=[-166,-56.4,25.8,95.6],SB=[-180.3,-42.6,12,106.6],SLOT=240;
-export const ARTISTS=['Jatin Birbal','Chawanni','Dakaar','Lendrik Kumar','Raftaaar','SAZA','Arina Granade'];
+export const ARTISTS=['Jatin Birbal','Chawanni','Dakaar','Lendrik Kumar','Raftaaar','SAZA','Arina Granade','Conejo Malo'];
+/* what each artist plays: pop = English songs, hindi = Hindi songs, rap, reggaeton = Spanish */
+const ASTYLE={'Jatin Birbal':['hindi','HINDI SONGS'],'Chawanni':['hindi','HINDI SONGS'],'SAZA':['hindi','HINDI SONGS'],'Dakaar':['trap','HINDI RAP'],'Lendrik Kumar':['boombap','RAP'],'Raftaaar':['desirap','HINDI RAP'],'Arina Granade':['pop','ENGLISH SONGS'],'Conejo Malo':['reggaeton','REGGAETON · ESPAÑOL']};
 const ALOOK={'Jatin Birbal':{shirt:'#f4f1ea',pants:'#3a4a6b',hair:'side',hairC:'#c9a25a',coat:'#d9d4c4'},'Chawanni':{shirt:'#ffcc3a',pants:'#141414',hair:'spiky',hairC:'#141414',shades:true},
   'Dakaar':{shirt:'#141414',pants:'#141414',hair:'buzz',beard:true,shades:true,coat:'#2b2b2b'},'Lendrik Kumar':{shirt:'#e94b3c',pants:'#2b2b2b',hair:'curly2',hairC:'#141414',beard:true},
-  'Raftaaar':{shirt:'#2f5bff',pants:'#141414',hair:'cap',hat:'#141414',shades:true,beard:true},'SAZA':{shirt:'#c9f26b',pants:'#3a3a3a',hair:'long',hairC:'#3a2414',fem:true},'Arina Granade':{shirt:'#e9d8ff',skirt:'#e9d8ff',pants:'#e9d8ff',hair:'ponytail',hairC:'#8a5a3b',fem:true}};
+  'Raftaaar':{shirt:'#2f5bff',pants:'#141414',hair:'cap',hat:'#141414',shades:true,beard:true},'SAZA':{shirt:'#c9f26b',pants:'#3a3a3a',hair:'long',hairC:'#3a2414',fem:true},'Arina Granade':{shirt:'#e9d8ff',skirt:'#e9d8ff',pants:'#e9d8ff',hair:'ponytail',hairC:'#8a5a3b',fem:true},'Conejo Malo':{shirt:'#f4f1ea',pants:'#1d1d1d',hair:'buzz',hairC:'#141414',shades:true,hat:'#e94b3c'}};
 const AWAY=[['DELULUGARH FC','#a463ff'],['MEMEPURA UNITED','#ff3b8d'],['BARFII CITY','#3d7be8'],['BASTI ROVERS','#8b1e2d'],['KAAPIKUNJ BREWERS','#1d3a8a']];
 const FIGHTERS=['Iron Inder','Bullet Bablu','Thunder Tara','Rocky Rana','Toofan Tiwari','Golden Gauri','Lightning Lakhan','Kaali Aandhi'];
 const COUPLES=[['Rohan','Isha'],['Kabir','Meera'],['Aditya','Tara'],['Dev','Riya'],['Arjun','Kavya'],['Sameer','Naina']];
@@ -181,8 +183,8 @@ export function makeStadium({scene,snd,bubble,toast,P,camera}){
     const fans=[];for(let i=0;i<14;i++){const n=ev.person({name:'Fan',look:ev.look(i),x:SX+10+r()*7,z:cz-11+r()*22,yaw:-PI/2,emote:['cheer','dance','wave'][i%3],lines:['I queued since morning for '+ART+'!','Best concert of my life. Until the next one.'],barks:[ART+'!','Encore!','Wooo!']});fans.push(n)}
     const mob=ev.fieldCrowd(SX+17,SX+40,cz-16,cz+16,170);
     const LINES=['Make some noise, Vashupur!','This one is for the bus stand vendors!','Put your phones up!','Ek baar aur!','Vashupur, I love you!','Choupati, are you there?'];let li=0,lt=3,dir=1;
-    ev.status=t=>'LIVE ON STAGE · '+ART;ev.screen=t=>[ART.toUpperCase(),'LIVE IN VASHUPUR','TONIGHT AT THE NATIONAL STADIUM'];
-    ev.music={concert:1};
+    ev.status=t=>'LIVE ON STAGE · '+ART;ev.screen=t=>[ART.toUpperCase(),'LIVE IN VASHUPUR · '+(ASTYLE[ART]||['','LIVE'])[1],'TONIGHT AT THE NATIONAL STADIUM'];
+    ev.music={concert:1,style:(ASTYLE[ART]||['pop'])[0],fem:!!(ALOOK[ART]&&ALOOK[ART].fem)};
     ev.tick=(dt,t,T)=>{const p=star.c.position;if(Math.abs(p.z-cz)>8)dir=-Math.sign(p.z-cz);star.spd=0;p.z+=dir*dt*1.1;star.c.rotation.y=PI/2;star.emote=['sing','dance','sing','wave','sing','cheer'][Math.floor(t/5)%6];
       lt-=dt;if(lt<=0){lt=6+r()*3;bubble(star,LINES[li++%LINES.length])}
       beams.forEach((b,i)=>{b.rotation.set(Math.sin(T*.9+i)*.5,0,-.7+Math.sin(T*1.3+i*.7)*.35);b.children[0].material.color.setHSL((i/8+T*.05)%1,.9,.6)});
@@ -216,9 +218,14 @@ export function makeStadium({scene,snd,bubble,toast,P,camera}){
     ev.tick=(dt,t,T)=>{const rd=round(t);if(bell!==rd*2+(inR(t)?0:1)&&t<RD*10&&t<koT){bell=rd*2+(inR(t)?0:1);if(near&&snd.bell)snd.bell()}
       if(t>=koT){const w=F[ko.win],l=F[1-ko.win];l.lie=true;l.spd=0;w.spd=0;w.emote='cheer';w.c.position.y=H;cntT-=dt;if(cnt<10&&cntT<=0){cnt++;cntT=.8;if(cnt>0)bubble(ref,cnt<10?String(cnt):'TEN! It\'s over!');if(cnt===10){cheer=6;if(near&&!said){said=true;toast('KNOCKOUT!',(ko.win?B:A)+' wins in round '+ko.round+'.')}}}ref.spd=seek(ref,l.c.position.x,l.c.position.z+1.2,2,dt);ref.c.position.y=H;return}
       if(t>=RD*10){F.forEach((f,i)=>{f.spd=0;f.emote=i===points?'cheer':'clap'});return}
-      if(inR(t)){a+=dt*.55;F.forEach((f,i)=>{const ang=a+i*PI,x=cx+Math.cos(ang)*1.15,z=cz+Math.sin(ang)*1.15,o=F[1-i].c.position;f.c.position.x+=(x-f.c.position.x)*Math.min(1,dt*3);f.c.position.z+=(z-f.c.position.z)*Math.min(1,dt*3);f.c.position.y=H;f.spd=0;f.emote='box';turnTo(f.c,Math.atan2(o.x-f.c.position.x,o.z-f.c.position.z),dt)});
+      if(inR(t)){a+=dt*.4;F.forEach((f,i)=>{const u=f.c.userData,o=F[1-i],op=o.c.position,ang=a+i*PI,bx0=cx+Math.cos(ang)*.72,bz0=cz+Math.sin(ang)*.72,dx=op.x-f.c.position.x,dz=op.z-f.c.position.z,dd=Math.hypot(dx,dz)||1,ux=dx/dd,uz=dz/dd;
+          f.pcd=(f.pcd==null?r()*.8:f.pcd)-dt;f.pt=Math.max(0,(f.pt||0)-dt);f.hit=Math.max(0,(f.hit||0)-dt*2.2);f.kn=Math.max(0,(f.kn||0)-dt*2.5);
+          if(f.pcd<=0&&!f.pt){f.pt=.3;f.pcd=.45+r()*.7;f.side=r()<.5?0:1;f.did=false}
+          const ph=f.pt?Math.sin(PI*(1-f.pt/.3)):0;u.pl=f.side===0?ph:0;u.pr=f.side===1?ph:0;u.hit=f.hit;
+          if(f.pt&&!f.did&&f.pt<.15){f.did=true;if(r()<.68){o.hit=1;o.kn=.7;cheer=Math.max(cheer,1.4);if(near&&snd.kick)snd.kick();if(r()<.18)bubble(o,['Ooof!','Nice one!','Come on!','Ugh!'][Math.floor(r()*4)])}}
+          const off=ph*.4-f.kn*.35;f.c.position.x+=(bx0+ux*off-f.c.position.x)*Math.min(1,dt*6);f.c.position.z+=(bz0+uz*off-f.c.position.z)*Math.min(1,dt*6);f.c.position.y=H;f.spd=0;f.emote='box';turnTo(f.c,Math.atan2(dx,dz),dt)});
         ref.spd=seek(ref,cx+Math.cos(a+PI/2)*2.6,cz+Math.sin(a+PI/2)*2.6,2.5,dt,Math.atan2(cx-ref.c.position.x,cz-ref.c.position.z));ref.c.position.y=H;if(r()<dt*.25)cheer=Math.max(cheer,1.2)}
-      else{F.forEach((f,i)=>{const s=i?1:-1;f.spd=seek(f,cx+s*(RS-.9),cz+s*(RS-.9),2,dt,s>0?-PI*.75:PI*.25);f.c.position.y=H;f.emote=null});ref.spd=seek(ref,cx,cz,2,dt);ref.c.position.y=H}}}
+      else{F.forEach((f,i)=>{const s=i?1:-1;f.spd=seek(f,cx+s*(RS-.9),cz+s*(RS-.9),2,dt,s>0?-PI*.75:PI*.25);f.c.position.y=H;f.emote=null;f.c.userData.pl=f.c.userData.pr=f.c.userData.hit=0});ref.spd=seek(ref,cx,cz,2,dt);ref.c.position.y=H}}}
 
   /* =============================== OLYMPICS =============================== */
   function olympics(ev){const {I,r}=ev;const lane=i=>TR[2]+.59+i*1.18,X0=-152,X1=-70;

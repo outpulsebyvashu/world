@@ -551,7 +551,7 @@ function guideTick(n,dt){const c=n.c,p=c.position;if(!tour){const dx=-120-p.x,dz
   return 0}
 
 /* ================= events: rally & concert ================= */
-function eventTick(dt,T){if(!W.event){const sm=stadium?stadium.tick(dt,T):null;snd.setScene({concert:sm&&sm.concert?1:0,rally:!!(sm&&sm.rally),party:!!(sm&&sm.party)||party&&P.world==='out'&&Math.hypot(P.pos.x-(W.partyAt||[0,0])[0],P.pos.z-(W.partyAt||[0,0])[1])<40,indoor:P.world!=='out'?P.world:null});return}const ph=Math.floor(Date.now()/120000)%2;if(ph!==evPhase){evPhase=ph;setPhase()}
+function eventTick(dt,T){if(!W.event){const sm=stadium?stadium.tick(dt,T):null;snd.setScene({concert:sm&&sm.concert?1:0,style:sm&&sm.style,fem:!!(sm&&sm.fem),rally:!!(sm&&sm.rally),party:!!(sm&&sm.party)||party&&P.world==='out'&&Math.hypot(P.pos.x-(W.partyAt||[0,0])[0],P.pos.z-(W.partyAt||[0,0])[1])<40,indoor:P.world!=='out'?P.world:null});return}const ph=Math.floor(Date.now()/120000)%2;if(ph!==evPhase){evPhase=ph;setPhase()}
   const E=W.event,d=Math.hypot(P.pos.x-E.x,P.pos.z-E.z);const near=P.world==='out'&&d<24;
   W.stageLights.forEach((m,i)=>{const k=evPhase===1?(Math.sin(T*(RM?.5:2)+i)*.5+.5):.15;m.material.color.setHSL((i/5+(evPhase===1?T*.05:0))%1,.9,.3+.4*k)});
   if(evPhase===0){rallyT-=dt;if(near&&rallyT<=0){rallyT=4.6;const line=RALLY[rallyI%RALLY.length];rallyI++;sub('Shri Vaada Kumar',line);snd.gibber(line.length);W.crowd.forEach(c=>{c.emote=Math.random()<.5?'clap':null});if(P.state==='sit'&&P.seat&&P.seat.event){heard++;if(heard>=5)G.host.egg('ow_rally','You sat through a whole rally. Patience: maxed.')}}if(!near)sub(null)}
