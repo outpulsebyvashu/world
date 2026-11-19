@@ -31,11 +31,11 @@ export function buildDistricts(scene,ctx){const {S,WIN,LMP,building,addPlane,ben
    for(let x=-7;x<=7;x+=.7){bx(LMP,x,8.4,15.55,.12,.12,.12,'#ffffff');bx(LMP,x,8.4,18.65,.12,.12,.12,'#ffffff')};move(cpR,[0,17.1],[-53,95.5],0,[])}
   const taxi=(x,z,ry)=>{const p=prop(S,x,0,z,ry);p.box(0,.62,0,1.6,.7,3.6,'#141414');p.box(0,1.25,-.2,1.45,.6,1.9,'#ffd23f');p.box(0,1.25,-.2,1.47,.42,1.7,'#26323d');p.box(0,1.65,-.2,.6,.22,.3,'#ffd23f');
     for(const zz of[1.15,-1.15])for(const s of[-1,1])p.wheel(s*.78,.32,zz,.32,.2);p.box(0,.7,1.82,1.2,.2,.04,'#e8e8e8');const r=Math.abs(Math.sin(ry))>.5;col(x-(r?1.9:.85),x+(r?1.9:.85),0,1.6,z-(r?.85:1.9),z+(r?.85:1.9))};
-  if(on('vashupur')){taxi(64,4.9,PI/2);taxi(-39.7,-4.9,-PI/2)}if(on('basti'))taxi(-2.6,40,PI);
+  if(on('vashupur')){taxi(64,6.2,PI/2);taxi(-39.7,-6.2,-PI/2)}if(on('basti'))taxi(-2.6,40,PI);
   if(on('vashupur')){const cpR=mark(scene,RB);const p=prop(S,22,0,2.7,PI/2);p.box(0,1.45,0,2.5,2.2,10,'#d7263d');p.box(0,3.65,0,2.5,2.1,9.8,'#d7263d');p.box(0,2.58,0,2.52,.12,10,'#f4efe6');p.box(0,4.72,0,2.4,.1,9.6,'#b71c2b');
     for(let i=0;i<6;i++)for(const y of[1.8,3.8])for(const s of[-1,1])p.box(s*1.26,y,-4+i*1.5,.04,.9,1.2,'#26323d');p.box(0,1.8,5.01,2.1,1.1,.04,'#26323d');p.box(0,3.8,5.01,2.1,.9,.04,'#26323d');
     for(const zz of[3.4,-3.2])for(const s of[-1,1])p.wheel(s*1.12,.5,zz,.5,.35);col(17,27,0,4.8,1.45,3.95);
-    const d=new THREE.Mesh(new THREE.PlaneGeometry(1.8,.35),new THREE.MeshBasicMaterial({map:signTex('VASHUPUR · LTD','#141414','#ffcc3a',512,100)}));d.position.set(27.02,3.15,2.7);d.rotation.y=PI/2;scene.add(d);move(cpR,[0,0],[19.6,2.4],0,[])}
+    const d=new THREE.Mesh(new THREE.PlaneGeometry(1.8,.35),new THREE.MeshBasicMaterial({map:signTex('VASHUPUR · LTD','#141414','#ffcc3a',512,100)}));d.position.set(27.02,3.15,2.7);d.rotation.y=PI/2;scene.add(d);move(cpR,[0,0],[19.6,3.6],0,[])}
   if(on('vashupur')){const cpR=mark(scene,RB);const p=prop(S,-12.6,0,12.6,PI*.75);p.box(0,.5,0,1.9,1,1,'#ff8a3d');p.box(0,1.05,0,2,.08,1.1,'#c9ccd1');p.cyl(-.5,1.25,0,.35,.35,.25,'#555',12);p.cyl(-.5,1.4,0,.3,.3,.04,'#d9963b',12);for(let i=0;i<4;i++)p.sph(.2+i*.2,1.18,.2,.1,'#d9963b');
    p.box(0,2.4,0,2.2,.08,1.4,'#e94b3c');for(const s of[-1,1])p.box(s*1,1.7,-.5,.05,1.4,.05,'#555');col(-13.7,-11.5,0,1.2,11.5,13.7);
    G.triggers.push({x:-11.3,z:11.3,r:1.6,label:'Grab a vada pav',act:()=>G.host.toast('VADA PAV','Mumbai\'s burger. ₹20, with dry garlic chutney.')});

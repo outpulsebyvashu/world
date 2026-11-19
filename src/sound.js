@@ -41,6 +41,14 @@ export const snd={get muted(){return muted},
   /* recorded clips (fetched the first time they are needed) */
   sample(url,vol=1){if(!ac||muted)return;const c=SAMPLES[url]||(SAMPLES[url]=fetch(url).then(r=>r.arrayBuffer()).then(b=>new Promise((ok,no)=>ac.decodeAudioData(b,ok,no))).catch(()=>null));
     c.then(buf=>{if(!buf)return;const s=ac.createBufferSource(),g=ac.createGain();s.buffer=buf;g.gain.value=vol*1.6;s.connect(g).connect(sfxG);s.start()})},
+  /* street sounds: horns, a bike revving, a police whistle */
+  horn(vol=1,big=0){if(!ac||muted)return;const t=ac.currentTime,g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.07*vol,t+.02);g.gain.setValueAtTime(.07*vol,t+.32);g.gain.linearRampToValueAtTime(0,t+.4);g.connect(sfxG);
+    for(const f of big?[196,247]:[392,494]){const o=ac.createOscillator();o.type='square';o.frequency.value=f;o.connect(g);o.start(t);o.stop(t+.42)}},
+  rev(vol=1){if(!ac||muted)return;const t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain(),f=ac.createBiquadFilter();o.type='sawtooth';f.type='lowpass';f.frequency.value=900;
+    o.frequency.setValueAtTime(70,t);o.frequency.exponentialRampToValueAtTime(210,t+.35);o.frequency.exponentialRampToValueAtTime(90,t+.9);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.08*vol,t+.05);g.gain.linearRampToValueAtTime(0,t+.95);
+    o.connect(f).connect(g).connect(sfxG);o.start(t);o.stop(t+1)},
+  whistle(){if(!ac||muted)return;const t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain(),l=ac.createOscillator(),lg=ac.createGain();o.frequency.value=2600;l.frequency.value=28;lg.gain.value=180;l.connect(lg).connect(o.frequency);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.05,t+.03);g.gain.setValueAtTime(.05,t+.55);g.gain.linearRampToValueAtTime(0,t+.65);o.connect(g).connect(sfxG);o.start(t);l.start(t);o.stop(t+.7);l.stop(t+.7)},
   /* fire-truck siren: a slow two-tone wail, k = loudness 0..1 */
   siren(k){if(!ac)return;if(!sirO){if(!k)return;sirO=ac.createOscillator();sirO.type='triangle';sirO.frequency.value=760;const lfo=ac.createOscillator(),lg=ac.createGain();lfo.type='triangle';lfo.frequency.value=.45;lg.gain.value=260;lfo.connect(lg).connect(sirO.frequency);lfo.start();
       sirG=ac.createGain();sirG.gain.value=0;sirO.connect(sirG).connect(sfxG);sirO.start()}sirG.gain.setTargetAtTime(k*k*.09,ac.currentTime,.15)},

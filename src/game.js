@@ -6,6 +6,7 @@ import {snd} from './sound.js';
 import {makeMask,groundMaterial,makeGrass,makeSky,MASK} from './nature.js';
 import {TOWNS,ORDER,BEANS} from './towns.js';
 import {makeFire} from './events.js';
+import {makeTraffic} from './traffic.js';
 
 const OW=window.OW={};
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
@@ -17,7 +18,7 @@ const cam={yaw:0,pitch:.36,dist:8.5,tdist:8.5,lastDrag:0};
 const inp={jx:0,jy:0,keys:{},target:null,pend:null,jump:false};
 let player,cupMesh,marker,timeMode=LS.get('ow_time','auto'),zoneName='',beansGot=new Set(LS.get('ow_beans',[])),unlocked=LS.get('ow_unlocked',false),party=false;
 let quest=LS.get('ow_quest',{doctor:0}),dlgState=null,tour=null,evPhase=-1,rallyI=0,rallyT=0,heard=0,concertT=0;
-G.player=P;G.snd=snd;OW._={P,G,cam,W,fire:()=>fire&&fire.start(),get fireState(){return fire&&fire.active},step(n,dt=.05){let t=performance.now()/1000;for(let i=0;i<n;i++){t+=dt;update(dt,t)}},drone:on=>setDrone(on!==false),dronePos:(x,y,z)=>{drone.pos.set(x,y,z);drone.vel.set(0,0,0)},get party(){return party},get camera(){return camera},get scene(){return scene},get grass(){return grass},get town(){return curTown},load:id=>loadTown(id),view(x,y,z,tx,ty,tz){running=false;camera.position.set(x,y,z);camera.lookAt(tx,ty,tz);setTime();renderer.render(scene,camera)},THREE};
+G.player=P;G.snd=snd;OW._={P,G,cam,W,fire:()=>fire&&fire.start(),get fireState(){return fire&&fire.active},get traffic(){return traffic},step(n,dt=.05){let t=performance.now()/1000;for(let i=0;i<n;i++){t+=dt;update(dt,t)}},drone:on=>setDrone(on!==false),dronePos:(x,y,z)=>{drone.pos.set(x,y,z);drone.vel.set(0,0,0)},get party(){return party},get camera(){return camera},get scene(){return scene},get grass(){return grass},get town(){return curTown},load:id=>loadTown(id),view(x,y,z,tx,ty,tz){running=false;camera.position.set(x,y,z);camera.lookAt(tx,ty,tz);setTime();renderer.render(scene,camera)},THREE};
 export const EGGS=['ow_beans','ow_roof','ow_call','ow_laptop','ow_mirror','ow_lake','ow_goal','ow_freeloader','ow_rally','ow_concert','ow_doctor','ow_party','ow_scooter','ow_dog','ow_tour','ow_fire','ow_bonfire','ow_statue','ow_firepole','ow_bus','ow_alltowns','ow_terminal','ow_snowman','ow_skydeck'];
 
 /* ================= host (standalone or inside portfolio) ================= */
@@ -49,7 +50,7 @@ OW.init=async(host,el,progress=()=>{})=>{
   player=makeChar({skin:'#c48a60',shirt:'#141414',pants:'#8a7f5a',cargo:'#6f6646',shoes:'#f5f5f5',hair:'curly',glasses:true,face:'smile',seed:3,logo:'#ff6a3d'});scene.add(player);
   const cb=new Batch();cyl(cb,0,0,0,.11,.09,.22,'#ffffff',10);cyl(cb,0,.11,0,.1,.1,.01,'#8a5a3b',10);cupMesh=cb.mesh(CHM);cupMesh.position.set(0,-.72,.12);cupMesh.visible=false;player.userData.armR.add(cupMesh);
   marker=new THREE.Mesh(new THREE.RingGeometry(.35,.5,24).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:.9,depthWrite:false}));marker.visible=false;scene.add(marker);
-  fire=makeFire({scene,camera,P,snd,W,toast,bubbleNear});
+  fire=makeFire({scene,camera,P,snd,W,toast,bubbleNear});traffic=makeTraffic({P,snd,bubble});
   if(!TOWNS[curTown]||!TOWNS[curTown].ready)curTown='vashupur';
   loadTown(curTown);progress(.75);await fontsP;fontsOK=true;streamNear(P.pos,70);progress(.9);await new Promise(r=>setTimeout(r,0));
   bindInput();resize();addEventListener('resize',resize);
@@ -158,7 +159,7 @@ function loadTown(id){if(!TOWNS[id])id='vashupur';
   for(const k of Object.keys(W))delete W[k];
   curTown=id;G.TOWN=id;LS.set('ow_town',id);const T=TOWNS[id];party=false;evPhase=-1;tour=null;closeDlg&&$('.ow-dlg')&&closeDlg();
   townRoot=new THREE.Group();scene.add(townRoot);lazy=[];
-  if(drone.on)setDrone(false);buildWorld(townRoot);spawnTown(townRoot);fire.reset(townRoot,T,id);
+  if(drone.on)setDrone(false);buildWorld(townRoot);spawnTown(townRoot);fire.reset(townRoot,T,id);traffic.reset(townRoot,T,id);
   W.ground.material=groundMaterial(!!T.snow);W.clouds.visible=false;W.sun.visible=false;
   if(T.snow){const n=1600,v=new Float32Array(n*3);for(let i=0;i<n;i++){v[i*3]=(Math.random()-.5)*70;v[i*3+1]=Math.random()*26;v[i*3+2]=(Math.random()-.5)*70}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(v,3));W.snow=new THREE.Points(g,new THREE.PointsMaterial({color:'#ffffff',size:.12,transparent:true,opacity:.85,depthWrite:false}));townRoot.add(W.snow)}
   const old=grass.U.uMask.value;grass.U.uMask.value=makeMask(T.roads.map(r=>r[4]==='x'?[r[0],r[1],r[2]-2.3,r[3]+2.3]:[r[0]-2.3,r[1]+2.3,r[2],r[3]]),T.b);if(old&&old!==grass.U.uMask.value)old.dispose();
@@ -179,7 +180,7 @@ function lazyTick(){if(!fontsOK||!lazy.length)return;const t0=performance.now();
   if(lazyT<=0){lazyT=15;const p=P.world==='out'?(drone.on?drone.focus:P.pos):(G.rooms[P.world]?_v.set(G.rooms[P.world].spawn.x,0,G.rooms[P.world].spawn.z):P.pos);for(const e of lazy)e.d=distOf(e,p);lazy.sort((a,b)=>a.d-b.d)}
   const budget=lazy[0].d<60?6:3;while(lazy.length&&performance.now()-t0<budget){const e=lazy.shift();drawTex(e.t)}}
 /* ---- drone view: free flight over the town, the player waits where they stood ---- */
-let fire=null;const drone={on:false,pos:new THREE.Vector3(),vel:new THREE.Vector3(),focus:new THREE.Vector3(),up:0,down:0,saved:null};
+let fire=null,traffic=null;const drone={on:false,pos:new THREE.Vector3(),vel:new THREE.Vector3(),focus:new THREE.Vector3(),up:0,down:0,saved:null};
 function bubbleNear(x,z,lines){const c=G.npcs.filter(n=>n.c&&n.c.visible&&!n.hidden&&n.kind!=='dog'&&n.kind!=='cat'&&Math.hypot(n.c.position.x-x,n.c.position.z-z)<36).slice(0,3);c.forEach((n,i)=>bubble(n,lines[i%lines.length]))}
 function setDrone(on){if(on&&P.world!=='out'){toast('DRONE','The drone only flies outside.');return}
   drone.on=on;root.classList.toggle('drone',on);const b=$('.ow-drone');b.setAttribute('aria-pressed',on?'true':'false');b.setAttribute('aria-label',on?'Land the drone':'Drone view');
@@ -257,7 +258,7 @@ function update(dt,T){
   if(marker.visible){marker.rotation.y+=dt*2;marker.material.opacity=.5+.4*Math.sin(T*6)}
   /* --- world systems --- */
   const FC=drone.on?drone.focus:P.pos;if(grass&&P.world==='out')grass.update(dt,T,FC.x,FC.z);if(sky){sky.position.copy(camera.position);if(sky.material.uniforms.time)sky.material.uniforms.time.value=T}
-  beansTick(dt,T);npcTick(dt,T);eventTick(dt,T);fire.tick(dt,T);ballTick(dt);ambientTick(dt,T);
+  beansTick(dt,T);npcTick(dt,T);eventTick(dt,T);fire.tick(dt,T);traffic.tick(dt,T,W);ballTick(dt);ambientTick(dt,T);
   if(P.world==='out')lakeCheck();
   /* --- action button --- */
   actT-=dt;if(actT<=0){actT=.12;if(drone.on){curAct=null;$('.ow-act').hidden=true}else pickAction()}
@@ -378,6 +379,7 @@ function npcTick(dt,T){const px=P.pos.x,pz=P.pos.z,now=performance.now(),FC=dron
       else if(d<=1.9&&P.world==='out'){turn(c,Math.atan2(dx,dz),dt);em='beg'}
       else{const hx=n.home[0]-p.x,hz=n.home[1]-p.z,hd=Math.hypot(hx,hz);if(hd>.5){sp=2;p.x+=hx/hd*sp*dt;p.z+=hz/hd*sp*dt;turn(c,Math.atan2(hx,hz),dt);em=null}}}
     else if(n.kind==='guide')sp=guideTick(n,dt);
+    else if(n.kind==='commute'&&n.walk)sp=n.walk(dt);
     else if(n.kind==='dog'){const dx=px-p.x,dz=pz-p.z,d=Math.hypot(dx,dz);if(P.world==='out'&&d<14&&d>2.4){sp=Math.min(9,d*1.4);p.x+=dx/d*sp*dt;p.z+=dz/d*sp*dt;turn(c,Math.atan2(dx,dz),dt)}c.children[0].position.y=sp?Math.abs(Math.sin(T*14))*.08:0;continue}
     else if(n.kind==='cat'){continue}
     if(party&&(n.kind==='wander'||n.kind==='crowd'||n.kind==='chase')&&P.world==='out'){const pa=W.partyAt||[0,0],a=(n.ci||G.npcs.indexOf(n))*.7,tx=pa[0]+Math.cos(a)*(6+(a%3)),tz=pa[1]+Math.sin(a)*(6+(a%3)),dx=tx-p.x,dz=tz-p.z,d=Math.hypot(dx,dz);if(d>.5&&n.kind!=='crowd'){sp=5;p.x+=dx/d*sp*dt;p.z+=dz/d*sp*dt;turn(c,Math.atan2(dx,dz),dt)}else em='dance'}
