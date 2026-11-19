@@ -17,6 +17,8 @@ export function makeMask(roads,b){if(b){MASK.x0=b[0]-40;MASK.z0=b[2]-40;MASK.w=b
   if(G.TOWN==='memepura'){x.fillStyle='#000';x.beginPath();x.arc((64-MASK.x0)*S,(64-MASK.z0)*S,19.2*S,0,7);x.fill();R(20,44,26,44,'#5a5a5a')}
   for(const r of(G.noGrass||[]))R(r[0],r[1],r[2],r[3]);
   x.fillStyle='#fff';for(const P of(G.grassPolys||[])){x.beginPath();P.forEach(([px,pz],i)=>{const X=(px-MASK.x0)*S,Y=(pz-MASK.z0)*S;i?x.lineTo(X,Y):x.moveTo(X,Y)});x.closePath();x.fill()}
+  /* roads always win: lawns drawn above must never put grass back on the asphalt */
+  for(const r of roads)R(r[0],r[1],r[2],r[3]);
   const blur=document.createElement('canvas');blur.width=c.width;blur.height=c.height;const bx=blur.getContext('2d');bx.filter='blur(3px)';bx.drawImage(c,0,0);
   const t=new THREE.CanvasTexture(blur);t.flipY=false;t.colorSpace=THREE.NoColorSpace;t.minFilter=THREE.LinearFilter;t.magFilter=THREE.LinearFilter;t.generateMipmaps=false;return t}
 
