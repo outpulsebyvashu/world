@@ -302,9 +302,18 @@ function busStand(scene,ctx){const {S,WIN,LMP,addPlane,TN}=ctx;const X0=-169.6,X
   const board=addPlane(scene,7,3.5,routeTex(TN),[-127,4.2,132.9],PI,()=>G.bus(),{reach:9});board.material.side=THREE.DoubleSide;blk(S,-130.6,-123.4,2.3,6.1,132.95,133.15,'#141414',false);
   G.triggers.push({x:-127,z:137.5,y:.25,r:3.2,label:'Take the bus',act:()=>G.bus()});
   // buses in bays, one leaving, one on the back curve
-  [[0,'#ffcc3a'],[2,'#f4f4f2'],[5,'#ff6a3d'],[7,'#3d7be8'],[9,'#5cc46b']].forEach(([i,c])=>busModel(scene,S,-160.4+(i+.5)*6.08,159,PI,c));
-  busModel(scene,S,-140,168.2,-Math.PI/2,'#f4f4f2');
+  /* three long-distance buses stay parked; the free bays are used by the buses that run in town */
+  [[0,'#ffcc3a'],[5,'#ff6a3d'],[9,'#5cc46b']].forEach(([i,c])=>busModel(scene,S,-160.4+(i+.5)*6.08,159,PI,c));
   G.extraNPCs.push({name:'Conductor Raju',look:{shirt:'#c9b48a',pants:'#3a4a6b',hair:'short',hat:'#2f5bff',mustache:true,face:'grin'},x:-122,z:146,yaw:PI,lines:['Vashupur bus stand! Kaapikunj, Memepura, Basti, Barfii, Delulugarh. All buses, all day.','Ticket? Free. The bus is part of the portfolio.','Window seat? Everyone wants window seat.'],barks:['Chalo chalo!','Next bus: now.']});
+  /* a busy stand: vendors and people waiting */
+  const kettle=hb=>{cyl(hb,0,-.78,.16,.13,.15,.26,'#c9ccd1',10);bx(hb,.12,-.66,.16,.12,.04,.04,'#9a9a9a')},flask=hb=>{cyl(hb,0,-.8,.16,.12,.12,.36,'#c62828',10);cyl(hb,0,-.6,.16,.07,.07,.06,'#141414',8)};
+  G.extraNPCs.push({name:'Chaiwala Bablu',look:{shirt:'#f4f1ea',pants:'#5b4636',hair:'short',mustache:true,held:kettle,long:true},x:-141,z:134.6,yaw:PI,lines:['Chai! Garam chai! Ten rupees, and it tastes like a hug.','Bus late? Chai is never late.','Adrak, elaichi, or both? Both. Always both.'],barks:['Chai chai chai!','Garam chai!']},
+    {name:'Coffee wala Sunny',look:{shirt:'#c62828',pants:'#26323d',hair:'side',held:flask,hat:'#141414'},x:-111,z:134.6,yaw:PI,lines:['Coffee! Nescoffee! Hot hot!','Filter coffee is upstairs in my heart, but this one sells.','For the road, sir? Take two.'],barks:['Coffee, nescoffee!','Hot coffee!']},
+    {name:'Peanut uncle',look:{shirt:'#3e7c59',pants:'#c9b48a',hair:'grey',long:true},x:-152,z:141,yaw:PI*.8,lines:['Moongphali! Hot, salted, in a paper cone.','I have sold peanuts to every bus in this stand.'],barks:['Moongphali!']},
+    {name:'Waiting passenger',look:{shirt:'#2b5fa8',pants:'#26323d',hair:'bun',fem:true},x:-133,z:146.5,yaw:PI,lines:['The Kaapikunj bus is always the slowest. Worth it though.'],barks:['Bus kab aayegi?']},
+    {name:'Waiting passenger',look:{shirt:'#ffcc3a',pants:'#3a4a6b',hair:'short'},x:-118,z:147,yaw:PI*1.1,lines:['I came for one day. That was three weeks ago.'],barks:['Ugh, late again.']},
+    {name:'Student',look:{shirt:'#6a4c93',pants:'#26323d',hair:'curly',glasses:true},x:-146,z:147.4,yaw:PI*.9,lines:['Exam in Memepura. Studied zero. Feeling great.'],barks:['Kitna late hai!']},
+    {name:'Aunty with bags',look:{shirt:'#ff5fa2',pants:'#ff5fa2',hair:'bun',long:true,fem:true,skirt:'#ff5fa2'},x:-102,z:146,yaw:PI,lines:['Beta, help me with this bag? Just to the bus. Which bus? Any bus.'],barks:['Arre, bus!']});
   G.buildings.push({name:'Vashupur Bus Stand',short:'Bus stand',x0:X0,x1:X1,z0:Z0,z1:Z1,col:'#a8a8a8',door:{x:-127,z:128.5},room:null});
   G.noGrass.push([X0,X1,Z0-3,Z1+2]);G.blocked.push([X0-3,X1+3,Z0-3,Z1+3]);G.noLamp.push([X0-1.5,X1+1.5,124,153])}
 

@@ -1,5 +1,5 @@
 /* Tiny procedural audio: no files, all generated in the browser. */
-const SAMPLES={};let sirO=null,sirG=null;let ac=null,master=null,musicG=null,sfxG=null,noiseBuf=null,motorO=null,motorG=null,murmur=null,murG=null;
+const SAMPLES={},BEDS={};let sirO=null,sirG=null;let ac=null,master=null,musicG=null,sfxG=null,noiseBuf=null,motorO=null,motorG=null,murmur=null,murG=null;
 let muted=(()=>{try{return localStorage.getItem('ow_mute')==='1'}catch(e){return false}})();
 let scene={concert:0,rally:false,party:false,indoor:null},mode='chill',step16=0,nextT=0,timer=null,chord=0;
 const N=m=>440*Math.pow(2,(m-69)/12);
@@ -39,8 +39,12 @@ export const snd={get muted(){return muted},
   brew(){if(!ac)return;noise(ac.currentTime,1.2,.12,3000,'bandpass')},
   gibber(n){if(!ac)return;const t=ac.currentTime;for(let i=0;i<Math.min(28,n/2);i++)tone(150+Math.random()*90,t+i*.09,.07,'sawtooth',.03)},
   /* recorded clips (fetched the first time they are needed) */
-  sample(url,vol=1){if(!ac||muted)return;const c=SAMPLES[url]||(SAMPLES[url]=fetch(url).then(r=>r.arrayBuffer()).then(b=>new Promise((ok,no)=>ac.decodeAudioData(b,ok,no))).catch(()=>null));
-    c.then(buf=>{if(!buf)return;const s=ac.createBufferSource(),g=ac.createGain();s.buffer=buf;g.gain.value=vol*1.6;s.connect(g).connect(sfxG);s.start()})},
+  sample(url,vol=1,pan=0){if(!ac||muted)return;const c=SAMPLES[url]||(SAMPLES[url]=fetch(url).then(r=>r.arrayBuffer()).then(b=>new Promise((ok,no)=>ac.decodeAudioData(b,ok,no))).catch(()=>null));
+    c.then(buf=>{if(!buf)return;const s=ac.createBufferSource(),g=ac.createGain();s.buffer=buf;g.gain.value=vol*1.6;let n=s.connect(g);if(pan&&ac.createStereoPanner){const p=ac.createStereoPanner();p.pan.value=Math.max(-1,Math.min(1,pan));n=n.connect(p)}n.connect(sfxG);s.start()})},
+  /* looping background bed (the bus stand crowd); k = loudness 0..1 */
+  bed(url,k){if(!ac)return;const b=BEDS[url];if(!b){if(!(k>0))return;const o=BEDS[url]={g:ac.createGain(),on:false};o.g.gain.value=0;o.g.connect(sfxG);
+      (SAMPLES[url]||(SAMPLES[url]=fetch(url).then(r=>r.arrayBuffer()).then(x=>new Promise((ok,no)=>ac.decodeAudioData(x,ok,no))).catch(()=>null))).then(buf=>{if(!buf)return;const s=ac.createBufferSource();s.buffer=buf;s.loop=true;s.connect(o.g);s.start();o.on=true});return}
+    b.g.gain.setTargetAtTime(muted?0:k*.5,ac.currentTime,.4)},
   /* street sounds: horns, a bike revving, a police whistle */
   horn(vol=1,big=0){if(!ac||muted)return;const t=ac.currentTime,g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.07*vol,t+.02);g.gain.setValueAtTime(.07*vol,t+.32);g.gain.linearRampToValueAtTime(0,t+.4);g.connect(sfxG);
     for(const f of big?[196,247]:[392,494]){const o=ac.createOscillator();o.type='square';o.frequency.value=f;o.connect(g);o.start(t);o.stop(t+.42)}},

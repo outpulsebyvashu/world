@@ -1,6 +1,21 @@
 {
   "name": "world",
+  "main": "worker/index.js",
   "compatibility_date": "2025-09-01",
   "workers_dev": true,
-  "assets": { "directory": "./public", "not_found_handling": "404-page" }
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api/*", "/ws/*"]
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "ACCOUNTS", "class_name": "Accounts" },
+      { "name": "TOWN", "class_name": "Town" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["Accounts", "Town"] }
+  ]
 }

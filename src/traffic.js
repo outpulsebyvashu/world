@@ -1,6 +1,7 @@
 import {THREE,G,Batch,bx,cyl,makeChar,anim} from './core.js';
 import {npc} from './world.js';
 import {roadGraph} from './roads.js';
+import {toChar,randomLook} from './look.js';
 /* Street life: buses and autos on the roads (left lane, stopping for signals and people),
    stunt riders pulling wheelies, a police checkpoint, and people walking to work. */
 const VM=new THREE.MeshLambertMaterial({vertexColors:true});
@@ -32,7 +33,8 @@ export function makeTraffic(ctx){const {P,snd}=ctx;let root=null,TD=null,net=nul
     if(v.path.length>1){const i=1+Math.floor(Math.random()*(v.path.length-1));const a=v.path[i-1],b=v.path[i],u=Math.random();v.p.set(a.x+(b.x-a.x)*u,0,a.z+(b.z-a.z)*u);v.i=i;model.rotation.y=Math.atan2(b.x-a.x,b.z-a.z)}
     model.position.copy(v.p);root.add(model);V.push(v);return v}
   function reset(r,td,id){root=r;TD=td;town=id;V=[];walkers=[];chk=null;net=roadGraph(td);LANE=net.W/4;mobile=matchMedia('(pointer:coarse)').matches;
-    stop=td.bus?(q=>({x:q.x,z:q.z}))(net.project(td.bus.x,td.bus.z)):null;
+    stop=td.bus?(q=>({x:q.x,z:q.z}))(net.project(td.bus.x,td.bus.z)):null;stand=null;riders=[];
+    if(td.busStand){stand={bays:[...Array(11)].map((_,i)=>({i,x:-160.4+(i+.5)*6.08,busy:[0,5,9].includes(i)})),vT:2,c:{x:-127,z:150}};stop={x:-87.9,z:119.5}}
     const tc=td.color||'#d7263d';
     /* traffic scales with the road network: small towns get an auto and a rider, the big ones buses too */
     const big=net.L>300,nAuto=Math.max(1,Math.min(mobile?4:5,Math.round(net.L/180)));
@@ -85,11 +87,11 @@ export function makeTraffic(ctx){const {P,snd}=ctx;let root=null,TD=null,net=nul
   function vehTick(v,dt,T){v.fineCD-=dt;if(v.ghost>0)v.ghost-=dt;
     if(v.pulled>0){v.pulled-=dt;v.spd=Math.max(0,v.spd-dt*8);v.edge+=(2-v.edge)*Math.min(1,dt*2);if(v.pulled<=0)v.fineCD=45;return}
     if(v.wait>0){v.wait-=dt;v.spd=0;return}
-    const t=v.path[v.i];if(!t){if(v.toStop){v.wait=6;v.fromStop=true}else{v.fromStop=false;v.wait=v.kind==='bus'?2:.3}v.path=[];if(!newRoute(v)){v.path=[];v.wait=1}return}
+    const t=v.path[v.i];if(!t){if(v.mode){standNext(v,T);return}if(v.toStop&&stand){standIn(v);return}if(v.toStop){v.wait=6;v.fromStop=true}else{v.fromStop=false;v.wait=v.kind==='bus'?2:.3}v.path=[];if(!newRoute(v)){v.path=[];v.wait=1}return}
     const dx=t.x-v.p.x,dz=t.z-v.p.z,d=Math.hypot(dx,dz);if(d<.7){v.i++;return}
-    const hx=Math.sin(v.g.rotation.y),hz=Math.cos(v.g.rotation.y),prev=v.path[v.i-1];v.onRing=!!(t.ring&&prev&&prev.ring);
+    const hx=v.reverse?dx/d:Math.sin(v.g.rotation.y),hz=v.reverse?dz/d:Math.cos(v.g.rotation.y),prev=v.path[v.i-1];v.onRing=!!(t.ring&&prev&&prev.ring);
     let want=v.max,byVeh=false,byPlayer=false;
-    {let a=Math.atan2(dx,dz)-v.g.rotation.y;a=Math.abs(Math.atan2(Math.sin(a),Math.cos(a)));if(a>1.4){v.g.rotation.y+=Math.sign(Math.atan2(Math.sin(Math.atan2(dx,dz)-v.g.rotation.y),Math.cos(Math.atan2(dx,dz)-v.g.rotation.y)))*dt*1.6;v.spd=Math.min(v.spd,1.2);want=1.2}}
+    if(!v.reverse){let a=Math.atan2(dx,dz)-v.g.rotation.y;a=Math.abs(Math.atan2(Math.sin(a),Math.cos(a)));if(a>1.4){v.g.rotation.y+=Math.sign(Math.atan2(Math.sin(Math.atan2(dx,dz)-v.g.rotation.y),Math.cos(Math.atan2(dx,dz)-v.g.rotation.y)))*dt*1.6;v.spd=Math.min(v.spd,1.2);want=1.2}}
     /* slow for corners and the roundabout */
     const nx=v.path[v.i+1];if(nx&&d<12){const a1=Math.atan2(dx,dz),a2=Math.atan2(nx.x-t.x,nx.z-t.z);if(Math.abs(Math.atan2(Math.sin(a2-a1),Math.cos(a2-a1)))>.45)want=Math.min(want,v.kind==='stunt'?9:5.5)}
     if(t.ring)want=Math.min(want,v.kind==='stunt'?10:7);
@@ -103,11 +105,12 @@ export function makeTraffic(ctx){const {P,snd}=ctx;let root=null,TD=null,net=nul
     /* never drive into people: the player and anyone crossing */
     for(const q of peds){const rx=q.x-v.p.x,rz=q.z-v.p.z,al=rx*hx+rz*hz,lat=Math.abs(rx*hz-rz*hx);if(al>-v.hl&&al<v.hl+3+v.spd*.7&&lat<v.hw+.9){want=0;if(q.player)byPlayer=true}}
     /* stop at a zebra crossing when someone is on it or waiting at it */
-    for(const zb of G.zebras){const rx=zb.x-v.p.x,rz=zb.z-v.p.z,al=rx*hx+rz*hz;if(al<v.hl||al>v.hl+15||Math.abs(rx*hz-rz*hx)>zb.hw+1)continue;
+    if(!v.mode)for(const zb of G.zebras){const rx=zb.x-v.p.x,rz=zb.z-v.p.z,al=rx*hx+rz*hz;if(al<v.hl||al>v.hl+15||Math.abs(rx*hz-rz*hx)>zb.hw+1)continue;
       const busy=peds.some(q=>zb.alongX?(Math.abs(q.z-zb.z)<zb.sw/2+1.6&&Math.abs(q.x-zb.x)<zb.hw+2.5):(Math.abs(q.x-zb.x)<zb.sw/2+1.6&&Math.abs(q.z-zb.z)<zb.hw+2.5));
       if(busy)want=Math.min(want,Math.max(0,(al-v.hl-zb.sw/2-1.2)*1.2))}
     /* traffic lights at Signal Chowk: stop at the line on red, on amber if there is room to stop */
-    if(W.signals&&town==='vashupur'){const al=-v.p.x*hx-v.p.z*hz,lat=Math.abs(-v.p.x*hz+v.p.z*hx),front=al-v.hl,SL=12;
+    if(v.mode)want=Math.min(want,v.reverse?2:5);
+    if(W.signals&&town==='vashupur'&&!v.mode){const al=-v.p.x*hx-v.p.z*hz,lat=Math.abs(-v.p.x*hz+v.p.z*hx),front=al-v.hl,SL=12;
       if(front>SL-.5&&front<SL+30&&lat<9){const st=light(Math.abs(hz)>Math.abs(hx)?'ns':'ew',T);if(st==='r'||(st==='a'&&front-SL>v.spd*.9))want=Math.min(want,Math.max(0,(front-SL)*1.3))}}
     /* slow through the police checkpoint */
     if(chk&&Math.hypot(chk.x-v.p.x,chk.z-v.p.z)<16)want=Math.min(want,4.5);
@@ -125,7 +128,7 @@ export function makeTraffic(ctx){const {P,snd}=ctx;let root=null,TD=null,net=nul
     if(byPlayer){v.blockT+=dt;v.hornT-=dt;if(v.blockT>.8&&v.hornT<=0&&v.kind!=='stunt'){v.hornT=2.5+Math.random()*2;const pd=Math.hypot(P.pos.x-v.p.x,P.pos.z-v.p.z);snd.horn(Math.max(.2,1-pd/25),v.kind==='bus'?1:0)}}else v.blockT=0;
     v.spd+=(want-v.spd)*Math.min(1,dt*(want<v.spd?3.5:1.1));if(want===0&&v.spd<.6)v.spd=0;
     const st=Math.min(d,v.spd*dt);v.p.x+=dx/d*st;v.p.z+=dz/d*st;
-    let a=Math.atan2(dx,dz)-v.g.rotation.y;a=Math.atan2(Math.sin(a),Math.cos(a));v.g.rotation.y+=a*Math.min(1,dt*(v.kind==='bus'?3:5))}
+    let a=Math.atan2(dx,dz)+(v.reverse?Math.PI:0)-v.g.rotation.y;a=Math.atan2(Math.sin(a),Math.cos(a));v.g.rotation.y+=a*Math.min(1,dt*(v.kind==='bus'?(v.mode?1.6:3):5))}
   function place(v,dt,T){const y=v.g.rotation.y,lx=Math.cos(y),lz=-Math.sin(y);let off=v.edge;
     if(v.kind==='stunt'&&!v.pulled){off+=Math.sin(T*1.7+v.ph)*Math.min(1.1,LANE-.7)*Math.min(1,v.spd/6)}
     v.g.position.set(v.p.x+lx*off,0,v.p.z+lz*off);
@@ -137,7 +140,33 @@ export function makeTraffic(ctx){const {P,snd}=ctx;let root=null,TD=null,net=nul
   function pushPlayer(v){if(P.world!=='out'||P.pos.y>3.4)return;const y=v.g.rotation.y,hx=Math.sin(y),hz=Math.cos(y),rx=P.pos.x-v.g.position.x,rz=P.pos.z-v.g.position.z;
     const al=rx*hx+rz*hz,lt=rx*hz-rz*hx,ea=v.hl+.35-Math.abs(al),el=v.hw+.35-Math.abs(lt);if(ea<=0||el<=0)return;
     if(el<ea){const s=Math.sign(lt)||1;P.pos.x+=hz*s*el;P.pos.z-=hx*s*el}else{const s=Math.sign(al)||1;P.pos.x+=hx*s*ea;P.pos.z+=hz*s*ea}}
-  function tick(dt,T,w){if(!root)return;W=w;
+  /* ---- Vashupur bus stand: drive in, park nose-in at a free bay, the conductor boards passengers,
+     reverse out honking, leave by the other arm ---- */
+  let stand=null,riders=[];
+  const CONDUCTOR={shirt:'#c9b48a',pants:'#3a4a6b',hair:'short',hat:'#2f5bff',mustache:true,face:'grin'};
+  function standIn(v){const free=stand.bays.filter(b=>!b.busy);if(!free.length){v.wait=4;v.toStop=false;v.fromStop=true;return}
+    const b=free[Math.floor(Math.random()*free.length)];b.busy=true;v.bay=b;v.toStop=false;v.mode='in';v.i=0;
+    v.path=[{x:-87.9,z:126.5},{x:-87.9,z:148},{x:-88.6,z:165},{x:-92.5,z:169.3},{x:b.x+7,z:169.3},{x:b.x+2,z:166.5},{x:b.x,z:162.5},{x:b.x,z:159}]}
+  function standNext(v,T){const b=v.bay;
+    if(v.mode==='in'){v.mode='board';v.wait=9+Math.random()*4;v.path=[];board(v);return}
+    if(v.mode==='board'){v.mode='rev';v.reverse=true;v.i=0;v.path=[{x:b.x,z:166.4}];endBoard(v);honk(v);return}
+    if(v.mode==='rev'){v.reverse=false;b.busy=false;v.bay=null;v.mode='leave';v.i=0;v.path=[{x:b.x-6,z:169.3},{x:-161.5,z:169.3},{x:-165.6,z:165},{x:-165.9,z:148},{x:-165.9,z:126.5}];return}
+    if(v.mode==='leave'){v.mode=null;v.fromStop=true;v.path=[];if(!newRoute(v))v.wait=1}}
+  function honk(v){const d=Math.hypot(P.pos.x-v.p.x,P.pos.z-v.p.z);if(P.world==='out'&&d<95)snd.sample(Math.random()<.5?'sfx/horn1.mp3':'sfx/horn2.mp3',Math.max(.15,1-d/100)*.8,pan(v.p.x,v.p.z))}
+  function pan(x,z){const c=ctx.camera;if(!c)return 0;const dx=x-c.position.x,dz=z-c.position.z,d=Math.hypot(dx,dz)||1;const rx=Math.cos(-c.rotation.y),rz=Math.sin(-c.rotation.y);return Math.max(-.8,Math.min(.8,(dx*rx+dz*rz)/d))}
+  /* passengers walk from the concourse to the door; the conductor waves them in */
+  function board(v){const b=v.bay,door={x:b.x-1.7,z:155.2};const cd=makeChar(Object.assign({seed:77},CONDUCTOR));cd.position.set(b.x-2.3,0,154.2);cd.rotation.y=Math.PI*.75;root.add(cd);v.cond=cd;
+    if(Math.hypot(P.pos.x-b.x,P.pos.z-155)<45)ctx.bubble({c:cd,name:'Conductor'},['Chalo chalo! Baitho!','Kaapikunj, Memepura! Jaldi!','Aage badho, aage!'][Math.floor(Math.random()*3)]);
+    const n=3+Math.floor(Math.random()*3);for(let k=0;k<n;k++){const c=makeChar(toChar(randomLook(),k+1));const sx=Math.max(-160,Math.min(-94,b.x+(Math.random()-.5)*16));c.position.set(sx,0,143.5+Math.random()*5);root.add(c);riders.push({c,to:door,sp:1.5+Math.random()*.6,delay:k*.9+Math.random()*.6,v})}}
+  function endBoard(v){if(v.cond){root.remove(v.cond);v.cond=null}riders=riders.filter(r=>{if(r.v===v){root.remove(r.c);return false}return true})}
+  function standTick(dt,T){for(const v of V)if(v.cond)anim(v.cond,dt,{emote:'wave'});
+    riders=riders.filter(r=>{if(r.delay>0){r.delay-=dt;anim(r.c,dt,{});return true}const c=r.c,dx=r.to.x-c.position.x,dz=r.to.z-c.position.z,d=Math.hypot(dx,dz);
+      if(d<.35){root.remove(c);return false}const st=Math.min(d,r.sp*dt);c.position.x+=dx/d*st;c.position.z+=dz/d*st;c.rotation.y=Math.atan2(dx,dz);anim(c,dt,{speed:r.sp});return true});
+    /* the stand is loud: crowd underneath, vendors calling out at random */
+    const dc=Math.hypot(P.pos.x-stand.c.x,P.pos.z-stand.c.z),near=P.world==='out'?Math.max(0,Math.min(1,1-(dc-25)/70)):0;snd.bed('sfx/crowd.mp3',near*.55);
+    stand.vT-=dt;if(stand.vT<=0){stand.vT=2.2+Math.random()*4;if(near>0){const vend=[[-141,134.6,[1,2,3]],[-111,134.6,[4,5,6]],[-152,141,[1,2,3,4,5,6]]][Math.floor(Math.random()*3)];
+      const k=vend[2][Math.floor(Math.random()*vend[2].length)],dv=Math.hypot(P.pos.x-vend[0],P.pos.z-vend[1]);if(dv<70)snd.sample('sfx/vendor'+k+'.mp3',Math.max(.12,1-dv/70)*.75,pan(vend[0],vend[1]))}}}
+  function tick(dt,T,w){if(!root)return;W=w;if(stand)standTick(dt,T);
     peds=[];if(P.world==='out')peds.push({x:P.pos.x,z:P.pos.z,player:true});for(const n of G.npcs){if(!n.c||!n.c.visible||n.hidden||n.kind==='static')continue;const p=n.c.position;if(onRoad(p.x,p.z))peds.push({x:p.x,z:p.z})}
     for(const v of V)vehTick(v,dt,T);for(const v of V){place(v,dt,T);pushPlayer(v)}
     if(chk){const on=Math.sin(T*9)>0;chk.lr.material.color.set(on?'#ff2d2d':'#4a0b0b');chk.lb.material.color.set(on?'#16306b':'#2d6bff');

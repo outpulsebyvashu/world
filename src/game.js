@@ -7,6 +7,8 @@ import {makeMask,groundMaterial,makeGrass,makeSky,MASK} from './nature.js';
 import {TOWNS,ORDER,BEANS} from './towns.js';
 import {makeFire} from './events.js';
 import {makeTraffic} from './traffic.js';
+import {OPT,LABEL,DEFAULT,clean,toChar,randomLook} from './look.js';
+import {makeNet,PHRASES} from './net.js';
 
 const OW=window.OW={};
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
@@ -18,7 +20,7 @@ const cam={yaw:0,pitch:.36,dist:8.5,tdist:8.5,lastDrag:0};
 const inp={jx:0,jy:0,keys:{},target:null,pend:null,jump:false};
 let player,cupMesh,marker,timeMode=LS.get('ow_time','auto'),zoneName='',beansGot=new Set(LS.get('ow_beans',[])),unlocked=LS.get('ow_unlocked',false),party=false;
 let quest=LS.get('ow_quest',{doctor:0}),dlgState=null,tour=null,evPhase=-1,rallyI=0,rallyT=0,heard=0,concertT=0;
-G.player=P;G.snd=snd;OW._={P,G,cam,W,fire:()=>fire&&fire.start(),get fireState(){return fire&&fire.active},get traffic(){return traffic},step(n,dt=.05){OW._.simT=OW._.simT||performance.now()/1000;for(let i=0;i<n;i++){OW._.simT+=dt;update(dt,OW._.simT)}},drone:on=>setDrone(on!==false),dronePos:(x,y,z)=>{drone.pos.set(x,y,z);drone.vel.set(0,0,0)},get party(){return party},get camera(){return camera},get scene(){return scene},get grass(){return grass},get town(){return curTown},get td(){return TOWNS[curTown]},load:id=>loadTown(id),view(x,y,z,tx,ty,tz){running=false;camera.position.set(x,y,z);camera.lookAt(tx,ty,tz);setTime();renderer.render(scene,camera)},THREE};
+G.player=P;G.snd=snd;OW._={P,G,cam,W,fire:()=>fire&&fire.start(),get fireState(){return fire&&fire.active},get traffic(){return traffic},get net(){return net},get prof(){return prof},step(n,dt=.05){OW._.simT=OW._.simT||performance.now()/1000;for(let i=0;i<n;i++){OW._.simT+=dt;update(dt,OW._.simT)}},drone:on=>setDrone(on!==false),dronePos:(x,y,z)=>{drone.pos.set(x,y,z);drone.vel.set(0,0,0)},get party(){return party},get camera(){return camera},get scene(){return scene},get grass(){return grass},get town(){return curTown},get td(){return TOWNS[curTown]},load:id=>loadTown(id),view(x,y,z,tx,ty,tz){running=false;camera.position.set(x,y,z);camera.lookAt(tx,ty,tz);setTime();renderer.render(scene,camera)},THREE};
 export const EGGS=['ow_beans','ow_roof','ow_call','ow_laptop','ow_mirror','ow_lake','ow_goal','ow_freeloader','ow_rally','ow_concert','ow_doctor','ow_party','ow_scooter','ow_dog','ow_tour','ow_fire','ow_bonfire','ow_statue','ow_firepole','ow_bus','ow_alltowns','ow_terminal','ow_snowman','ow_skydeck'];
 
 /* ================= host (standalone or inside portfolio) ================= */
@@ -47,16 +49,18 @@ OW.init=async(host,el,progress=()=>{})=>{
   G.enter=enterRoom;G.exit=exitRoom;G.card=card;G.talk=talk;G.say=(n,t)=>dlg(n,[t]);G.cv=openCV;G.brew=brew;
   G.tp=tpTo;G.bus=openBus;G.lift=openLift;G.res={tower:'A',floor:0,flat:1};
   sky=makeSky(scene);grass=makeGrass(scene,makeMask([]));progress(.5);
-  player=makeChar({skin:'#c48a60',shirt:'#141414',pants:'#8a7f5a',cargo:'#6f6646',shoes:'#f5f5f5',hair:'curly',glasses:true,face:'smile',seed:3,logo:'#ff6a3d'});scene.add(player);
+  player=makeChar(toChar(prof.look));scene.add(player);
   const cb=new Batch();cyl(cb,0,0,0,.11,.09,.22,'#ffffff',10);cyl(cb,0,.11,0,.1,.1,.01,'#8a5a3b',10);cupMesh=cb.mesh(CHM);cupMesh.position.set(0,-.72,.12);cupMesh.visible=false;player.userData.armR.add(cupMesh);
   marker=new THREE.Mesh(new THREE.RingGeometry(.35,.5,24).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:.9,depthWrite:false}));marker.visible=false;scene.add(marker);
-  fire=makeFire({scene,camera,P,snd,W,toast,bubbleNear});traffic=makeTraffic({P,snd,bubble,toast,fire});
+  fire=makeFire({scene,camera,P,snd,W,toast,bubbleNear});traffic=makeTraffic({P,snd,bubble,toast,fire,camera});
+  net=makeNet({root:()=>townRoot,hideNear:()=>dressing?P.pos:null,name:()=>prof.name,look:()=>prof.look,token:()=>prof.token,bubble,onCount:setOnline});
   if(!TOWNS[curTown]||!TOWNS[curTown].ready)curTown='vashupur';
   loadTown(curTown);progress(.75);await fontsP;fontsOK=true;streamNear(P.pos,70);progress(.9);await new Promise(r=>setTimeout(r,0));
   bindInput();resize();addEventListener('resize',resize);
   setTime();
   progress(1);
-  if(!LS.get('ow_hint',false))$('.ow-hint').hidden=false;
+  if(!LS.get('ow_hint',false))$('.ow-hint').hidden=false;else if(!LS.get('ow_profile',false))openAcct('guest');
+  if(prof.token)checkSession();setInterval(autoSave,30000);addEventListener('pagehide',()=>autoSave(true));
   updQuest();
 };
 OW.start=()=>{if(running)return;running=true;last=performance.now();requestAnimationFrame(loop)};
@@ -123,7 +127,8 @@ function bindInput(){const cv=renderer.domElement,joy=$('.ow-joy'),knob=$('.ow-k
   $('.ow-cvb').onclick=openCV;$('.ow-map').onclick=openMap;
   let lc=0,lt;$('.ow-loc').onclick=()=>{lc++;clearTimeout(lt);lt=setTimeout(()=>lc=0,500);if(lc>=2){lc=0;if(G.host.open)G.host.open();else openMenu()}};
   root.addEventListener('click',e=>{const x=e.target.closest('[data-close]');if(x){x.closest('.ow-ov,.ow-dlg').hidden=true;if(x.closest('.ow-dlg'))dlgState=null}});
-  $('.ow-hint [data-go]').onclick=()=>{$('.ow-hint').hidden=true;LS.set('ow_hint',true);snd.unlock()};
+  $('.ow-hint [data-go]').onclick=()=>{$('.ow-hint').hidden=true;LS.set('ow_hint',true);snd.unlock();if(!LS.get('ow_profile',false))openAcct('guest')};
+  bindPlayers();
   $('.ow-hint [data-cv]').onclick=()=>{$('.ow-hint').hidden=true;LS.set('ow_hint',true);openCV()};
   $('.ow-bigmap canvas').addEventListener('click',bigMapTap);
 }
@@ -139,7 +144,7 @@ function tap(cx,cy){if(P.state==='sit'||P.climb||drone.on)return;const r=rendere
     const d=Math.hypot(h.point.x-P.pos.x,h.point.z-P.pos.z);if(d<=(o.userData.reach||4)){o.userData.tap();snd.click()}else{setTarget(h.point.x,h.point.z,{fn:o.userData.tap,reach:(o.userData.reach||4)-.4,x:h.point.x,z:h.point.z})}return}
   plY.constant=-P.pos.y;if(ray.ray.intersectPlane(plY,hitP))setTarget(hitP.x,hitP.z,null)}
 function setTarget(x,z,pend){inp.target={x,z};inp.pend=pend;marker.position.set(x,P.pos.y+.06,z);marker.visible=true;marker.scale.setScalar(1)}
-function emote(e){if(P.ride||P.state==='sit')return;P.emote=e;P.emoteT=e==='dance'?6:2.6;if(e==='sip')cupMesh.visible=true;snd.click()}
+function emote(e){if(P.ride||P.state==='sit')return;if(net)net.emote(e);P.emote=e;P.emoteT=e==='dance'?6:2.6;if(e==='sip')cupMesh.visible=true;snd.click()}
 
 /* ================= physics ================= */
 function inBox(c,x,z,r){return x+r>c.x0&&x-r<c.x1&&z+r>c.z0&&z-r<c.z1}
@@ -152,7 +157,7 @@ const rayBox=(o,d,c)=>{let t0=0,t1=1;for(const [a,b0,b1] of[['x',c.x0,c.x1],['y'
 
 /* ================= towns & the bus ================= */
 function disposeTree(o){o.traverse(n=>{if(n.geometry)n.geometry.dispose();const ms=n.material?(Array.isArray(n.material)?n.material:[n.material]):[];for(const m of ms){if(m===CHM)continue;if(m.map&&!(m.map.userData&&m.map.userData.keep))m.map.dispose();m.dispose()}})}
-function placeAtSpawn(){const s=TOWNS[curTown].spawn;if(P.ride)dismount();P.state='walk';P.seat=null;P.climb=null;P.pos.set(s.x,0,s.z);P.vel.set(0,0,0);P.world='out';P.yaw=s.yaw;cam.yaw=s.yaw+Math.PI;cam.pitch=.36;inp.target=null;if(marker)marker.visible=false}
+function placeAtSpawn(){const s=TOWNS[curTown].spawn;if(P.ride)dismount();P.state='walk';P.seat=null;P.climb=null;/* a little sideways so players arriving together do not stand inside each other */const j=(Math.random()-.5)*3.2;P.pos.set(s.x+Math.cos(s.yaw)*j,0,s.z-Math.sin(s.yaw)*j);P.vel.set(0,0,0);P.world='out';P.yaw=s.yaw;cam.yaw=s.yaw+Math.PI;cam.pitch=.36;inp.target=null;if(marker)marker.visible=false}
 function loadTown(id){if(!TOWNS[id])id='vashupur';
   if(townRoot){scene.remove(townRoot);disposeTree(townRoot)}
   Object.assign(G,{colliders:[],triggers:[],pick:[],npcs:[],zones:[],buildings:[],rooms:{},beans:[],seats:[],chairs:[],blocked:[],camCols:[],cranes:[],extraNPCs:[],noGrass:[],grassPolys:[],mapPolys:[],zebras:[],noLamp:[]});
@@ -166,7 +171,7 @@ function loadTown(id){if(!TOWNS[id])id='vashupur';
   grass.U.uMaskMin.value.set(MASK.x0,MASK.z0);grass.U.uMaskSize.value.set(MASK.w,MASK.h);
   makeBeans();if(unlocked)applyUnlock(false);
   MX0=T.b[0];MZ0=T.b[2];MW=T.b[1]-T.b[0];MH=T.b[3]-T.b[2];mapBG();
-  placeAtSpawn();collectLazy();if(fontsOK)streamNear(P.pos,70);if(running||renderer){setTime();snapCam()}zone(T.name,true);const lb=$('.ow-loc');if(lb){lb.textContent=T.name.toUpperCase();lb.setAttribute('aria-label',T.name+' (double-tap for menu)')}updQuestSafe();
+  placeAtSpawn();collectLazy();if(net)net.join(id);if(fontsOK)streamNear(P.pos,70);if(running||renderer){setTime();snapCam()}zone(T.name,true);const lb=$('.ow-loc');if(lb){lb.textContent=T.name.toUpperCase();lb.setAttribute('aria-label',T.name+' (double-tap for menu)')}updQuestSafe();
   if(!visited.has(id)){visited.add(id);LS.set('ow_visited',[...visited]);if(visited.size>=6)G.host.egg('ow_alltowns','You visited all six towns. Frequent rider.')}}
 /* ---- texture streaming: signs and posters are painted nearest-first, a few ms per frame ---- */
 let lazy=[],fontsOK=false,lazyT=0;const _v=new THREE.Vector3(),_s=new THREE.Sphere();
@@ -199,6 +204,66 @@ function droneCam(dt){const cp=Math.cos(cam.pitch);fw.set(-Math.sin(cam.yaw)*cp,
   sunL.position.copy(drone.focus).addScaledVector(sunDir,90);sunL.target.position.copy(drone.focus);
   W.sun.position.copy(camera.position).addScaledVector(sunDir,600);W.sun.lookAt(camera.position);
   W.moon.position.copy(camera.position).add(tmp.set(-sunDir.x,Math.abs(sunDir.y)+.25,-sunDir.z).normalize().multiplyScalar(560));W.moon.lookAt(camera.position);W.stars.position.copy(camera.position)}
+/* ---- players: guest name, accounts, character creator, multiplayer ---- */
+let net=null,dressing=null;
+const prof={name:LS.get('ow_name',null),look:clean(LS.get('ow_look',null)||randomLook()),token:LS.get('ow_token',null),user:null};
+if(!prof.name)prof.name='Guest '+(1000+Math.floor(Math.random()*9000));LS.set('ow_look',prof.look);
+const PKEYS=['ow_beans','ow_eggs','ow_quest','ow_unlocked','ow_visited'];let savedKey='';
+const cleanName=v=>String(v||'').replace(/[^\p{L}\p{N} _.-]/gu,'').replace(/\s+/g,' ').trim().slice(0,16);
+function setOnline(n){const e=$('.ow-online');if(!e)return;e.hidden=n<1;e.querySelector('b').textContent=n}
+async function api(path,body){try{const r=await fetch('/api/'+path,{method:body?'POST':'GET',headers:Object.assign({'content-type':'application/json'},prof.token?{authorization:'Bearer '+prof.token}:{}),body:body?JSON.stringify(body):undefined});
+  let d={};try{d=await r.json()}catch(e){}return{ok:r.ok,status:r.status,d}}catch(e){return{ok:false,status:0,d:{error:'No connection. Try again.'}}}}
+function progress(){const o={};for(const k of PKEYS){const v=localStorage.getItem(k);if(v!=null)o[k]=v}return o}
+/* merge account progress with this device: lists are combined, everything else takes the account's value */
+function mergeProgress(server){let changed=false;for(const k of PKEYS){if(server[k]==null)continue;const local=localStorage.getItem(k);let out=server[k];
+  try{const a=JSON.parse(server[k]),b=local==null?null:JSON.parse(local);if(Array.isArray(a)&&Array.isArray(b))out=JSON.stringify([...new Set([...b,...a])]);else if(a&&b&&typeof a==='object'&&typeof b==='object'&&!Array.isArray(a))out=JSON.stringify(Object.assign({},b,a))}catch(e){}
+  if(out!==local){localStorage.setItem(k,out);changed=true}}return changed}
+function setSession(token,user){prof.token=token;prof.user=user;prof.name=user.username;LS.set('ow_token',token);LS.set('ow_name',user.username);LS.set('ow_profile',true)}
+async function checkSession(){const r=await api('me');if(r.ok&&r.d.user){prof.user=r.d.user;prof.name=r.d.user.username;if(r.d.user.look&&r.d.user.look.g){const l=clean(r.d.user.look);if(JSON.stringify(l)!==JSON.stringify(prof.look))setPlayerLook(l)}if(net)net.reconnect()}
+  else if(r.status===401){prof.token=null;prof.user=null;try{localStorage.removeItem('ow_token')}catch(e){}}}
+function autoSave(final){if(!prof.token)return;const p=progress(),key=JSON.stringify(p)+JSON.stringify(prof.look);if(key===savedKey)return;savedKey=key;
+  if(final===true){try{fetch('/api/save',{method:'POST',keepalive:true,headers:{'content-type':'application/json',authorization:'Bearer '+prof.token},body:JSON.stringify({progress:p,look:prof.look})})}catch(e){}return}
+  api('save',{progress:p,look:prof.look})}
+function setPlayerLook(l){prof.look=clean(l);LS.set('ow_look',prof.look);if(!player)return;const old=player,np=makeChar(toChar(prof.look));np.position.copy(old.position);np.rotation.copy(old.rotation);np.visible=old.visible;
+  scene.remove(old);old.traverse(o=>{if(o.geometry&&o!==cupMesh)o.geometry.dispose()});if(cupMesh.parent)cupMesh.parent.remove(cupMesh);np.userData.armR.add(cupMesh);scene.add(np);player=np}
+function setTab(t){const o=$('.ow-acct');const me=!!prof.user;o.querySelector('.ow-tabs').hidden=me;o.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t?'true':'false'));
+  o.querySelectorAll('[data-f]').forEach(f=>{f.hidden=f.dataset.f!==(me?'me':t);const e=f.querySelector('.err');if(e)e.textContent=''});
+  o.querySelector('h2').textContent=me?'Hi, '+prof.name:t==='signup'?'Make an account':t==='login'?'Welcome back':"Who's playing?";if(me)o.querySelector('.u').textContent=prof.name}
+function openAcct(tab){closeAll();$('#ow-gn').value=prof.name;setTab(tab||'guest');$('.ow-acct').hidden=false}
+async function submitAuth(kind,f){const btn=f.querySelector('button[type=submit]'),err=f.querySelector('.err');err.textContent='';btn.disabled=true;const label=btn.textContent;btn.textContent=kind==='signup'?'Creating…':'Logging in…';
+  const body={username:f.username.value.trim(),password:f.password.value};if(kind==='signup'){body.look=prof.look;body.progress=progress()}
+  const r=await api(kind,body);btn.disabled=false;btn.textContent=label;if(!r.ok){err.textContent=r.d.error||'Something went wrong. Try again.';return}
+  setSession(r.d.token,r.d.user);f.password.value='';$('.ow-acct').hidden=true;
+  if(kind==='login'){const u=r.d.user;if(u.look&&u.look.g)setPlayerLook(u.look);if(mergeProgress(u.progress||{})){autoSave();toast('WELCOME BACK',prof.name+', loading your progress…');setTimeout(()=>location.reload(),1200);return}autoSave()}
+  else{savedKey=JSON.stringify(progress())+JSON.stringify(prof.look)}
+  toast(kind==='signup'?'ACCOUNT CREATED':'WELCOME BACK','Signed in as '+prof.name+'.');if(net)net.reconnect()}
+/* character creator: the camera turns to face you and every tap changes you live */
+function openChar(){closeAll();dressing={yaw:cam.yaw,pitch:cam.pitch,tdist:cam.tdist,before:JSON.stringify(prof.look)};cam.tdist=6.4;root.classList.add('dress');
+  const h=root.clientHeight||innerHeight,w=root.clientWidth||innerWidth;camera.setViewOffset(w,h,0,Math.round(h*.31),w,h);renderChar();$('.ow-char').hidden=false;const b=$('.ow-char [data-ch=done]');if(b)b.focus()}
+function closeChar(){if(!dressing)return;cam.yaw=dressing.yaw;cam.pitch=dressing.pitch;cam.tdist=dressing.tdist;const changed=dressing.before!==JSON.stringify(prof.look);dressing=null;camera.clearViewOffset();root.classList.remove('dress');$('.ow-char').hidden=true;
+  if(changed){if(net)net.look(prof.look);autoSave()}LS.set('ow_profile',true)}
+function renderChar(){const l=prof.look,g=l.g,body=$('.ow-cbody');body.innerHTML='';
+  const sec=(title,key,vals,kind)=>{const h=document.createElement('h4');h.textContent=title;const box=document.createElement('div');box.className=kind==='sw'?'ow-sw':'ow-chips';box.setAttribute('role','group');box.setAttribute('aria-label',title);
+    vals.forEach((v,i)=>{const b=document.createElement('button');b.type='button';const on=kind==='tog'?!!l[v]:l[key]===v;b.setAttribute('aria-pressed',on?'true':'false');
+      if(kind==='sw'){b.style.background=v;b.setAttribute('aria-label',title+' '+(i+1))}else b.textContent=kind==='tog'?(v==='glasses'?'Glasses':'Beard'):LABEL[v]||v;
+      b.onclick=()=>{let n=Object.assign({},prof.look);if(kind==='tog')n[v]=!n[v];else if(key==='g'){n.g=v;if(!OPT.hair[v].includes(n.hair))n.hair=v==='f'?'long':'short';if(!OPT.top[v].includes(n.top))n.top='tee';if(!OPT.bot[v].includes(n.bot))n.bot='jeans'}else n[key]=v;
+        setPlayerLook(n);snd.click();renderChar()};box.appendChild(b)});body.append(h,box)};
+  sec('Body','g',OPT.g);sec('Skin','skin',OPT.skin,'sw');sec('Hair style','hair',OPT.hair[g]);sec('Hair colour','hairC',OPT.hairC,'sw');
+  sec('Top','top',OPT.top[g]);sec('Top colour','topC',OPT.topC,'sw');sec('Bottoms','bot',OPT.bot[g]);sec('Bottoms colour','botC',OPT.botC,'sw');sec('Shoes','shoes',OPT.shoes,'sw');
+  sec('Extras',null,g==='m'?['glasses','beard']:['glasses'],'tog')}
+function bindPlayers(){
+  $('.ow-me').onclick=()=>{snd.click();openAcct(prof.user?'me':'guest')};
+  root.querySelectorAll('.ow-acct [data-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+  $('.ow-acct [data-f=guest]').onsubmit=e=>{e.preventDefault();const n=cleanName($('#ow-gn').value);if(n)prof.name=n;LS.set('ow_name',prof.name);LS.set('ow_profile',true);$('.ow-acct').hidden=true;toast('PLAYING AS',prof.name);if(net)net.reconnect()};
+  $('.ow-acct [data-f=signup]').onsubmit=e=>{e.preventDefault();submitAuth('signup',e.target)};
+  $('.ow-acct [data-f=login]').onsubmit=e=>{e.preventDefault();submitAuth('login',e.target)};
+  $('.ow-acct [data-act=logout]').onclick=async()=>{autoSave();await api('logout',{});prof.token=null;prof.user=null;try{localStorage.removeItem('ow_token')}catch(e){}prof.name='Guest '+(1000+Math.floor(Math.random()*9000));LS.set('ow_name',prof.name);setTab('guest');$('#ow-gn').value=prof.name;toast('LOGGED OUT','You are playing as a guest.');if(net)net.reconnect()};
+  $('.ow-tocustom').onclick=()=>{$('.ow-acct').hidden=true;openChar()};
+  $('.ow-char [data-ch=done]').onclick=()=>{snd.click();closeChar()};
+  $('.ow-char [data-ch=random]').onclick=()=>{setPlayerLook(randomLook(prof.look.g));snd.click();renderChar()};
+  const ph=$('.ow-phrases');PHRASES.forEach((t,i)=>{const b=document.createElement('button');b.type='button';b.textContent=t;b.onclick=()=>{ph.hidden=true;bubble({c:player,name:prof.name},t);if(net)net.say(i);snd.click()};ph.appendChild(b)});
+  $('.ow-chat').onclick=()=>{$('.ow-emotes').hidden=true;ph.hidden=!ph.hidden;snd.click()};
+  addEventListener('keydown',e=>{if(e.key==='Escape'&&dressing)closeChar()})}
 function updQuestSafe(){try{updQuest()}catch(e){}}
 function beanHint(){const left=ORDER.filter(t=>BEANS.some((b,i)=>b.t===t&&!beansGot.has(i))).map(t=>TOWNS[t].name);return left.length?' Still missing some in: '+left.join(', ')+'.':''}
 function openBus(){const o=$('.ow-bus');const l=o.querySelector('.ow-towns');l.innerHTML='';
@@ -232,6 +297,7 @@ function update(dt,T){
     if(d<.35||(inp.pend&&pd<=inp.pend.reach)){const p=inp.pend;inp.target=null;inp.pend=null;marker.visible=false;if(p)p.fn()}else{mx=dx/d;mz=dz/d;mag=d>10?1:Math.min(1,d/1.2+.4)}}
   else mag=0;
   if(drone.on){droneTick(dt,mx,mz,mag,sprint);mag=0;inp.jump=false}
+  if(dressing){mag=0;inp.jump=false;inp.target=null}
   if(P.state==='sit'){if(mag>.5||inp.jump){stand();inp.jump=false}else{mag=0}}
   if(P.climb){climbStep(dt);mag=0}
   /* --- velocity --- */
@@ -258,7 +324,7 @@ function update(dt,T){
   if(marker.visible){marker.rotation.y+=dt*2;marker.material.opacity=.5+.4*Math.sin(T*6)}
   /* --- world systems --- */
   const FC=drone.on?drone.focus:P.pos;if(grass&&P.world==='out')grass.update(dt,T,FC.x,FC.z);if(sky){sky.position.copy(camera.position);if(sky.material.uniforms.time)sky.material.uniforms.time.value=T}
-  beansTick(dt,T);npcTick(dt,T);eventTick(dt,T);fire.tick(dt,T);traffic.tick(dt,T,W);ballTick(dt);ambientTick(dt,T);
+  beansTick(dt,T);npcTick(dt,T);eventTick(dt,T);fire.tick(dt,T);traffic.tick(dt,T,W);if(net){net.tick(dt);net.send(dt,P,P.ride?1:P.state==='sit'?2:0)}ballTick(dt);ambientTick(dt,T);
   if(P.world==='out')lakeCheck();
   /* --- action button --- */
   actT-=dt;if(actT<=0){actT=.12;if(drone.on){curAct=null;$('.ow-act').hidden=true}else pickAction()}
@@ -268,7 +334,7 @@ function update(dt,T){
   bubblesTick();
   camTick(dt)}
 function snapCam(){camTick(1,true)}
-function camTick(dt,snap){if(drone.on)return droneCam(dt);cam.dist+=(cam.tdist-cam.dist)*Math.min(1,dt*6);
+function camTick(dt,snap){if(drone.on)return droneCam(dt);if(dressing){let d=P.yaw-cam.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));cam.yaw+=d*Math.min(1,dt*5);cam.pitch+=(.1-cam.pitch)*Math.min(1,dt*5)}cam.dist+=(cam.tdist-cam.dist)*Math.min(1,dt*6);
   const tgt=tmp.set(P.pos.x,P.pos.y+(P.state==='sit'?1.1:1.55)+(P.ride?.4:0),P.pos.z);
   if(P.state==='sit'&&P.seat){let d=(P.seat.yaw+Math.PI)-cam.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));if(performance.now()-cam.lastDrag>1500)cam.yaw+=d*Math.min(1,dt*2)}
   if(P.ride&&performance.now()-cam.lastDrag>1200){let d=(P.yaw+Math.PI)-cam.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));cam.yaw+=d*Math.min(1,dt*2.5)}
@@ -335,7 +401,7 @@ function card(p){const c=$('.ow-card');c.hidden=false;$('.ow-card .k').textConte
   $('.ow-card .sw').style.background=p.color||'#f4efe6';$('.ow-card button').focus()}
 function openCV(){const c=$('.ow-cv');c.hidden=false;$('.ow-cv .x').focus()}
 function openMenu(){$('.ow-menu').hidden=false}
-function closeAll(){root.querySelectorAll('.ow-ov').forEach(o=>o.hidden=true);closeDlg();$('.ow-emotes').hidden=true}
+function closeAll(){root.querySelectorAll('.ow-ov').forEach(o=>o.hidden=true);closeDlg();$('.ow-emotes').hidden=true;$('.ow-phrases').hidden=true}
 
 /* ================= quests ================= */
 function updQuest(){const q=[];q.push((beansGot.size>=8?'✓ ':'')+'Find Kaveri\'s coffee beans ('+beansGot.size+'/8)');if(quest.doctor===1)q.push(P.cup?'Bring the coffee to Dr. Rao (Vashupur)':'Brew a coffee at TOKI for Dr. Rao (Vashupur)');if(quest.doctor===2)q.push('✓ Doctor\'s orders');

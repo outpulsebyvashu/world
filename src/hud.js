@@ -5,10 +5,10 @@ export const HUD=`
 <div class="ow-hud">
   <div class="ow-top">
     <button type="button" class="ow-map" aria-label="Open the town map"><canvas width="176" height="176"></canvas></button>
-    <div class="ow-mid"><button type="button" class="ow-loc" aria-label="Current town (double-tap for menu)">OUTPULSE SPACE</button><p class="ow-zone" aria-live="polite"></p></div>
+    <div class="ow-mid"><button type="button" class="ow-loc" aria-label="Current town (double-tap for menu)">OUTPULSE SPACE</button><p class="ow-zone" aria-live="polite"></p><span class="ow-online" hidden><i></i><b>1</b> online</span></div>
     <div class="ow-right">
       <span class="ow-beans" role="status" aria-label="Coffee beans found">${bean}<b>0/8</b></span>
-      <div class="ow-row"><button type="button" class="ow-drone ow-ib" aria-label="Drone view" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="9" y="10" width="6" height="4" rx="1.2"/><path d="M9.5 10.5L7 8M14.5 10.5L17 8M9.5 13.5L7 16M14.5 13.5L17 16"/><circle cx="5.5" cy="6.5" r="2.3"/><circle cx="18.5" cy="6.5" r="2.3"/><circle cx="5.5" cy="17.5" r="2.3"/><circle cx="18.5" cy="17.5" r="2.3"/></svg></button><button type="button" class="ow-time ow-ib"></button><button type="button" class="ow-mute ow-ib"></button></div>
+      <div class="ow-row"><button type="button" class="ow-me ow-ib" aria-label="Your profile and character"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></button><button type="button" class="ow-drone ow-ib" aria-label="Drone view" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="9" y="10" width="6" height="4" rx="1.2"/><path d="M9.5 10.5L7 8M14.5 10.5L17 8M9.5 13.5L7 16M14.5 13.5L17 16"/><circle cx="5.5" cy="6.5" r="2.3"/><circle cx="18.5" cy="6.5" r="2.3"/><circle cx="5.5" cy="17.5" r="2.3"/><circle cx="18.5" cy="17.5" r="2.3"/></svg></button><button type="button" class="ow-time ow-ib"></button><button type="button" class="ow-mute ow-ib"></button></div>
       <button type="button" class="ow-cvb">Quick CV</button>
     </div>
   </div>
@@ -18,10 +18,11 @@ export const HUD=`
   <div class="ow-joy" aria-label="Movement joystick"><div class="ow-knob"></div></div>
   <div class="ow-btns">
     <button type="button" class="ow-act" hidden></button>
-    <div class="ow-brow"><button type="button" class="ow-emo" aria-label="Emotes"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 14.5c2 2.5 6 2.5 8 0"/><circle cx="9" cy="10" r=".8" fill="currentColor"/><circle cx="15" cy="10" r=".8" fill="currentColor"/></svg></button>
+    <div class="ow-brow"><div class="ow-col"><button type="button" class="ow-chat" aria-label="Say something"><svg viewBox="0 0 24 24"><path d="M4 5h16v10H9l-5 4z"/></svg></button><button type="button" class="ow-emo" aria-label="Emotes"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 14.5c2 2.5 6 2.5 8 0"/><circle cx="9" cy="10" r=".8" fill="currentColor"/><circle cx="15" cy="10" r=".8" fill="currentColor"/></svg></button></div>
     <button type="button" class="ow-down" aria-label="Fly down" hidden><svg viewBox="0 0 24 24"><path d="M6 10l6 6 6-6"/></svg><span>DOWN</span></button>
     <button type="button" class="ow-jump" aria-label="Jump"><svg viewBox="0 0 24 24"><path d="M6 14l6-6 6 6"/></svg><span>JUMP</span></button></div>
   </div>
+  <div class="ow-phrases" hidden></div>
   <div class="ow-emotes" hidden><button type="button" data-e="wave">Wave</button><button type="button" data-e="dance">Dance</button><button type="button" data-e="sip">Sip coffee</button><button type="button" data-e="sixseven">Six-seven</button></div>
   <div class="ow-dlg" hidden role="dialog" aria-live="polite"><b class="ow-dn"></b><p class="ow-dt"></p><div class="ow-dc"></div><button type="button" class="ow-dx" data-close aria-label="Close dialog">×</button></div>
   <div class="ow-toast" role="status" aria-live="polite"></div>
@@ -46,6 +47,14 @@ export const HUD=`
   <p class="d">Six towns, one bus. Every building, billboard and character is part of my portfolio. Blue-fenced plots? Something's cooking. Find all 8 coffee beans across the towns for secrets.</p>
   <div class="ow-pa"><button type="button" class="ow-btn p" data-go>Start exploring</button><button type="button" class="ow-btn" data-cv>Just show me the CV</button></div></div></div>
 <div class="ow-ov ow-bus" hidden role="dialog" aria-modal="true" aria-label="Bus route"><div class="ow-pan"><button type="button" class="x" data-close aria-label="Close">×</button><p class="k">Vashu Transport · the only way between towns</p><h2>Where to?</h2><div class="ow-towns"></div></div></div>
+<div class="ow-ov ow-acct" hidden role="dialog" aria-modal="true" aria-labelledby="ow-acct-h"><div class="ow-pan"><button type="button" class="x" data-close aria-label="Close">×</button><p class="k">Outpulse Space · players</p><h2 id="ow-acct-h">Who's playing?</h2>
+  <div class="ow-tabs" role="tablist"><button type="button" role="tab" data-tab="guest" aria-selected="true">Guest</button><button type="button" role="tab" data-tab="signup" aria-selected="false">Sign up</button><button type="button" role="tab" data-tab="login" aria-selected="false">Log in</button></div>
+  <form class="ow-f" data-f="guest"><label for="ow-gn">Your name</label><input id="ow-gn" name="name" maxlength="16" autocomplete="nickname" required><p class="hint">Play now. Sign up any time to keep your look, beans and secrets.</p><button type="submit" class="pri">Play as guest</button></form>
+  <form class="ow-f" data-f="signup" hidden><label for="ow-su">Username</label><input id="ow-su" name="username" maxlength="16" autocomplete="username" autocapitalize="none" spellcheck="false" required><p class="hint">3 to 16 letters, numbers or _</p><label for="ow-sp">Password</label><input id="ow-sp" name="password" type="password" minlength="8" maxlength="128" autocomplete="new-password" required><p class="hint">At least 8 characters</p><p class="err" role="alert"></p><button type="submit" class="pri">Create account</button></form>
+  <form class="ow-f" data-f="login" hidden><label for="ow-lu">Username</label><input id="ow-lu" name="username" maxlength="16" autocomplete="username" autocapitalize="none" spellcheck="false" required><label for="ow-lp">Password</label><input id="ow-lp" name="password" type="password" maxlength="128" autocomplete="current-password" required><p class="err" role="alert"></p><button type="submit" class="pri">Log in</button></form>
+  <div class="ow-f" data-f="me" hidden><p class="d">Signed in as <b class="u"></b>. Your look, beans and secrets are saved to your account.</p><button type="button" class="sec" data-act="logout">Log out</button></div>
+  <button type="button" class="sec ow-tocustom">Customise character</button></div></div>
+<div class="ow-char" hidden role="dialog" aria-label="Customise your character"><div class="ow-chead"><b>Your character</b><button type="button" class="sec" data-ch="random">Random</button><button type="button" class="pri" data-ch="done">Done</button></div><div class="ow-cbody"></div></div>
 <div class="ow-ov ow-lift" hidden role="dialog" aria-modal="true" aria-label="Lift"><div class="ow-pan"><button type="button" class="x" data-close aria-label="Close">×</button><p class="k">Lift</p><h2>Which floor?</h2><div class="ow-floors"></div></div></div>
 <div class="ow-ride" hidden aria-live="polite"><div><svg viewBox="0 0 64 40" aria-hidden="true"><rect x="2" y="4" width="60" height="28" rx="6" fill="#ffcc3a" stroke="#141414" stroke-width="3"/><rect x="8" y="9" width="12" height="9" rx="2" fill="#26323d"/><rect x="24" y="9" width="12" height="9" rx="2" fill="#26323d"/><rect x="40" y="9" width="16" height="9" rx="2" fill="#26323d"/><circle cx="16" cy="33" r="5" fill="#141414"/><circle cx="48" cy="33" r="5" fill="#141414"/></svg><p class="k">Next stop</p><b></b><em></em><i></i></div></div>`;
 
@@ -81,16 +90,34 @@ export const CSS=`
 .ow-joy{position:absolute;left:calc(18px + env(safe-area-inset-left));bottom:calc(22px + env(safe-area-inset-bottom));width:132px;height:132px;border-radius:50%;background:rgba(255,255,255,.28);border:3px solid rgba(20,20,20,.55);touch-action:none;display:grid;place-items:center}
 .ow-knob{width:58px;height:58px;border-radius:50%;background:#fff;border:3px solid #141414;box-shadow:0 4px 0 #141414;pointer-events:none}
 .ow-btns{position:absolute;right:calc(14px + env(safe-area-inset-right));bottom:calc(22px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:flex-end;gap:12px}
-.ow-brow{display:flex;align-items:flex-end;gap:10px}
+.ow-brow{display:flex;align-items:flex-end;gap:10px}.ow-col{display:flex;flex-direction:column;gap:10px}
+.ow-chat svg{stroke-linejoin:round}
+.ow-online{display:inline-flex;align-items:center;gap:6px;background:rgba(20,20,20,.78);color:#fff;border-radius:999px;padding:3px 10px;font:700 11px "Inter Tight",sans-serif}.ow-online[hidden]{display:none}.ow-online i{width:8px;height:8px;border-radius:50%;background:#3ddc84}
+.ow-phrases{position:absolute;right:14px;bottom:calc(130px + env(safe-area-inset-bottom));display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#fff;border:3px solid #141414;border-radius:16px;padding:10px;box-shadow:0 4px 0 #141414;max-width:min(360px,calc(100vw - 28px));z-index:4}.ow-phrases[hidden]{display:none}
+.ow-phrases button{min-height:44px;border:2px solid #141414;border-radius:10px;background:#f4efe6;font:700 13px "Inter Tight",sans-serif;padding:0 10px;text-align:left}
+.ow-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:12px 0 14px;background:#f1ece2;border-radius:14px;padding:4px}
+.ow-tabs button{min-height:44px;border:0;border-radius:10px;background:none;font:800 14px "Inter Tight",sans-serif;color:#555}.ow-tabs button[aria-selected="true"]{background:#141414;color:#fff}
+.ow-f{display:flex;flex-direction:column;gap:6px}.ow-f[hidden]{display:none}.ow-f label{font:700 13px "Inter Tight",sans-serif;margin-top:6px}
+.ow-f input{min-height:48px;border:2px solid #141414;border-radius:12px;padding:0 14px;font:500 16px "Inter Tight",sans-serif;background:#fff}.ow-f input:focus-visible{outline:3px solid #ff6a3d;outline-offset:2px}
+.ow-f .hint{margin:0;color:#666;font-size:13px}.ow-f .err{margin:4px 0 0;color:#c62828;font:700 14px "Inter Tight",sans-serif;min-height:0}.ow-f .err:empty{display:none}
+.ow .pri,.ow .sec{min-height:48px;border-radius:14px;border:3px solid #141414;font:800 15px "Inter Tight",sans-serif;padding:0 18px;box-shadow:0 3px 0 #141414}.ow .pri{background:#ff6a3d;color:#141414;margin-top:10px}.ow .sec{background:#fff;color:#141414}
+.ow .pri:disabled{opacity:.5}.ow-tocustom{margin-top:12px;width:100%}
+.ow-char{position:absolute;left:0;right:0;bottom:0;height:min(58dvh,560px);background:#fff;border-top:3px solid #141414;border-radius:22px 22px 0 0;box-shadow:0 -4px 0 rgba(0,0,0,.12);z-index:6;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom)}.ow-char[hidden]{display:none}
+.ow-chead{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:2px solid #eee}.ow-chead b{flex:1;font:800 18px "Bricolage Grotesque",sans-serif}.ow-chead .pri{margin:0}
+.ow-cbody{overflow:auto;padding:6px 14px 18px;-webkit-overflow-scrolling:touch}
+.ow-cbody h4{margin:14px 0 8px;font:800 12px "Inter Tight",sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#666}
+.ow-chips{display:flex;flex-wrap:wrap;gap:8px}.ow-chips button{min-height:44px;padding:0 14px;border:2px solid #141414;border-radius:999px;background:#fff;font:700 14px "Inter Tight",sans-serif}.ow-chips button[aria-pressed="true"]{background:#141414;color:#fff}
+.ow-sw{display:flex;flex-wrap:wrap;gap:6px}.ow-sw button{width:44px;height:44px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px #cfcfcf;padding:0}.ow-sw button[aria-pressed="true"]{box-shadow:0 0 0 3px #141414}
+.ow.dress .ow-hud{visibility:hidden}
 .ow-down{width:66px;height:66px;border-radius:50%;border:3px solid #141414;background:#fff;box-shadow:0 4px 0 #141414;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;font-size:10px;touch-action:none;padding:0}.ow-down[hidden]{display:none}
 .ow-down svg{width:24px;height:24px;fill:none;stroke:#141414;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.ow-down:active{transform:translateY(3px);box-shadow:0 1px 0 #141414}
 .ow-ib[aria-pressed="true"]{background:#ffcc3a}
-.ow.drone .ow-emo,.ow.drone .ow-act{display:none}
+.ow.drone .ow-emo,.ow.drone .ow-chat,.ow.drone .ow-act{display:none}
 .ow-jump{width:84px;height:84px;border-radius:50%;border:3px solid #141414;background:#fff;box-shadow:0 5px 0 #141414;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;font-size:11px;touch-action:none}
 .ow-jump svg{width:30px;height:30px;fill:none;stroke:#141414;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
 .ow-jump:active,.ow-emo:active,.ow-act:active,.ow-ib:active{transform:translateY(3px);box-shadow:0 1px 0 #141414}
-.ow-emo{width:52px;height:52px;border-radius:50%;border:3px solid #141414;background:#fff;box-shadow:0 4px 0 #141414;display:grid;place-items:center;padding:0}
-.ow-emo svg{width:26px;height:26px;fill:none;stroke:#141414;stroke-width:2}
+.ow-emo,.ow-chat{width:52px;height:52px;border-radius:50%;border:3px solid #141414;background:#fff;box-shadow:0 4px 0 #141414;display:grid;place-items:center;padding:0}
+.ow-emo svg,.ow-chat svg{width:26px;height:26px;fill:none;stroke:#141414;stroke-width:2}
 .ow-act{min-height:52px;max-width:60vw;padding:0 18px;border-radius:999px;border:3px solid #141414;background:#ffcc3a;font-weight:800;font-size:15px;box-shadow:0 4px 0 #141414;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;animation:owp 1.6s ease-in-out infinite}
 @keyframes owp{50%{transform:scale(1.04)}}
 .ow-emotes{position:absolute;right:14px;bottom:calc(130px + env(safe-area-inset-bottom));display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#fff;border:3px solid #141414;border-radius:16px;padding:10px;box-shadow:0 4px 0 #141414}

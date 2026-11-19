@@ -84,7 +84,7 @@ export function makeFire(ctx){
     /* people see it: the scream plays when it is on screen and close enough */
     if(P.world==='out'&&k>.25){const dc=Math.hypot(F.x-camera.position.x,F.z-camera.position.z);prj.set(F.x,3,F.z).project(camera);
       const onScreen=prj.z<1&&Math.abs(prj.x)<1.05&&Math.abs(prj.y)<1.1;screamT-=dt;
-      if(onScreen&&dc<90&&screamT<=0&&screams<5){snd.sample('fire.mp3',Math.max(.25,1-dc/100));screamT=seenOnce?8+Math.random()*5:9;screams++;
+      if(onScreen&&dc<90&&screamT<=0&&screams<5){snd.sample('sfx/fire.mp3',Math.max(.25,1-dc/100));screamT=seenOnce?8+Math.random()*5:9;screams++;
         if(!seenOnce){seenOnce=true;ctx.bubbleNear(F.x,F.z,['Aag! Aag!','Call 101!','Bhaago!','Paani lao!'])}}}}
   /* where the truck is while it is out on a call (other traffic pulls over) */
   function truckPos(){return F&&truck.visible&&F.truck.spd>1?truck.position:null}
