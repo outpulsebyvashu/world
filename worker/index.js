@@ -15,6 +15,9 @@ async function hashPw(pw,salt){const k=await crypto.subtle.importKey('raw',new T
 function same(a,b){if(a.length!==b.length)return false;let d=0;for(let i=0;i<a.length;i++)d|=a.charCodeAt(i)^b.charCodeAt(i);return d===0}
 const PROGRESS_MAX=16000;
 
+/* the one admin account: authorised for everything, and the only one who can grant entry requests */
+const ADMIN='vashuisbored',GATES=['pm'];
+function isAdmin(name){return String(name||'').toLowerCase()===ADMIN}
 export class Accounts extends DurableObject{
   constructor(ctx,env){super(ctx,env);this.sql=ctx.storage.sql;
     this.sql.exec(`CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY AUTOINCREMENT,username TEXT UNIQUE NOT NULL COLLATE NOCASE,salt TEXT NOT NULL,hash TEXT NOT NULL,look TEXT NOT NULL DEFAULT '{}',progress TEXT NOT NULL DEFAULT '{}',created INTEGER NOT NULL,seen INTEGER);
@@ -27,7 +30,7 @@ export class Accounts extends DurableObject{
   session(uid){const token=hex(crypto.getRandomValues(new Uint8Array(32)));this.sql.exec('INSERT INTO sessions(token,uid,expires) VALUES(?,?,?)',token,uid,Date.now()+60*864e5);return token}
   user(token){if(!token||!/^[0-9a-f]{64}$/.test(token))return null;const r=this.sql.exec('SELECT u.id,u.username,u.look,u.progress,s.expires FROM sessions s JOIN users u ON u.id=s.uid WHERE s.token=?',token).toArray()[0];
     if(!r||r.expires<Date.now())return null;return r}
-  pub(r){return{username:r.username,look:JSON.parse(r.look||'{}'),progress:JSON.parse(r.progress||'{}')}}
+  pub(r){return{username:r.username,admin:isAdmin(r.username),look:JSON.parse(r.look||'{}'),progress:JSON.parse(r.progress||'{}')}}
   async fetch(req){const url=new URL(req.url),path=url.pathname,ip=req.headers.get('cf-connecting-ip')||'local';
     const token=(req.headers.get('authorization')||'').replace(/^Bearer\s+/i,'');
     let body={};if(req.method==='POST'){try{body=await req.json()}catch{return json({error:'Bad request.'},400)}}
@@ -65,10 +68,10 @@ export class Town extends DurableObject{
     if(this.ctx.getWebSockets().length>=60)return new Response('Town is full.',{status:503});
     const who=JSON.parse(req.headers.get('x-ow-user')||'{}');const id=hex(crypto.getRandomValues(new Uint8Array(4)));
     const pair=new WebSocketPair(),[client,server]=Object.values(pair);
-    const me={id,name:who.name,look:who.look,acct:!!who.acct,s:null,n:0,t:0};
+    const me={id,name:who.name,look:who.look,acct:!!who.acct,admin:!!who.acct&&isAdmin(who.name),grants:[],rq:0,s:null,n:0,t:0};
     this.ctx.acceptWebSocket(server);server.serializeAttachment(me);
     const others=this.ctx.getWebSockets().filter(w=>w!==server).map(w=>w.deserializeAttachment()).filter(Boolean);
-    this.send(server,{t:'hello',id,players:others.map(o=>({id:o.id,name:o.name,look:o.look,acct:o.acct,s:o.s}))});
+    this.send(server,{t:'hello',id,admin:me.admin,players:others.map(o=>({id:o.id,name:o.name,look:o.look,acct:o.acct,s:o.s}))});
     this.cast({t:'join',id,name:me.name,look:me.look,acct:me.acct},server);
     return new Response(null,{status:101,webSocket:client})}
   webSocketMessage(ws,raw){const a=ws.deserializeAttachment();if(!a||typeof raw!=='string'||raw.length>900)return;
@@ -78,6 +81,14 @@ export class Town extends DurableObject{
     else if(m.t==='q'&&Number.isInteger(m.i)&&m.i>=0&&m.i<PHRASES){ws.serializeAttachment(a);this.cast({t:'q',id:a.id,i:m.i},ws)}
     else if(m.t==='e'&&EMOTES.includes(m.e)){ws.serializeAttachment(a);this.cast({t:'e',id:a.id,e:m.e},ws)}
     else if(m.t==='look'){a.look=clean(m.look);ws.serializeAttachment(a);this.cast({t:'look',id:a.id,look:a.look},ws)}
+    /* entry requests: anyone asks, only the admin (a verified account) can grant */
+    else if(m.t==='req'&&GATES.includes(m.what)){if(now-(a.rq||0)<15000){ws.serializeAttachment(a);return this.send(ws,{t:'reqr',what:m.what,ok:false,why:'wait'})}a.rq=now;ws.serializeAttachment(a);
+      const admins=this.ctx.getWebSockets().filter(w=>{const b=w.deserializeAttachment();return b&&b.admin&&w!==ws});
+      if(!admins.length)return this.send(ws,{t:'reqr',what:m.what,ok:false,why:'offline'});
+      for(const w of admins)this.send(w,{t:'req',id:a.id,name:a.name,acct:a.acct,what:m.what});this.send(ws,{t:'reqs',what:m.what})}
+    else if(m.t==='grant'&&a.admin&&GATES.includes(m.what)&&typeof m.id==='string'){ws.serializeAttachment(a);
+      const w=this.ctx.getWebSockets().find(w=>{const b=w.deserializeAttachment();return b&&b.id===m.id});if(!w)return this.send(ws,{t:'gone',id:m.id});
+      const b=w.deserializeAttachment();if(m.ok&&!b.grants.includes(m.what)){b.grants.push(m.what);w.serializeAttachment(b)}this.send(w,{t:'reqr',what:m.what,ok:!!m.ok,why:m.ok?'':'denied',by:a.name})}
     else ws.serializeAttachment(a)}
   webSocketClose(ws){const a=ws.deserializeAttachment();if(a)this.cast({t:'leave',id:a.id},ws);try{ws.close(1000,'bye')}catch{}}
   webSocketError(ws){this.webSocketClose(ws)}
@@ -88,7 +99,7 @@ export default{async fetch(req,env){const url=new URL(req.url),path=url.pathname
   if(path.startsWith('/api/'))return accounts.fetch(req);
   const m=path.match(/^\/ws\/([a-z]+)$/);
   if(m){if(!TOWNS.includes(m[1]))return new Response('Unknown town.',{status:404});if(req.headers.get('Upgrade')!=='websocket')return new Response('Expected a WebSocket.',{status:426});
-    let who={name:cleanName(url.searchParams.get('name'))||'Guest',acct:false,look:null};
+    let who={name:cleanName(url.searchParams.get('name'))||'Guest',acct:false,look:null};if(isAdmin(who.name.replace(/[ _.-]/g,'')))who.name='Guest';
     try{who.look=clean(JSON.parse(url.searchParams.get('look')||'{}'))}catch{who.look=clean({})}
     const token=url.searchParams.get('token');
     if(token){const r=await accounts.fetch(new Request('https://do/internal/who?token='+encodeURIComponent(token)));if(r.ok){const u=await r.json();who={name:u.username,acct:true,look:who.look}}}

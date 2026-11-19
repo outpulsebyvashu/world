@@ -50,12 +50,13 @@ export const TOWNS={
     trees:0,flora:'city',city:true}
 };
 /* 8 beans across the towns. A string first item means "inside that room" (offset from room centre). */
+/* all 8 beans are in Vashupur, out in the open on the main streets (index order kept so saved progress still matches) */
 export const BEANS=[
-  {t:'vashupur',p:[0,1.95,119.5]},
-  {t:'vashupur',p:['meow',7.6,1.75,-5.2]},
-  {t:'kaapikunj',p:[-31,.9,-24.5]},
-  {t:'vashupur',p:['mall2',13.9,1.0,6.9]},
-  {t:'memepura',p:[64,.9,57.4]},
-  {t:'basti',p:[-28,1.7,61.5]},
-  {t:'barfii',p:[-88,.9,17]},
-  {t:'delulugarh',p:[0,85.2,-41]}];
+  {t:'vashupur',p:[-104,.95,128.7]},   // bus stand pavement, right where you arrive
+  {t:'vashupur',p:[30,.95,132.6]},     // outside Meow Club
+  {t:'vashupur',p:[86.2,.95,134.6]},   // under the Choupati arch
+  {t:'vashupur',p:[141,.95,134.4]},    // Outpulse Museum path
+  {t:'vashupur',p:[9,.95,40]},         // pavement outside Outpulse Labs
+  {t:'vashupur',p:[125,.95,9]},        // pavement outside PM House
+  {t:'vashupur',p:[66,.95,-28.6]},     // Lolu Mall entrance
+  {t:'vashupur',p:[-9,.95,60.8]}];     // pavement by the stadium parking

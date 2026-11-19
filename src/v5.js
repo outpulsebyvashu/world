@@ -29,15 +29,17 @@ export function pmHouse(scene,ctx){const {S,WIN,LMP,addPlane}=ctx;
   col(WX0,WX1,0,WH+.8,WZ1-.6,WZ1);
   /* main gate: two pillars with lamps, closed steel gates with a gold ring */
   for(const s of[-1,1]){const x=gx+s*(GW+.6);blk(S,x-.6,x+.6,0,5.4,WZ0-.3,WZ0+.9,CREAM);bx(S,x,5.55,WZ0+.3,1.5,.3,1.5,SAND);bx(LMP,x,6.05,WZ0+.3,.5,.7,.5,'#fff6d8')}
-  blk(S,gx-GW,gx+GW,0,.25,WZ0+.15,WZ0+.45,DK);for(let x=gx-GW+.2;x<gx+GW;x+=.36)bx(S,x,1.9,WZ0+.3,.1,3.5,.1,DK);for(const y of[.6,1.9,3.5])bx(S,gx,y,WZ0+.3,GW*2,.14,.14,DK);bx(S,gx,1.9,WZ0+.3,.06,3.5,.18,'#141414');
-  {const r=new THREE.TorusGeometry(.75,.08,8,28);r.translate(gx,2.3,WZ0+.12);S.add(r,'#c9a227');const h=new THREE.CylinderGeometry(.14,.14,.1,12);h.rotateX(PI/2);h.translate(gx,2.3,WZ0+.12);S.add(h,'#c9a227');
-    for(let k=0;k<12;k++){const a=k/12*PI;bx(S,gx,2.3,WZ0+.12,.04,1.4,.03,'#c9a227',0,0,a)}}
-  col(gx-GW,gx+GW,0,WH+.6,WZ0,WZ0+.6);
+  blk(S,gx-GW,gx+GW,0,.06,WZ0+.15,WZ0+.45,DK,false);
+  /* two gate leaves on hinges (they swing inwards for authorised players) */
+  const leaf=sd=>{const b=new Batch();for(let u=.2;u<GW;u+=.36)bx(b,sd*u,1.9,0,.1,3.5,.1,DK);for(const y of[.6,1.9,3.5])bx(b,sd*GW/2,y,0,GW,.14,.14,DK);bx(b,sd*(GW-.05),1.9,0,.1,3.5,.18,'#141414');
+    const r=new THREE.TorusGeometry(.6,.07,8,24);r.translate(sd*GW/2,2.2,-.18);b.add(r,'#c9a227');const h=new THREE.CylinderGeometry(.12,.12,.08,12);h.rotateX(PI/2);h.translate(sd*GW/2,2.2,-.18);b.add(h,'#c9a227');
+    for(let k=0;k<12;k++)bx(b,sd*GW/2,2.2,-.18,.035,1.15,.03,'#c9a227',0,0,k/12*PI);const g=new THREE.Group();g.position.set(gx-sd*GW,0,WZ0+.3);const m=b.mesh(CHM);m.castShadow=true;g.add(m);scene.add(g);return g};
+  const gL=leaf(1),gR=leaf(-1),cGate=col(gx-GW,gx+GW,0,WH+.6,WZ0,WZ0+.6);
   addPlane(scene,7,1.05,signTex('PM HOUSE','#efe6d2','#5a3b1e',768,116),[gx-11.5,2.9,WZ0-.02],PI,null);
   addPlane(scene,7,1.05,signTex('NO ENTRY WITHOUT AUTHORISATION','#c62828','#ffffff',1024,150),[gx+11.5,2.9,WZ0-.02],PI,null);
   for(const x of[WX0+8,WX1-8])addPlane(scene,4.2,.7,signTex('RESTRICTED AREA · PHOTOGRAPHY PROHIBITED','#141414','#ffcc3a',1024,170),[x,2.4,WZ0-.02],PI,null);
   /* checkpoint outside the gate: boom barrier, tyre killers, sentry boxes, bollards */
-  {const z=WZ0-4.2;blk(S,gx-GW-.9,gx-GW-.3,0,1.2,z-.3,z+.3,'#f4f1ea');for(let i=0;i<9;i++)bx(S,gx-GW+.1+i*.9,1,z,.9,.14,.14,i%2?'#ffffff':'#c62828');col(gx-GW,gx+GW+.4,.75,1.25,z-.12,z+.12);
+  let gB,cBoom;{const z=WZ0-4.2;blk(S,gx-GW-.9,gx-GW-.3,0,1.2,z-.3,z+.3,'#f4f1ea');const b=new Batch();for(let i=0;i<9;i++)bx(b,.7+i*.9,0,0,.9,.14,.14,i%2?'#ffffff':'#c62828');gB=new THREE.Group();gB.position.set(gx-GW-.6,1,z);gB.add(b.mesh(CHM));scene.add(gB);cBoom=col(gx-GW,gx+GW+.4,.75,1.25,z-.12,z+.12);
     for(let x=gx-GW;x<gx+GW;x+=.5){const g=new THREE.ConeGeometry(.08,.18,4);g.translate(x,.09,z+1.4);S.add(g,'#ffcc3a')}bx(S,gx,.02,z+1.4,GW*2,.04,.5,'#141414')}
   for(const s of[-1,1]){const x=gx+s*(GW+3.4),z=WZ0-1.3;const sb=prop(S,x,0,z);sb.box(0,1.3,0,1.5,2.6,1.5,'#f4f1ea');for(let k=0;k<5;k++)sb.box(0,.3+k*.5,.76,1.5,.18,.02,k%2?'#ff9933':'#138808');sb.box(0,1.7,.77,.9,.7,.02,'#22313f');sb.box(0,2.72,0,1.9,.18,1.9,OL);col(x-.75,x+.75,0,2.6,z-.75,z+.75)}
   for(let x=X0+2;x<X1-1;x+=3.2){if(Math.abs(x-gx)<GW+1.5)continue;cyl(S,x,.45,Z0+.6,.16,.18,.9,'#f4f1ea',10);bx(S,x,.62,Z0+.6,.34,.12,.34,'#c62828');col(x-.18,x+.18,0,.9,Z0+.42,Z0+.78)}
@@ -71,7 +73,8 @@ export function pmHouse(scene,ctx){const {S,WIN,LMP,addPlane}=ctx;
     {name:'Army Havildar',look:ARMY,x:gx-GW-3.4,z:WZ0-2.6,yaw:PI,lines:['Halt! Ultra high security area.','Authorised personnel only. Turn around, please.'],barks:['Jai Hind.','Halt!']},
     {name:'Army jawan',look:Object.assign({},ARMY,{mustache:false}),x:gx+GW+3.4,z:WZ0-2.6,yaw:PI,lines:['Day and night, this gate stays shut.'],barks:['Jai Hind.','Keep moving.']},
     {name:'Army jawan',look:ARMY,x:150.5,z:19.6,yaw:PI,lines:['Our truck. Do not lean on it.'],barks:['Jai Hind.']},{name:'Army jawan',look:Object.assign({},ARMY,{mustache:false}),x:152.3,z:19.6,yaw:PI,lines:['Eyes forward.'],barks:['Halt!']});
-  G.triggers.push({x:gx,z:WZ0-3.2,r:2.6,label:'Request entry',act:()=>G.denied&&G.denied()});
+  G.triggers.push({x:gx,z:WZ0-3.2,r:2.6,get label(){return G.pmAuth&&G.pmAuth()?'Enter PM House':'Request entry'},act:()=>G.denied&&G.denied()});
+  ctx.W.pmGate={x:gx,z:WZ0,L:gL,R:gR,B:gB,cGate,cBoom,y1Gate:cGate.y1,y1Boom:cBoom.y1,k:0};
   /* inside: Lutyens-style white bungalow with a colonnaded verandah, porch, flag, helipad, black SUVs */
   const BW='#f4f1ea',bx0=124,bx1=158,bz0=35,bz1=51,BH=6.4;
   blk(S,bx0,bx1,0,1,bz0,bz1,SAND);blk(S,bx0+.3,bx1-.3,1,BH,bz0+.3,bz1-.3,BW);blk(S,bx0-.2,bx1+.2,BH,BH+.5,bz0-3.6,bz1+.2,CREAM,false);blk(S,bx0,bx1,BH+.5,BH+1.2,bz0,bz1,BW,false);

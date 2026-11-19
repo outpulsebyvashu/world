@@ -48,14 +48,14 @@ OW.init=async(host,el,progress=()=>{})=>{
   camera=new THREE.PerspectiveCamera(58,1,.1,1700);
   hemi=new THREE.HemisphereLight('#cfe9ff','#6a8f4e',1.1);scene.add(hemi);amb=new THREE.AmbientLight('#ffffff',.25);scene.add(amb);
   sunL=new THREE.DirectionalLight('#fff3dc',2.2);sunL.castShadow=true;const sm=innerWidth>900?2048:1024;sunL.shadow.mapSize.set(sm,sm);const sc=sunL.shadow.camera;sc.left=-32;sc.right=32;sc.top=32;sc.bottom=-32;sc.near=1;sc.far=220;sunL.shadow.bias=-.0004;sunL.shadow.normalBias=.03;scene.add(sunL,sunL.target);
-  G.enter=enterRoom;G.exit=exitRoom;G.mallLift=openMallLift;G.denied=pmDenied;G.card=card;G.talk=talk;G.say=(n,t)=>dlg(n,[t]);G.cv=openCV;G.brew=brew;
+  G.enter=enterRoom;G.exit=exitRoom;G.mallLift=openMallLift;G.denied=pmGateAct;G.pmAuth=()=>auth('pm');G.card=card;G.talk=talk;G.say=(n,t)=>dlg(n,[t]);G.cv=openCV;G.brew=brew;
   G.tp=tpTo;G.bus=openBus;G.lift=openLift;G.res={tower:'A',floor:0,flat:1};
   sky=makeSky(scene);grass=makeGrass(scene,makeMask([]));progress(.5);
   player=makeChar(toChar(prof.look));scene.add(player);
   const cb=new Batch();cyl(cb,0,0,0,.11,.09,.22,'#ffffff',10);cyl(cb,0,.11,0,.1,.1,.01,'#8a5a3b',10);cupMesh=cb.mesh(CHM);cupMesh.position.set(0,-.72,.12);cupMesh.visible=false;player.userData.armR.add(cupMesh);
   marker=new THREE.Mesh(new THREE.RingGeometry(.35,.5,24).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:.9,depthWrite:false}));marker.visible=false;scene.add(marker);
   fire=makeFire({scene,camera,P,snd,W,toast,bubbleNear});traffic=makeTraffic({P,snd,bubble,toast,fire,camera});
-  net=makeNet({root:()=>townRoot,hideNear:()=>dressing?P.pos:null,name:()=>prof.name,look:()=>prof.look,token:()=>prof.token,bubble,onCount:setOnline});
+  net=makeNet({onHello:()=>adminPerks(),onReq,root:()=>townRoot,hideNear:()=>dressing?P.pos:null,name:()=>prof.name,look:()=>prof.look,token:()=>prof.token,bubble,onCount:setOnline});
   if(!TOWNS[curTown]||!TOWNS[curTown].ready)curTown='vashupur';
   loadTown(curTown);progress(.75);await fontsP;fontsOK=true;streamNear(P.pos,70);progress(.9);await new Promise(r=>setTimeout(r,0));
   bindInput();resize();addEventListener('resize',resize);
@@ -94,7 +94,7 @@ function makeBeans(){const geo=new THREE.SphereGeometry(.3,12,10);geo.scale(1,1.
   BEANS.forEach((bn,i)=>{if(bn.t!==curTown)return;const b=bn.p;let [x,y,z]=b;if(typeof b[0]==='string'){const r=G.rooms[b[0]];if(!r)return;x=r.cx+b[1];y=b[2];z=b[3]}const g=new THREE.Group();const m=new THREE.Mesh(geo,mat);g.add(m);const s=new THREE.Mesh(new THREE.BoxGeometry(.04,.62,.05),gm);s.position.z=.24;g.add(s);
     const glow=new THREE.Mesh(new THREE.RingGeometry(.45,.6,20),new THREE.MeshBasicMaterial({color:'#ffcc3a',transparent:true,opacity:.6,side:THREE.DoubleSide,depthWrite:false}));g.add(glow);g.position.set(x,y,z);townRoot.add(g);G.beans.push({g,id:i,y});if(beansGot.has(i))g.visible=false})}
 function pickBean(b){beansGot.add(b.id);LS.set('ow_beans',[...beansGot]);b.g.visible=false;snd.chime();$('.ow-beans b').textContent=beansGot.size+'/8';
-  if(beansGot.size>=8&&!unlocked){unlocked=true;LS.set('ow_unlocked',true);applyUnlock(true)}else toast('COFFEE BEAN '+beansGot.size+'/8',['Kaveri will be pleased.','Smells like Coorg.','Keep looking. Try jumping on things.','Halfway roast.','Medium roast achieved.','Almost a full dose.','One more. Look high and low.'][beansGot.size-1]||'');updQuest()}
+  if(beansGot.size>=8&&!unlocked){unlocked=true;LS.set('ow_unlocked',true);applyUnlock(true)}else toast('COFFEE BEAN '+beansGot.size+'/8',['Kaveri will be pleased.','Smells like Coorg.','Keep walking the main streets.','Halfway roast.','Medium roast achieved.','Almost a full dose.','One more, somewhere in Vashupur.'][beansGot.size-1]||'');updQuest()}
 function applyUnlock(fresh){if(W.ladder)W.ladder.visible=!G.LOT;if(W.dj)W.dj.visible=true;if(fresh){G.host.egg('ow_beans',G.LOT?'All 8 beans found! Unlocked: the Arc-Street scooter in every town and party mode at the Vashupur DJ booth.':'All 8 beans found! Unlocked: HQ rooftop ladder, Arc-Street scooter, and party mode at the DJ booth.');snd.fanfare()}}
 
 /* ================= input ================= */
@@ -220,8 +220,8 @@ function progress(){const o={};for(const k of PKEYS){const v=localStorage.getIte
 function mergeProgress(server){let changed=false;for(const k of PKEYS){if(server[k]==null)continue;const local=localStorage.getItem(k);let out=server[k];
   try{const a=JSON.parse(server[k]),b=local==null?null:JSON.parse(local);if(Array.isArray(a)&&Array.isArray(b))out=JSON.stringify([...new Set([...b,...a])]);else if(a&&b&&typeof a==='object'&&typeof b==='object'&&!Array.isArray(a))out=JSON.stringify(Object.assign({},b,a))}catch(e){}
   if(out!==local){localStorage.setItem(k,out);changed=true}}return changed}
-function setSession(token,user){prof.token=token;prof.user=user;prof.name=user.username;LS.set('ow_token',token);LS.set('ow_name',user.username);LS.set('ow_profile',true)}
-async function checkSession(){const r=await api('me');if(r.ok&&r.d.user){prof.user=r.d.user;prof.name=r.d.user.username;if(r.d.user.look&&r.d.user.look.g){const l=clean(r.d.user.look);if(JSON.stringify(l)!==JSON.stringify(prof.look))setPlayerLook(l)}if(net)net.reconnect()}
+function setSession(token,user){prof.token=token;prof.user=user;prof.name=user.username;LS.set('ow_token',token);LS.set('ow_name',user.username);LS.set('ow_profile',true);adminPerks()}
+async function checkSession(){const r=await api('me');if(r.ok&&r.d.user){prof.user=r.d.user;prof.name=r.d.user.username;adminPerks();if(r.d.user.look&&r.d.user.look.g){const l=clean(r.d.user.look);if(JSON.stringify(l)!==JSON.stringify(prof.look))setPlayerLook(l)}if(net)net.reconnect()}
   else if(r.status===401){prof.token=null;prof.user=null;try{localStorage.removeItem('ow_token')}catch(e){}}}
 function autoSave(final){if(!prof.token)return;const p=progress(),key=JSON.stringify(p)+JSON.stringify(prof.look);if(key===savedKey)return;savedKey=key;
   if(final===true){try{fetch('/api/save',{method:'POST',keepalive:true,headers:{'content-type':'application/json',authorization:'Bearer '+prof.token},body:JSON.stringify({progress:p,look:prof.look})})}catch(e){}return}
@@ -317,7 +317,28 @@ function ytTick(){const C=W.cinema;if(!(C&&P.world==='mall3'&&P.state==='sit'&&!
 function quadCSS(W0,H0,p){const [x0,y0]=p[0],[x1,y1]=p[1],[x2,y2]=p[2],[x3,y3]=p[3];const dx1=x1-x2,dx2=x3-x2,dx3=x0-x1+x2-x3,dy1=y1-y2,dy2=y3-y2,dy3=y0-y1+y2-y3;let a,b,c=x0,d,e,f=y0,g=0,h=0;
   if(Math.abs(dx3)<1e-6&&Math.abs(dy3)<1e-6){a=x1-x0;b=x3-x0;d=y1-y0;e=y3-y0}else{const den=dx1*dy2-dx2*dy1;g=(dx3*dy2-dx2*dy3)/den;h=(dx1*dy3-dx3*dy1)/den;a=x1-x0+g*x1;b=x3-x0+h*x3;d=y1-y0+g*y1;e=y3-y0+h*y3}
   return 'matrix3d('+[a/W0,d/W0,0,g/W0,b/H0,e/H0,0,h/H0,0,0,1,0,c,f,0,1].map(n=>+n.toFixed(6)).join(',')+')'}
-function pmDenied(){snd.alarm();toast('ACCESS DENIED','PM House. Authorised personnel only.');dlg('SPG Officer',['Halt.','This is the PM House. No one enters without authorisation.','Your name is not on the list. Please step back from the gate.'])}
+/* authorisation: the admin account (vashuisbored, checked by the server) can do everything;
+   anyone else can ask, and the admin grants entry for that visit */
+const grants=new Set();let pmPending=null;
+function isAdmin(){return!!(prof.user&&prof.user.admin)||!!(net&&net.admin)}
+function auth(what){return isAdmin()||grants.has(what)}
+function adminPerks(){if(isAdmin()&&!unlocked){unlocked=true;applyUnlock(false);toast('AUTHORISED','Signed in as admin: every door and unlock is open to you.')}}
+function pmGateAct(){if(auth('pm')){snd.chime();toast('ACCESS GRANTED',isAdmin()?'Welcome. The gate is open for you.':'You are authorised. The gate is open.');return}
+  if(pmPending)return toast('PLEASE WAIT','Your request is with the authority.');
+  if(!net||!net.request('pm'))return pmDenied('No one with authority can be reached right now.');
+  pmPending=setTimeout(()=>{pmPending=null;pmDenied('No reply from the authority. Try again later.')},45000);
+  dlg('SPG Officer',['Wait here. We are asking for authorisation.'])}
+function pmDenied(why){snd.alarm();toast('ACCESS DENIED','PM House. Authorised personnel only.');dlg('SPG Officer',['Halt.','This is the PM House. No one enters without authorisation.',why||'Please step back from the gate.'])}
+function onReq(m){if(m.t==='req'){snd.chime();toast('ENTRY REQUEST',m.name+' wants to enter the PM House.');
+    dlg('Entry request',[m.name+(m.acct?' (signed in)':' (guest)')+' is asking to enter the PM House.'],[{t:'Grant',f:()=>{net.grant(m.id,m.what,true);toast('GRANTED',m.name+' can enter the PM House.')}},{t:'Deny',f:()=>net.grant(m.id,m.what,false)}]);return}
+  if(m.t==='reqs')return toast('REQUEST SENT','Waiting for approval…');
+  if(m.t==='gone')return toast('REQUEST','That player has already left.');
+  if(m.t==='reqr'){if(m.why==='wait')return toast('PLEASE WAIT','You can ask again in a few seconds.');clearTimeout(pmPending);pmPending=null;
+    if(m.ok){grants.add(m.what);snd.chime();closeDlg();toast('ACCESS GRANTED','Authorised by '+(m.by||'the authority')+'. The gate is opening.')}
+    else pmDenied(m.why==='offline'?'No one with authority is in Vashupur right now.':'Your request was declined.')}}
+/* the PM House gate swings open (and the boom lifts) only for authorised players standing near it */
+function pmGateTick(dt){const g=W.pmGate;if(!g)return;const near=P.world==='out'&&Math.hypot(P.pos.x-g.x,P.pos.z-g.z)<11;const want=auth('pm')&&near?1:0;
+  g.k+=(want-g.k)*Math.min(1,dt*2.2);g.L.rotation.y=-Math.PI/2*g.k;g.R.rotation.y=Math.PI/2*g.k;g.B.rotation.z=Math.PI/2*.92*g.k;const open=g.k>.35;g.cGate.y1=open?-1:g.y1Gate;g.cBoom.y1=open?-1:g.y1Boom}
 function tpTo(x,y,z,yaw,label){if(drone.on)setDrone(false);snd.door();fade(()=>{if(P.ride)dismount();P.world='out';P.pos.set(x,y,z);P.vel.set(0,0,0);P.yaw=yaw||0;cam.yaw=(yaw||0)+Math.PI;cam.pitch=.42;inp.target=null;marker.visible=false;setTime();zone(label||TOWNS[curTown].name,true);snapCam()})}
 
 function fade(fn){const f=$('.ow-fade');f.classList.add('on');setTimeout(()=>{fn();setTimeout(()=>f.classList.remove('on'),60)},RM?0:260)}
@@ -367,7 +388,7 @@ function update(dt,T){
   if(marker.visible){marker.rotation.y+=dt*2;marker.material.opacity=.5+.4*Math.sin(T*6)}
   /* --- world systems --- */
   const FC=drone.on?drone.focus:P.pos;if(grass&&P.world==='out')grass.update(dt,T,FC.x,FC.z);if(sky){sky.position.copy(camera.position);if(sky.material.uniforms.time)sky.material.uniforms.time.value=T}
-  beansTick(dt,T);npcTick(dt,T);jailTick(dt,T);eventTick(dt,T);fire.tick(dt,T);traffic.tick(dt,T,W);if(net){net.tick(dt);net.send(dt,P,P.ride?1:P.state==='sit'?2:0)}ballTick(dt);ambientTick(dt,T);ytTick();if(P.world==='mall3'&&W.cinema){W.cinema.t-=dt;if(W.cinema.t<=0){W.cinema.t=1/15;W.cinema.tick(T);W.cinema.tex.needsUpdate=true}}
+  beansTick(dt,T);npcTick(dt,T);jailTick(dt,T);eventTick(dt,T);fire.tick(dt,T);traffic.tick(dt,T,W);if(net){net.tick(dt);net.send(dt,P,P.ride?1:P.state==='sit'?2:0)}ballTick(dt);ambientTick(dt,T);pmGateTick(dt);ytTick();if(P.world==='mall3'&&W.cinema){W.cinema.t-=dt;if(W.cinema.t<=0){W.cinema.t=1/15;W.cinema.tick(T);W.cinema.tex.needsUpdate=true}}
   if(P.world==='out')lakeCheck();
   /* --- action button --- */
   actT-=dt;if(actT<=0){actT=.12;if(drone.on){curAct=null;$('.ow-act').hidden=true}else pickAction()}
@@ -433,7 +454,7 @@ function showPage(){const s=dlgState;if(!s)return;const t=s.pages[s.i];const el=
 function closeDlg(){$('.ow-dlg').hidden=true;clearInterval(typer);dlgState=null}
 function talk(n){if(n.c&&n.c.rotation&&n.kind!=='dog'&&n.kind!=='cat'&&!n.lie&&!n.sit){n.c.rotation.y=Math.atan2(P.pos.x-n.c.position.x,P.pos.z-n.c.position.z);n.faceT=4}
   if(n.id==='guide')return guideTalk(n);
-  if(n.id==='farmer')return dlg('Kaveri (coffee farmer)',beansGot.size>=8?['You found all 8 of my beans! Best roast of the year.','The scooter and the DJ booth in Vashupur are open for you. Enjoy!']:['Ayyo! My Coorg beans rolled all over the six towns.','There are 8. Some are high up, some are inside buildings. Take the bus and look everywhere.','You have '+beansGot.size+' so far.'+beanHint()+' Find them all and I\'ll unlock something special.']);
+  if(n.id==='farmer')return dlg('Kaveri (coffee farmer)',beansGot.size>=8?['You found all 8 of my beans! Best roast of the year.','The scooter and the DJ booth in Vashupur are open for you. Enjoy!']:['Ayyo! My Coorg beans fell off the delivery truck in Vashupur.','There are 8, all out on the main streets: the bus stand, Meow Club, Choupati, the museum, Outpulse Labs, PM House, Lolu Mall and the stadium.','You have '+beansGot.size+' so far.'+beanHint()+' Find them all and I\'ll unlock something special.']);
   if(n.id==='doctor'){if(quest.doctor===0){quest.doctor=1;LS.set('ow_quest',quest);updQuest();return dlg('Dr. Rao',['I haven\'t had a decent coffee in a week.','Doctor\'s orders: go to the TOKI kiosk at Choupati, brew me a coffee and bring it here.'])}
     if(quest.doctor===1&&P.cup){quest.doctor=2;LS.set('ow_quest',quest);P.cup=false;cupMesh.visible=false;updQuest();G.host.egg('ow_doctor','Coffee delivered. The doctor approves.');return dlg('Dr. Rao',['Ahh. Perfect extraction. Pulse is back to normal.','Prescription: hire this barista. Take twice daily.'])}
     if(quest.doctor===1)return dlg('Dr. Rao',['Still waiting on that coffee. TOKI has a kiosk at Choupati, just east of the roundabout.']);
